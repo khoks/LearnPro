@@ -1,0 +1,30 @@
+# Normalize line endings — critical for a Windows-first repo that will run on macOS/Linux.
+# All text files use LF in the repo; Windows checkouts auto-translate via core.autocrlf.
+* text=auto eol=lf
+
+# Shell scripts and Unix-only files: always LF.
+*.sh    text eol=lf
+*.bash  text eol=lf
+Dockerfile text eol=lf
+*.yml   text eol=lf
+*.yaml  text eol=lf
+
+# Windows-only batch / PowerShell scripts: always CRLF.
+*.bat   text eol=crlf
+*.cmd   text eol=crlf
+*.ps1   text eol=crlf
+
+# Common binary types — never line-end munge.
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.ico   binary
+*.pdf   binary
+*.zip   binary
+*.gz    binary
+*.tar   binary
+*.woff  binary
+*.woff2 binary
+*.ttf   binary
+*.eot   binary
