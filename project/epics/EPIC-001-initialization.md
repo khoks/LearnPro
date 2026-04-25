@@ -2,7 +2,7 @@
 id: EPIC-001
 title: Repo initialization, design docs, and tracking system
 type: epic
-status: in-progress
+status: done
 priority: P0
 phase: scaffolding
 tags: [scaffolding, docs, tracking]
@@ -35,16 +35,16 @@ This Epic is **purely scaffolding**. No application code lands here.
 
 ## Stories under this Epic
 
-- STORY-001 — Initialize git repo with hygiene files (in-progress)
-- STORY-002 — Capture vision and write design docs (in-progress)
-- STORY-003 — Stand up in-repo tracking system (in-progress)
-- STORY-004 — Scaffold empty folder structure for future code (in-progress)
+- [STORY-001](../stories/STORY-001-init-git-repo.md) — Initialize git repo with hygiene files (done)
+- [STORY-002](../stories/STORY-002-write-vision-docs.md) — Capture raw vision + groomed feature catalog + recommended additions (done)
+- [STORY-003](../stories/STORY-003-architecture-and-roadmap.md) — Author architecture doc, 5 ADRs, MVP scope, and phased roadmap (done)
+- [STORY-004](../stories/STORY-004-stand-up-tracking.md) — Stand up in-repo Epic/Story/Task tracking system (done)
 
 ## Exit criteria
 
-- [ ] `git status` clean on `main` with one commit.
-- [ ] All four child Stories at `done`.
-- [ ] A fresh Claude Code session can answer "what is this project, where do I find X, what's pending" using only the repo's contents.
+- [x] `git status` clean on `main` with one commit.
+- [x] All four child Stories at `done`.
+- [x] A fresh Claude Code session can answer "what is this project, where do I find X, what's pending" using only the repo's contents.
 
 ## Related
 
@@ -54,3 +54,4 @@ This Epic is **purely scaffolding**. No application code lands here.
 ## Activity log
 
 - 2026-04-25 — created; work in progress (executing the approved plan)
+- 2026-04-25 — done; initial commit landed, all 4 stories closed, all 17 tasks done

@@ -2,7 +2,7 @@
 id: STORY-001
 title: Initialize git repo with Windows-friendly hygiene
 type: story
-status: in-progress
+status: done
 priority: P0
 estimate: S
 parent: EPIC-001
@@ -49,3 +49,4 @@ This story produces the boilerplate that an empty `git init` does *not* give you
 
 - 2026-04-25 — created
 - 2026-04-25 — set to in-progress; all 7 child tasks completed during day-1 session
+- 2026-04-25 — done (closed with the initial commit)

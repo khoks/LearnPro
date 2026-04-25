@@ -2,7 +2,7 @@
 id: STORY-002
 title: Capture raw vision + groomed feature catalog + recommended additions
 type: story
-status: in-progress
+status: done
 priority: P0
 estimate: M
 parent: EPIC-001
@@ -44,3 +44,4 @@ Together they convert "huge ambitious vision" into "concrete buckets we can prio
 
 - 2026-04-25 — created
 - 2026-04-25 — set to in-progress; all 3 child tasks completed during day-1 session
+- 2026-04-25 — done (closed with the initial commit)

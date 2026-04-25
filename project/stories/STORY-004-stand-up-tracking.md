@@ -2,7 +2,7 @@
 id: STORY-004
 title: Stand up in-repo Epic/Story/Task tracking system
 type: story
-status: in-progress
+status: done
 priority: P0
 estimate: M
 parent: EPIC-001
@@ -50,3 +50,4 @@ The day-1 pre-population covers all 16 Epics (so the strategic shape is locked),
 
 - 2026-04-25 — created
 - 2026-04-25 — set to in-progress; child tasks 14–16 complete; TASK-017 in flight
+- 2026-04-25 — done (closed with the initial commit; all 4 child tasks done)

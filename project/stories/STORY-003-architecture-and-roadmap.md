@@ -2,7 +2,7 @@
 id: STORY-003
 title: Author architecture doc, 5 ADRs, MVP scope, and phased roadmap
 type: story
-status: in-progress
+status: done
 priority: P0
 estimate: M
 parent: EPIC-001
@@ -52,3 +52,4 @@ The roadmap pair fixes scope:
 
 - 2026-04-25 — created
 - 2026-04-25 — set to in-progress; all 3 child tasks completed during day-1 session
+- 2026-04-25 — done (closed with the initial commit)

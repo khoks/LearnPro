@@ -1,19 +1,13 @@
 # LearnPro Board
 
-> **Last updated:** 2026-04-25
+> **Last updated:** 2026-04-25 (EPIC-001 closed; ready to begin EPIC-002 / MVP build)
 > **How to read this:** This is the live status of every Epic, Story, and Task in the project. Hand-maintained for now (a regenerator script lives in the v1 backlog). When you change an item's `status:` frontmatter, also update the row here in the same commit.
 
 ---
 
 ## In Progress
 
-| ID | Title | Type | Phase | Priority | Est | Owner |
-|----|-------|------|-------|----------|-----|-------|
-| [EPIC-001](epics/EPIC-001-initialization.md) | Repository initialization & scaffolding | epic | scaffolding | P0 | — | claude |
-| [STORY-001](stories/STORY-001-init-git-repo.md) | Initialize git repo with Windows-friendly hygiene | story | scaffolding | P0 | S | claude |
-| [STORY-002](stories/STORY-002-write-vision-docs.md) | Capture raw vision + groomed feature catalog + recommended additions | story | scaffolding | P0 | M | claude |
-| [STORY-003](stories/STORY-003-architecture-and-roadmap.md) | Author architecture doc, 5 ADRs, MVP scope, and phased roadmap | story | scaffolding | P0 | M | claude |
-| [STORY-004](stories/STORY-004-stand-up-tracking.md) | Stand up in-repo Epic/Story/Task tracking system | story | scaffolding | P0 | M | claude |
+_(none — EPIC-001 just closed. Pick the next story from "Up Next" to start work.)_
 
 ---
 
@@ -60,7 +54,17 @@ When EPIC-001 closes, the next epic to pick up is **[EPIC-002](epics/EPIC-002-mv
 
 ## Recently Done
 
-All day-1 scaffolding tasks completed during the initialization session.
+EPIC-001 closed in full on 2026-04-25 (initial scaffolding commit `c1e17a1`).
+
+| ID | Title | Done |
+|----|-------|------|
+| [EPIC-001](epics/EPIC-001-initialization.md) | Repository initialization & scaffolding | 2026-04-25 |
+| [STORY-001](stories/STORY-001-init-git-repo.md) | Initialize git repo with Windows-friendly hygiene | 2026-04-25 |
+| [STORY-002](stories/STORY-002-write-vision-docs.md) | Capture raw vision + groomed feature catalog + recommended additions | 2026-04-25 |
+| [STORY-003](stories/STORY-003-architecture-and-roadmap.md) | Author architecture doc, 5 ADRs, MVP scope, and phased roadmap | 2026-04-25 |
+| [STORY-004](stories/STORY-004-stand-up-tracking.md) | Stand up in-repo Epic/Story/Task tracking system | 2026-04-25 |
+
+### Day-1 scaffolding tasks (all done)
 
 | ID | Title | Done | Story |
 |----|-------|------|-------|
@@ -100,7 +104,7 @@ _(none)_
 
 | ID | Epic | Status | Phase | Priority |
 |----|------|--------|-------|----------|
-| [EPIC-001](epics/EPIC-001-initialization.md) | Repository initialization & scaffolding | in-progress | scaffolding | P0 |
+| [EPIC-001](epics/EPIC-001-initialization.md) | Repository initialization & scaffolding | done | scaffolding | P0 |
 | [EPIC-002](epics/EPIC-002-mvp-loop.md) | MVP single learning loop | backlog | mvp | P0 |
 | [EPIC-003](epics/EPIC-003-sandbox.md) | Containerized code sandbox | backlog | mvp | P0 |
 | [EPIC-004](epics/EPIC-004-tutor-agent.md) | Tutor agent harness | backlog | mvp | P0 |
