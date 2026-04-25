@@ -1,19 +1,28 @@
 # LearnPro Board
 
-> **Last updated:** 2026-04-25 (EPIC-001 closed; ready to begin EPIC-002 / MVP build)
+> **Last updated:** 2026-04-25 (Phase B of EPIC-017 product grooming complete; Phase A queued)
 > **How to read this:** This is the live status of every Epic, Story, and Task in the project. Hand-maintained for now (a regenerator script lives in the v1 backlog). When you change an item's `status:` frontmatter, also update the row here in the same commit.
 
 ---
 
 ## In Progress
 
-_(none — EPIC-001 just closed. Pick the next story from "Up Next" to start work.)_
+| ID | Title | Type | Phase | Priority | Est | Owner |
+|----|-------|------|-------|----------|-----|-------|
+| [EPIC-017](epics/EPIC-017-product-discovery.md) | Product discovery, competitive positioning, and feature grooming | epic | scaffolding | P0 | — | claude |
 
 ---
 
 ## Up Next (Ready)
 
-When EPIC-001 closes, the next epic to pick up is **[EPIC-002](epics/EPIC-002-mvp-loop.md) — MVP single learning loop**. Its first story is the auth + onboarding work.
+EPIC-017 product grooming is mid-flight. Phase B (competitive + differentiators) is done; Phase A (UX deep-dive) is next. After EPIC-017 closes, MVP build begins with EPIC-002.
+
+| ID | Title | Type | Phase | Priority | Est |
+|----|-------|------|-------|----------|-----|
+| [STORY-029](stories/STORY-029-ux-deep-dive.md) | Per-feature UX deep-dive on MVP epics (Phase A) | story | scaffolding | P0 | L |
+| [STORY-030](stories/STORY-030-backlog-expansion.md) | Backlog expansion — 40–60 ideas, 15+ filed (Phase C) | story | scaffolding | P0 | L |
+
+### After EPIC-017 closes — MVP build begins
 
 | ID | Title | Type | Phase | Priority | Est |
 |----|-------|------|-------|----------|-----|
@@ -54,10 +63,11 @@ When EPIC-001 closes, the next epic to pick up is **[EPIC-002](epics/EPIC-002-mv
 
 ## Recently Done
 
-EPIC-001 closed in full on 2026-04-25 (initial scaffolding commit `c1e17a1`).
+EPIC-017 Phase B done (2026-04-25). EPIC-001 closed in full on 2026-04-25 (initial scaffolding commit `c1e17a1`).
 
 | ID | Title | Done |
 |----|-------|------|
+| [STORY-028](stories/STORY-028-competitive-and-differentiators.md) | Competitive teardown + differentiators spec (Phase B) | 2026-04-25 |
 | [EPIC-001](epics/EPIC-001-initialization.md) | Repository initialization & scaffolding | 2026-04-25 |
 | [STORY-001](stories/STORY-001-init-git-repo.md) | Initialize git repo with Windows-friendly hygiene | 2026-04-25 |
 | [STORY-002](stories/STORY-002-write-vision-docs.md) | Capture raw vision + groomed feature catalog + recommended additions | 2026-04-25 |
@@ -120,3 +130,4 @@ _(none)_
 | [EPIC-014](epics/EPIC-014-rag-memory.md) | RAG / agent memory | backlog | v1 | P2 |
 | [EPIC-015](epics/EPIC-015-saas-readiness.md) | SaaS readiness primitives (`org_id`, adapters, data export) | backlog | mvp | P1 |
 | [EPIC-016](epics/EPIC-016-security-and-anti-cheat.md) | Security & anti-cheat | backlog | mvp | P0 |
+| [EPIC-017](epics/EPIC-017-product-discovery.md) | Product discovery, competitive positioning, and feature grooming | in-progress | scaffolding | P0 |
