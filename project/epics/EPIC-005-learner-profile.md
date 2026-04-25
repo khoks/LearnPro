@@ -54,6 +54,21 @@ Without this, "adaptive" is hand-waving. With this, every other Epic has the sub
 - Vision: [`docs/vision/GROOMED_FEATURES.md`](../../docs/vision/GROOMED_FEATURES.md) § Theme 2
 - Recommended additions: [`docs/vision/RECOMMENDED_ADDITIONS.md`](../../docs/vision/RECOMMENDED_ADDITIONS.md) — Knowledge graph
 
+## Design notes & alternatives
+
+See [`docs/product/UX_DETAILS.md § EPIC-005`](../../docs/product/UX_DETAILS.md#epic-005--learner-profile--episodic-memory) for the full deep-dive.
+
+Key locked decisions for this Epic:
+- **Per-concept skill score (0–1) + confidence (0–1).** No single composite "level" score — useless for adaptive selection.
+- **Mastery rule:** `skill ≥ 0.8 AND confidence ≥ 0.7 AND last successful application ≤ 14 days ago`. Anything older becomes "fading" and queues for review.
+- **Confidence is shown as dot opacity, not a number.** Numbers invite dispute; opacity is felt.
+- **The exact difficulty-tuner formula is NOT shown to users.** Surfacing it lets people game it instead of practicing.
+- **Profile page shows skill heatmap, recent episodes, mastery list, JSON export.** No editing in MVP — read-only.
+- **Re-doing a mastered problem counts as "review," not new evidence.** Prevents grinding old problems to inflate skill.
+- **Empty profile placeholder for first ~5 sessions** ("we're still learning about you") — heatmap is noise without enough data.
+
+Alternatives considered (single composite level, user-set self-rating, full graph from day 1): see UX_DETAILS for rationale.
+
 ## Activity log
 
 - 2026-04-25 — created

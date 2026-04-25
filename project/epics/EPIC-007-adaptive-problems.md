@@ -56,6 +56,21 @@ Provide problems calibrated to the learner's current skill, with progressive hin
 - Vision: [`docs/vision/GROOMED_FEATURES.md`](../../docs/vision/GROOMED_FEATURES.md) § Theme 4
 - Recommended additions: hint laddering, debugging exercises, "read this code"
 
+## Design notes & alternatives
+
+See [`docs/product/UX_DETAILS.md § EPIC-007`](../../docs/product/UX_DETAILS.md#epic-007--adaptive-problem-generation--grading) for the full deep-dive.
+
+Key locked decisions for this Epic:
+- **The grader is NOT the LLM.** Tests are the floor (deterministic pass/fail); LLM is the ceiling (commentary on idiomatic-ness, efficiency, one specific note). LLM-only grading hallucinates.
+- **Grade revealed instantly when tests finish (~1.5s).** Tutor commentary streams in *after* the green/red verdict — latency-tolerant.
+- **Hidden test failures show test *name* only** (e.g. "test_empty_input failed"). Never reveal the input — that defeats the purpose.
+- **3-rung hint ladder with XP cost (5 / 15 / 30 XP).** Cost trains "think before clicking." 3 rungs is enough to walk from question → reveal; more rungs = decision paralysis.
+- **Curated problem bank for MVP** (~30 per language, hand-written, in `packages/problems/`). LLM-generated *variants* land in v1; bank stays curated.
+- **Difficulty tuner is a heuristic in MVP**: `delta_skill = +base × correctness_multiplier - 0.1 × hint_rungs - 0.05 × overtime - 0.05 × failed_attempts`. Replaced with a learned model in v1.
+- **Next-problem selection rules**: same concept if `skill < 0.5`; advance if `skill ≥ 0.7 AND confidence ≥ 0.5`; one review problem from a fading concept every 3rd problem.
+
+Alternatives considered (LLM-only grading, no hint cost, 5-rung ladder, rubric-based open-ended grading): see UX_DETAILS for rationale.
+
 ## Activity log
 
 - 2026-04-25 — created

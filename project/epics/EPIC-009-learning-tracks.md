@@ -55,6 +55,19 @@ Define the structure for learning content (a "track" — sequence of concepts an
 
 - Vision: [`docs/vision/GROOMED_FEATURES.md`](../../docs/vision/GROOMED_FEATURES.md) § Theme 6
 
+## Design notes & alternatives
+
+See [`docs/product/UX_DETAILS.md § EPIC-009`](../../docs/product/UX_DETAILS.md#epic-009--learning-tracks) for the full deep-dive.
+
+Key locked decisions for this Epic:
+- **A track is a directed graph of *concepts*, not lessons.** Concepts have prerequisites, 4–8 problems each, and one short "intro card."
+- **Concept intro card is ≤ 150 words**, single button: "Got it — give me a problem." Most platforms drown new concepts in walls of text; we get to practice fast.
+- **MVP tracks: Python fundamentals + TypeScript fundamentals.** Python sequence: control flow → collections → comprehensions → functions → classes → modules → file I/O → stdlib highlights → idioms. TS sequence: types → control flow → arrays/objects → functions → modules → async/await → generics intro → idioms.
+- **User can switch tracks; progress is preserved per-track.**
+- **Pure adaptive sequence (no track structure) was rejected** — users want a sense of "where am I going."
+
+Alternatives considered (no track / pure adaptive, rich multi-page lessons, free pick-any-concept): see UX_DETAILS for rationale.
+
 ## Activity log
 
 - 2026-04-25 — created

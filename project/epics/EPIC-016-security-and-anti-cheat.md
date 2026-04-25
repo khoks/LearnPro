@@ -56,6 +56,21 @@ Two related concerns under one Epic:
 - ADR: [`ADR-0002-sandbox`](../../docs/architecture/ADR-0002-sandbox.md)
 - Recommended additions: Anti-cheat / honesty mode
 
+## Design notes & alternatives
+
+See [`docs/product/UX_DETAILS.md § EPIC-016`](../../docs/product/UX_DETAILS.md#epic-016--security--anti-cheat) for the full deep-dive. Tutor-side anti-cheat behavior is in the [`EPIC-004 § Cheating detection`](../../docs/product/UX_DETAILS.md#cheating-detection-philosophy) section.
+
+Key locked decisions for this Epic:
+- **Sandbox security is invisible when working.** Network-block error: "Network access is disabled. Sandboxes are isolated for safety." Memory cap: "Out of memory. Are you building a list bigger than necessary?" Brief, framed as learning hints, not security lectures.
+- **Anti-cheat philosophy: detect respectfully, never punitively.** LearnPro doesn't police cheating. The profile is the user's own; if they sabotage it, they sabotage themselves.
+- **Soft signals only in MVP**: `paste_ratio`, `time_on_problem`, `hint_rungs_used`. Logged silently. **No accusations, ever.**
+- **Optional "I got help on this one" toggle** (off by default). When on: submission is graded but does NOT count toward concept mastery. Feature for honest learners.
+- **Keystroke entropy / paste-confirm modal / honesty mode (paste-lock) deferred to v1.**
+- **Self-hosters get a `SECURITY.md` linked from settings** with threat model + hardening checklist + vuln-report process.
+- **2FA → v1; SSO/SAML, audit logs → v3 SaaS.**
+
+Alternatives considered (no sandboxing for MVP, surfacing security as a UI feature, MVP keystroke-based anti-cheat): see UX_DETAILS for rationale.
+
 ## Activity log
 
 - 2026-04-25 — created

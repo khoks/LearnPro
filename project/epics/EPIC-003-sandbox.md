@@ -53,6 +53,18 @@ Provide a safe, fast, multi-language code execution environment that runs entire
 - ADR: [`ADR-0002-sandbox`](../../docs/architecture/ADR-0002-sandbox.md)
 - Vision: [`docs/vision/GROOMED_FEATURES.md`](../../docs/vision/GROOMED_FEATURES.md) § Theme 1
 
+## Design notes & alternatives
+
+See [`docs/product/UX_DETAILS.md § EPIC-003`](../../docs/product/UX_DETAILS.md#epic-003--containerized-code-sandbox) for the full deep-dive.
+
+Key locked decisions for this Epic:
+- **stdout streams live, line-by-line via WebSocket** (not batched at end). Long-running problems give a sense of progress; users see their `print` debug statements as the program runs — a real differentiator over "submit and wait" platforms.
+- **One-shot containers for MVP** (~500ms cold-start). Pool of warm containers for stateful workspaces lands in v1.
+- **Result panel shows three tabs:** Tests / Output / Errors. Hidden tests show only their *name* + pass/fail (e.g. "test_empty_input failed") — never reveal the input.
+- **Error messages are framed as learning hints**, not security lectures. "Out of memory. Are you building a list bigger than necessary?" not "ResourceLimitExceeded."
+
+Alternatives considered (WASM/Pyodide in-browser, serverless functions, persistent per-user containers): see UX_DETAILS for rationale.
+
 ## Activity log
 
 - 2026-04-25 — created

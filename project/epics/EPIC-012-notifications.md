@@ -55,6 +55,21 @@ Help users keep practice momentum with respectful nudges across channels. Channe
 
 - Vision: [`docs/vision/GROOMED_FEATURES.md`](../../docs/vision/GROOMED_FEATURES.md) § Theme 9
 
+## Design notes & alternatives
+
+See [`docs/product/UX_DETAILS.md § EPIC-012`](../../docs/product/UX_DETAILS.md#epic-012--notifications) for the full deep-dive, including a copy DO/DON'T table with concrete examples.
+
+Key locked decisions for this Epic:
+- **MVP notification types**: daily reminder (Web Push, quiet-hours-respected), session abandoned (in-app only), tutor offline/back (in-app), daily budget reached (in-app), grace day used (in-app + Web Push), concept mastered (in-app, small celebration).
+- **Quiet hours suppress entirely, don't queue.** Queueing creates an 8am notification storm — worse than no notification.
+- **Default quiet hours: 21:00–08:00 local time**, configurable.
+- **Copy is factual + brief.** Same tutor voice rules: no exclamation marks, no emoji, no FOMO ("you're about to LOSE your streak!" is forbidden).
+- **Multiple devices subscribed to push: send to all** (deduplicate by `notification_id`).
+- **Web Push permission denied: show one-time enable banner** (dismissable forever); in-app still works.
+- **Email digests deferred to v1, WhatsApp to v2 (Meta Cloud API), SMS deferred indefinitely** (cost + spam-filter risk).
+
+Alternatives considered (aggressive re-engagement push, email in MVP, Slack/Discord integration): see UX_DETAILS for rationale.
+
 ## Activity log
 
 - 2026-04-25 — created

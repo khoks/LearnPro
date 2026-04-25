@@ -1,6 +1,6 @@
 # LearnPro Board
 
-> **Last updated:** 2026-04-25 (Phase B of EPIC-017 product grooming complete; Phase A queued)
+> **Last updated:** 2026-04-25 (Phase A of EPIC-017 product grooming complete; Phase C queued)
 > **How to read this:** This is the live status of every Epic, Story, and Task in the project. Hand-maintained for now (a regenerator script lives in the v1 backlog). When you change an item's `status:` frontmatter, also update the row here in the same commit.
 
 ---
@@ -15,11 +15,10 @@
 
 ## Up Next (Ready)
 
-EPIC-017 product grooming is mid-flight. Phase B (competitive + differentiators) is done; Phase A (UX deep-dive) is next. After EPIC-017 closes, MVP build begins with EPIC-002.
+EPIC-017 product grooming is mid-flight. Phase B (competitive + differentiators) and Phase A (UX deep-dive) are done; Phase C (backlog expansion) is next. After EPIC-017 closes, MVP build begins with EPIC-002.
 
 | ID | Title | Type | Phase | Priority | Est |
 |----|-------|------|-------|----------|-----|
-| [STORY-029](stories/STORY-029-ux-deep-dive.md) | Per-feature UX deep-dive on MVP epics (Phase A) | story | scaffolding | P0 | L |
 | [STORY-030](stories/STORY-030-backlog-expansion.md) | Backlog expansion — 40–60 ideas, 15+ filed (Phase C) | story | scaffolding | P0 | L |
 
 ### After EPIC-017 closes — MVP build begins
@@ -63,10 +62,11 @@ EPIC-017 product grooming is mid-flight. Phase B (competitive + differentiators)
 
 ## Recently Done
 
-EPIC-017 Phase B done (2026-04-25). EPIC-001 closed in full on 2026-04-25 (initial scaffolding commit `c1e17a1`).
+EPIC-017 Phase A done (2026-04-25 — UX_DETAILS.md + design notes on all MVP epics). EPIC-017 Phase B done (2026-04-25). EPIC-001 closed in full on 2026-04-25 (initial scaffolding commit `c1e17a1`).
 
 | ID | Title | Done |
 |----|-------|------|
+| [STORY-029](stories/STORY-029-ux-deep-dive.md) | Per-feature UX deep-dive on MVP epics (Phase A) | 2026-04-25 |
 | [STORY-028](stories/STORY-028-competitive-and-differentiators.md) | Competitive teardown + differentiators spec (Phase B) | 2026-04-25 |
 | [EPIC-001](epics/EPIC-001-initialization.md) | Repository initialization & scaffolding | 2026-04-25 |
 | [STORY-001](stories/STORY-001-init-git-repo.md) | Initialize git repo with Windows-friendly hygiene | 2026-04-25 |

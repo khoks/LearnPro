@@ -53,6 +53,19 @@ Specifically owned here:
 - [`docs/roadmap/MVP.md`](../../docs/roadmap/MVP.md)
 - ADR: [`ADR-0003-llm-provider`](../../docs/architecture/ADR-0003-llm-provider.md)
 
+## Design notes & alternatives
+
+See [`docs/product/UX_DETAILS.md § EPIC-002`](../../docs/product/UX_DETAILS.md#epic-002--mvp-adaptive-loop) and [§ The first-session magic moment](../../docs/product/UX_DETAILS.md#the-first-session-magic-moment-cross-cutting) for the full deep-dive.
+
+Key locked decisions for this Epic:
+- **First-session budget: ≤ 8 minutes from sign-up to first green checkmark.** Pre-warm the sandbox during onboarding so Run is never cold the first time.
+- **Run vs. Submit are deliberately separate buttons.** Run is free + fast (visible tests only); Submit grades + counts (visible + hidden tests + tutor commentary). Single-button "every keystroke runs tests" patterns train learned helplessness — we explicitly reject them.
+- **Dashboard shows ONE big card, not a feed.** No leaderboard, no recommended-content carousel.
+- **Session-end UX has one CTA: "Done — see you tomorrow."** No upsell, no rating prompt, no "share progress."
+- **Pre-populate the editor with a function signature + visible failing test.** Removes blank-page paralysis, mirrors real-world TDD-ish workflow.
+
+Alternatives considered (skill-test pre-quiz, single Run-Submit button, tutor-led tour, etc.): see UX_DETAILS for rationale.
+
 ## Activity log
 
 - 2026-04-25 — created

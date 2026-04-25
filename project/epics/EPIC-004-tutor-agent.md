@@ -61,6 +61,22 @@ Provide the LLM-powered tutor that drives the adaptive loop: assigns problems, g
 - ADR: [`ADR-0003-llm-provider`](../../docs/architecture/ADR-0003-llm-provider.md)
 - Vision: [`docs/vision/GROOMED_FEATURES.md`](../../docs/vision/GROOMED_FEATURES.md) § Theme 2
 
+## Design notes & alternatives
+
+**This Epic owns the most important UX in the product.** The tutor *is* the differentiator. See [`docs/product/UX_DETAILS.md § EPIC-004`](../../docs/product/UX_DETAILS.md#epic-004--tutor-agent-harness-the-pedagogy) for the full pedagogy spec — read it before writing tutor prompts.
+
+Key locked decisions for this Epic (all are non-negotiable; violating them collapses LearnPro into "ChatGPT with extra steps"):
+
+- **Question-first, reveal-on-second-ask.** Tutor asks a Socratic question targeting the gap; only reveals the technique on a second hint click or third stuck signal.
+- **Tutor must reference the user's actual code in the first response after submit.** Generic praise is forbidden. Enforced by prompt + post-processing check.
+- **No surprise help.** Tutor never volunteers a hint. User must click `Hint` (which has an XP cost: 5/15/30 per rung).
+- **No autocomplete / no Copilot-style ghost text.** Deliberate anti-Copilot stance — autocomplete steals the productive struggle. See [`DIFFERENTIATORS.md § 5`](../../docs/product/DIFFERENTIATORS.md).
+- **Cheating is never accused.** Soft signals (`paste_ratio`, time-on-problem) are logged silently. Optional "I got help on this one" toggle excludes the episode from mastery weighting.
+- **Tone: direct + warm, no exclamation marks, no emoji, no "you got this!"** See the tone calibration table in UX_DETAILS for specific scripts (good vs. bad responses) for: easy solve, stuck user, wrong submit, correct-but-inefficient code, "this is too hard," "just give me the answer."
+- **Tutor panel hard-caps at 4 visible messages** before requiring "expand history." Long scrollback distracts from the editor.
+
+The tutor identity, the question-vs-reveal heuristic, the frustration handler, and the cheating philosophy are all spelled out in UX_DETAILS — those are the spec.
+
 ## Activity log
 
 - 2026-04-25 — created

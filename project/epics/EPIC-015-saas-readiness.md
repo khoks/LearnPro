@@ -52,6 +52,19 @@ Build now the primitives that make a future SaaS migration a config flip, not a 
 - ADR: [`ADR-0005-license`](../../docs/architecture/ADR-0005-license.md) (BSL 1.1 protects the SaaS path)
 - Recommended additions: GDPR-style data export
 
+## Design notes & alternatives
+
+See [`docs/product/UX_DETAILS.md § EPIC-015`](../../docs/product/UX_DETAILS.md#epic-015--saas-readiness-primitives) for the full deep-dive.
+
+Key locked decisions for this Epic:
+- **Most of this Epic is invisible to users.** Adapter interfaces (`SandboxProvider`, `LLMProvider`, `NotificationChannel`, `ObjectStore`, `Auth`, `Telemetry`) exist in code; UI doesn't expose configuration of them all in MVP — only LLM provider in an "Advanced" settings section.
+- **`org_id` everywhere** (every row has user_id + org_id; defaulted to `"default"` in self-hosted). Users never see this in MVP — purely architectural.
+- **Settings page surfaces in MVP**: email, display name, daily time budget, AI budget reset time + timezone, preferred reminder time, quiet hours, LLM provider config (Advanced), Export My Data button, (v1: Delete My Account).
+- **Self-hosters configure LLM provider via Advanced section** with restart warning. End users on SaaS never see provider config.
+- **No billing, no multi-user invites, no admin panel, no plan tiers in MVP/v1/v2.** Those land in v3 SaaS launch.
+
+Alternatives considered (no `org_id` until SaaS, full multi-tenant UI in MVP): see UX_DETAILS for rationale.
+
 ## Activity log
 
 - 2026-04-25 — created

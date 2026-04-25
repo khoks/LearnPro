@@ -52,6 +52,19 @@ Build LearnPro as a responsive web app from day 1 (Windows browser baseline) so 
 
 - Vision: [`docs/vision/GROOMED_FEATURES.md`](../../docs/vision/GROOMED_FEATURES.md) § Theme 10
 
+## Design notes & alternatives
+
+See [`docs/product/UX_DETAILS.md § EPIC-013`](../../docs/product/UX_DETAILS.md#epic-013--cross-platform-responsive-web-baseline) for the full deep-dive.
+
+Key locked decisions for this Epic:
+- **Editor page is desktop-only in MVP** (≥ 1280px primary, 768–1279px tablet usable with bottom drawer for tutor). Mobile (< 768px) shows "use a wider screen for the editor" with a deep link — we don't ship a broken Monaco-on-mobile experience.
+- **Dashboard, profile, settings, history all work mobile-OK.** Users can check progress on phone; just can't code there in MVP.
+- **PWA + Capacitor mobile wrapper deferred** (v1 / v2). Build the loop first, prove it, then wrap it.
+- **Browser support: modern Chromium, Firefox, Safari.** No IE / no legacy Edge. Safari mobile WebSocket flakiness handled with SSE fallback.
+- **Pre-warm sandbox during onboarding** so first Run is never cold (also covers slow-network users).
+
+Alternatives considered (native iOS/Android in MVP, force-fit Monaco on mobile, drop responsive entirely): see UX_DETAILS for rationale.
+
 ## Activity log
 
 - 2026-04-25 — created

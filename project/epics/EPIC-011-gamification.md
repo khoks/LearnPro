@@ -55,6 +55,21 @@ Make progress visible and rewarding without resorting to dark patterns. Show the
 - Vision: [`docs/vision/GROOMED_FEATURES.md`](../../docs/vision/GROOMED_FEATURES.md) § Theme 8
 - Recommended additions: Pomodoro / break reminders
 
+## Design notes & alternatives
+
+See [`docs/product/UX_DETAILS.md § EPIC-011`](../../docs/product/UX_DETAILS.md#epic-011--gamification) for the full deep-dive — including the explicit anti-dark-pattern table.
+
+Key locked decisions for this Epic:
+- **XP formula: `xp = base × difficulty_factor × correctness_multiplier`.** `base = 10`; difficulty 1.0–3.0; correctness 0.0–1.0 (1.0 first-try-no-hint, 0.7 with hints, 0.5 multiple submits, 0.0 if `Reveal solution` clicked).
+- **No level system in MVP.** Just a running XP total. Levels add grind pressure — defer to v1 with measurement.
+- **Streak: 2 grace days per calendar month, auto-applied.** Quiet message "we used a grace day; 1 left this month." Streak counter shows from day 2 onward.
+- **NO confetti, NO "🔥 you're on fire!" copy, NO "you broke your streak!" guilt push.** See UX_DETAILS anti-pattern table.
+- **No public leaderboards.** Opt-in private cohort leaderboards may come in v2; never default-on.
+- **No daily "lives" lost-on-failure (Duolingo).** Punishes practice. Refused.
+- **Concept mastery badge is small and monochrome**, shown on the profile heatmap. No "🏆 ACHIEVEMENT UNLOCKED 🏆."
+
+The anti-dark-pattern stance is a *core differentiator* — see [`DIFFERENTIATORS.md § 7`](../../docs/product/DIFFERENTIATORS.md). Violating it forfeits the moat.
+
 ## Activity log
 
 - 2026-04-25 — created

@@ -2,7 +2,7 @@
 id: STORY-029
 title: Per-feature UX deep-dive on MVP epics
 type: story
-status: backlog
+status: done
 priority: P0
 estimate: L
 parent: EPIC-017
@@ -26,11 +26,11 @@ Each touched epic file gets a brief "Design notes & alternatives" section pointi
 
 ## Acceptance criteria
 
-- [ ] `docs/product/UX_DETAILS.md` has a substantive section per MVP epic.
-- [ ] Tutor pedagogy section in EPIC-004 deep-dive locks the tone, the question-vs-reveal heuristic, and the cheating/frustration responses.
-- [ ] Every fork has 2–3 documented alternatives + a locked recommendation.
-- [ ] First-session UX is specified end-to-end with timing budgets per step.
-- [ ] Each MVP epic file has a "Design notes & alternatives" section.
+- [x] `docs/product/UX_DETAILS.md` has a substantive section per MVP epic.
+- [x] Tutor pedagogy section in EPIC-004 deep-dive locks the tone, the question-vs-reveal heuristic, and the cheating/frustration responses.
+- [x] Every fork has 2–3 documented alternatives + a locked recommendation.
+- [x] First-session UX is specified end-to-end with timing budgets per step.
+- [x] Each MVP epic file has a "Design notes & alternatives" section.
 
 ## Dependencies
 
@@ -39,3 +39,5 @@ Each touched epic file gets a brief "Design notes & alternatives" section pointi
 ## Activity log
 
 - 2026-04-25 — created
+- 2026-04-25 — picked up; in-progress
+- 2026-04-25 — done (UX_DETAILS.md written; design-notes section added to all 13 MVP epic files)

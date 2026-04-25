@@ -49,6 +49,18 @@ Make LearnPro's recommendations career-relevant: ask the user about their target
 
 - Vision: [`docs/vision/GROOMED_FEATURES.md`](../../docs/vision/GROOMED_FEATURES.md) § Theme 7
 
+## Design notes & alternatives
+
+See [`docs/product/UX_DETAILS.md § EPIC-010`](../../docs/product/UX_DETAILS.md#epic-010--career-aware-curriculum) for the full deep-dive.
+
+Key locked decisions for this Epic:
+- **One onboarding question maps to a default track**: Backend / Full-stack → Python; Frontend → TypeScript; Data analyst → Python; ML → Python; Just learning → Python; Other → Python (save freeform for v1 JD parser).
+- **Role appears in tutor's contextual framing**, not as a separate UI surface. E.g., for a backend learner: "This dictionary pattern shows up in route handlers — basically every backend framework uses it."
+- **Concrete career relevance, not generic motivation.** No "this skill will help you in your career!" copy.
+- **JD parser, role library expansion, salary integration deferred** to v1/v2/v3 respectively. MVP is just the question + default mapping + tutor framing.
+
+Alternatives considered (no role question, full role library at MVP, multi-role recommendations): see UX_DETAILS for rationale.
+
 ## Activity log
 
 - 2026-04-25 — created

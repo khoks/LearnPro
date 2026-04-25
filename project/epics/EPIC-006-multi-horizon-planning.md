@@ -48,6 +48,21 @@ Generate plans across four horizons — current session (25–60 min), today, th
 
 - Vision: [`docs/vision/GROOMED_FEATURES.md`](../../docs/vision/GROOMED_FEATURES.md) § Theme 3
 
+## Design notes & alternatives
+
+See [`docs/product/UX_DETAILS.md § EPIC-006`](../../docs/product/UX_DETAILS.md#epic-006--multi-horizon-planning) for the full deep-dive.
+
+Key locked decisions for this Epic:
+- **MVP only does session-level planning.** Day, week, mastery horizons defer to v1 — building them before the session loop is validated risks over-planning a learner who isn't retaining anything.
+- **3–5 micro-objectives per session, generated at start.** Each is concrete (e.g., "Apply list comprehensions to a real filtering problem") — not vague ("Get better at Python").
+- **Plan IS the sidebar; work IS the editor.** No separate "review your plan" screen. Objectives auto-check off when their exit condition fires (e.g., "solve 2 problems on dict-of-lists" → 2 problems passed).
+- **Soft budgets, not hard cuts.** When daily time budget is hit mid-problem, tutor shows "Finish this and call it a day, or keep going — your call." No auto-stop.
+- **Streak credit at first solve**, regardless of total time. Removes incentive to grind out 10 meaningless minutes just to "not break the streak."
+- **No "edit plan" button in MVP.** User overrides via tutor ("I want to do something different today") which triggers session-plan agent regen.
+- **Don't shame missed days.** Re-balance toward fading concepts on return; never say "you missed 3 days."
+
+Alternatives considered (multi-horizon UI in MVP, hard time cuts, AI-only plan with no exit conditions): see UX_DETAILS for rationale.
+
 ## Activity log
 
 - 2026-04-25 — created
