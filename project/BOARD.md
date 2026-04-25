@@ -1,27 +1,19 @@
 # LearnPro Board
 
-> **Last updated:** 2026-04-25 (Phase A of EPIC-017 product grooming complete; Phase C queued)
+> **Last updated:** 2026-04-25 (EPIC-017 product grooming closed in full — Phases A + B + C done. MVP build is the next session.)
 > **How to read this:** This is the live status of every Epic, Story, and Task in the project. Hand-maintained for now (a regenerator script lives in the v1 backlog). When you change an item's `status:` frontmatter, also update the row here in the same commit.
 
 ---
 
 ## In Progress
 
-| ID | Title | Type | Phase | Priority | Est | Owner |
-|----|-------|------|-------|----------|-----|-------|
-| [EPIC-017](epics/EPIC-017-product-discovery.md) | Product discovery, competitive positioning, and feature grooming | epic | scaffolding | P0 | — | claude |
+_(none — product grooming complete; pick a Story from "Up Next" to begin MVP build)_
 
 ---
 
-## Up Next (Ready)
+## Up Next (Ready) — MVP build begins here
 
-EPIC-017 product grooming is mid-flight. Phase B (competitive + differentiators) and Phase A (UX deep-dive) are done; Phase C (backlog expansion) is next. After EPIC-017 closes, MVP build begins with EPIC-002.
-
-| ID | Title | Type | Phase | Priority | Est |
-|----|-------|------|-------|----------|-----|
-| [STORY-030](stories/STORY-030-backlog-expansion.md) | Backlog expansion — 40–60 ideas, 15+ filed (Phase C) | story | scaffolding | P0 | L |
-
-### After EPIC-017 closes — MVP build begins
+EPIC-017 closed. The next session picks up MVP work. Recommended order (each is a Story under EPIC-002 / EPIC-003 / EPIC-004):
 
 | ID | Title | Type | Phase | Priority | Est |
 |----|-------|------|-------|----------|-----|
@@ -56,16 +48,52 @@ EPIC-017 product grooming is mid-flight. Phase B (competitive + differentiators)
 | [STORY-026](stories/STORY-026-data-export.md) | GDPR-style JSON data export endpoint | EPIC-002 | mvp | P1 | S |
 | [STORY-027](stories/STORY-027-accessibility-baseline.md) | Accessibility baseline (keyboard nav, Monaco screen-reader labels) | EPIC-002 | mvp | P1 | S |
 
-> **Backlog beyond MVP:** stories for v1/v2/v3 epics will be created as those phases approach (so backlog doesn't get stale). See each [EPIC-xxx](epics/) file for its planned scope.
+---
+
+## Backlog (v1 — filed via Phase C)
+
+These stories were filed during EPIC-017 Phase C from the expanded idea catalog ([`docs/vision/RECOMMENDED_ADDITIONS.md`](../docs/vision/RECOMMENDED_ADDITIONS.md)). Selected because each (a) reinforces a differentiator from [`docs/product/DIFFERENTIATORS.md`](../docs/product/DIFFERENTIATORS.md), (b) is startable within the v1 window, and (c) is specific enough to estimate today.
+
+| ID | Title | Epic | Phase | Priority | Est |
+|----|-------|------|-------|----------|-----|
+| [STORY-031](stories/STORY-031-fsrs-spaced-repetition.md) | FSRS spaced repetition scheduler | EPIC-005 | v1 | P1 | M |
+| [STORY-032](stories/STORY-032-knowledge-graph-population.md) | Knowledge graph population (concept prerequisites) | EPIC-005 | v1 | P1 | L |
+| [STORY-033](stories/STORY-033-profile-update-agent.md) | Dedicated profile-update agent (split from tutor) | EPIC-004 | v1 | P1 | M |
+| [STORY-034](stories/STORY-034-critique-agent-split.md) | Separate critique/grader agent (split from tutor) | EPIC-004 | v1 | P1 | M |
+| [STORY-035](stories/STORY-035-prompt-eval-harness.md) | Prompt eval harness (regression suite for tutor prompts) | EPIC-004 | v1 | P0 | M |
+| [STORY-036](stories/STORY-036-ollama-fallback.md) | Ollama local-model adapter (privacy / air-gap fallback) | EPIC-004 | v1 | P2 | M |
+| [STORY-037](stories/STORY-037-debugging-exercises.md) | Debugging exercises (broken code, find-and-fix) | EPIC-007 | v1 | P1 | L |
+| [STORY-038](stories/STORY-038-read-this-code-exercises.md) | "Read this code" exercises (comprehension differentiator) | EPIC-007 | v1 | P1 | L |
+| [STORY-039](stories/STORY-039-llm-problem-variants.md) | LLM-generated problem variants on top of seed bank | EPIC-007 | v1 | P2 | M |
+| [STORY-040](stories/STORY-040-github-portfolio.md) | GitHub portfolio auto-push (`learnpro-portfolio` repo) | EPIC-013 | v1 | P1 | M |
+| [STORY-041](stories/STORY-041-cheatsheet-generator.md) | Personal cheatsheet / notes auto-generation from sessions | EPIC-002 | v1 | P2 | S |
+| [STORY-042](stories/STORY-042-anti-cheat-v1.md) | Anti-cheat v1 (keystroke entropy + paste signals; never accusatory) | EPIC-016 | v1 | P1 | M |
+| [STORY-043](stories/STORY-043-multi-file-workspaces.md) | Multi-file workspaces in sandbox | EPIC-003 | v1 | P0 | L |
+| [STORY-044](stories/STORY-044-pwa-baseline.md) | PWA baseline (manifest + service worker + offline shell) | EPIC-013 | v1 | P1 | M |
+| [STORY-045](stories/STORY-045-email-digests.md) | Email digest channel (weekly recap + grace-day notices) | EPIC-012 | v1 | P2 | S |
+| [STORY-046](stories/STORY-046-daily-weekly-plans.md) | Daily and weekly plan views (multi-horizon planning UI) | EPIC-006 | v1 | P1 | M |
+
+## Backlog (v2 — filed via Phase C)
+
+| ID | Title | Epic | Phase | Priority | Est |
+|----|-------|------|-------|----------|-----|
+| [STORY-047](stories/STORY-047-mock-interviewer-agent.md) | Mock interviewer agent persona (timed, neutral, debrief) | EPIC-004 | v2 | P1 | L |
+| [STORY-048](stories/STORY-048-project-based-learning.md) | Project-based learning — multi-session projects with milestones | EPIC-007 | v2 | P1 | XL |
+| [STORY-049](stories/STORY-049-capacitor-mobile.md) | Capacitor mobile wrapper for iOS and Android | EPIC-013 | v2 | P1 | L |
+| [STORY-050](stories/STORY-050-whatsapp-notifications.md) | WhatsApp notifications via Meta Cloud API | EPIC-012 | v2 | P1 | M |
+
+> **Backlog beyond Phase C:** stories for the remaining ~96 catalog ideas live in [`docs/vision/RECOMMENDED_ADDITIONS.md`](../docs/vision/RECOMMENDED_ADDITIONS.md) as a deferred inventory. They become STORY files when their phase is picked up (so the backlog doesn't get stale). See each [EPIC-xxx](epics/) file for its planned scope.
 
 ---
 
 ## Recently Done
 
-EPIC-017 Phase A done (2026-04-25 — UX_DETAILS.md + design notes on all MVP epics). EPIC-017 Phase B done (2026-04-25). EPIC-001 closed in full on 2026-04-25 (initial scaffolding commit `c1e17a1`).
+EPIC-017 product grooming closed in full on 2026-04-25 (Phases A + B + C). EPIC-001 closed on 2026-04-25 (initial scaffolding commit `c1e17a1`). Phase A commit: `bbf7300`.
 
 | ID | Title | Done |
 |----|-------|------|
+| [EPIC-017](epics/EPIC-017-product-discovery.md) | Product discovery, competitive positioning, and feature grooming | 2026-04-25 |
+| [STORY-030](stories/STORY-030-backlog-expansion.md) | Backlog expansion — 116-idea catalog + 20 stories filed (Phase C) | 2026-04-25 |
 | [STORY-029](stories/STORY-029-ux-deep-dive.md) | Per-feature UX deep-dive on MVP epics (Phase A) | 2026-04-25 |
 | [STORY-028](stories/STORY-028-competitive-and-differentiators.md) | Competitive teardown + differentiators spec (Phase B) | 2026-04-25 |
 | [EPIC-001](epics/EPIC-001-initialization.md) | Repository initialization & scaffolding | 2026-04-25 |
@@ -130,4 +158,4 @@ _(none)_
 | [EPIC-014](epics/EPIC-014-rag-memory.md) | RAG / agent memory | backlog | v1 | P2 |
 | [EPIC-015](epics/EPIC-015-saas-readiness.md) | SaaS readiness primitives (`org_id`, adapters, data export) | backlog | mvp | P1 |
 | [EPIC-016](epics/EPIC-016-security-and-anti-cheat.md) | Security & anti-cheat | backlog | mvp | P0 |
-| [EPIC-017](epics/EPIC-017-product-discovery.md) | Product discovery, competitive positioning, and feature grooming | in-progress | scaffolding | P0 |
+| [EPIC-017](epics/EPIC-017-product-discovery.md) | Product discovery, competitive positioning, and feature grooming | done | scaffolding | P0 |

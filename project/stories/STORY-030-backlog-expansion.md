@@ -2,7 +2,7 @@
 id: STORY-030
 title: Backlog expansion (40–60 new ideas, 15+ filed as stories)
 type: story
-status: backlog
+status: done
 priority: P0
 estimate: L
 parent: EPIC-017
@@ -22,11 +22,11 @@ The discipline: only file as a Story if (a) it reinforces the differentiators (P
 
 ## Acceptance criteria
 
-- [ ] 40+ new feature ideas catalogued (across all 16 epics + cross-cutting).
-- [ ] Each idea has rationale, target phase, related epic, tradeoffs.
-- [ ] At least 15 new STORY files filed in `project/stories/` (numbered STORY-031+).
-- [ ] `RECOMMENDED_ADDITIONS.md` updated with the broader catalog.
-- [ ] BOARD.md updated to surface the new stories in the backlog table.
+- [x] 40+ new feature ideas catalogued (across all 16 epics + cross-cutting).
+- [x] Each idea has rationale, target phase, related epic, tradeoffs.
+- [x] At least 15 new STORY files filed in `project/stories/` (numbered STORY-031+).
+- [x] `RECOMMENDED_ADDITIONS.md` updated with the broader catalog.
+- [x] BOARD.md updated to surface the new stories in the backlog table.
 
 ## Dependencies
 
@@ -35,3 +35,5 @@ The discipline: only file as a Story if (a) it reinforces the differentiators (P
 ## Activity log
 
 - 2026-04-25 — created
+- 2026-04-25 — picked up; in-progress
+- 2026-04-25 — done. `RECOMMENDED_ADDITIONS.md` rewritten as a 116-idea catalog organized by epic with "Filed?" column. 20 new STORY files filed (STORY-031..STORY-050) — 16 v1, 4 v2 — across EPICs 002, 003, 004, 005, 006, 007, 012, 013, 016. Discipline applied: only filed if (a) reinforces a differentiator, (b) startable in v1/v2, (c) specific enough to estimate.

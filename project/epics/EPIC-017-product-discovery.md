@@ -2,7 +2,7 @@
 id: EPIC-017
 title: Product discovery, competitive positioning, and feature grooming
 type: epic
-status: in-progress
+status: done
 priority: P0
 phase: scaffolding
 tags: [product, discovery, competitive, grooming]
@@ -41,16 +41,16 @@ Three phases, one Story each:
 
 ## Stories under this Epic
 
-- [STORY-028](../stories/STORY-028-competitive-and-differentiators.md) — Competitive teardown + differentiators (in-progress)
-- [STORY-029](../stories/STORY-029-ux-deep-dive.md) — Per-feature UX deep-dive (backlog)
-- [STORY-030](../stories/STORY-030-backlog-expansion.md) — Backlog expansion (backlog)
+- [STORY-028](../stories/STORY-028-competitive-and-differentiators.md) — Competitive teardown + differentiators (done)
+- [STORY-029](../stories/STORY-029-ux-deep-dive.md) — Per-feature UX deep-dive (done)
+- [STORY-030](../stories/STORY-030-backlog-expansion.md) — Backlog expansion (done)
 
 ## Exit criteria
 
-- [ ] All three Phase docs exist and are substantive (not skeletons).
-- [ ] Every MVP epic file has a "Design notes & alternatives" section after Phase A.
-- [ ] At least 15 new STORY files filed in `project/stories/` after Phase C.
-- [ ] `RECOMMENDED_ADDITIONS.md` updated with the expanded backlog.
+- [x] All three Phase docs exist and are substantive (not skeletons).
+- [x] Every MVP epic file has a "Design notes & alternatives" section after Phase A.
+- [x] At least 15 new STORY files filed in `project/stories/` after Phase C (filed 20: STORY-031..STORY-050).
+- [x] `RECOMMENDED_ADDITIONS.md` updated with the expanded backlog (116-idea catalog).
 
 ## Related
 
@@ -60,3 +60,7 @@ Three phases, one Story each:
 ## Activity log
 
 - 2026-04-25 — created; Phase B kicked off
+- 2026-04-25 — Phase B done (`docs/product/COMPETITIVE.md`, `docs/product/DIFFERENTIATORS.md`)
+- 2026-04-25 — Phase A done (`docs/product/UX_DETAILS.md` + design-notes section on every MVP epic)
+- 2026-04-25 — Phase C done (RECOMMENDED_ADDITIONS expanded; 20 new stories STORY-031..050 filed)
+- 2026-04-25 — Epic closed; product grooming complete. MVP build (EPIC-002) is the next session.
