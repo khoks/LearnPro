@@ -23,7 +23,7 @@
 ## 2026-04-25 — Single-agent harness with workflow-routed model selection via skill/policy docs
 
 **What it is:** One agentic loop. An orchestrator inspects the active workflow (onboarding, hint generation, grading, session planning, profile update, etc.), loads that workflow's skill/policy doc, and from that doc picks the model + tool set + prompt graph to run. So the "tutor" and "grader" aren't separate agents — they're the same agent harness running different workflow configurations.
-**Where it lives in the product:** ADR-0006 (forthcoming, separate PR). Foundation interfaces in [STORY-057](../../project/stories/STORY-057-policy-adapter-interfaces.md).
+**Where it lives in the product:** [ADR-0006](../architecture/ADR-0006-agentic-orchestration.md). Foundation interfaces in [STORY-057](../../project/stories/STORY-057-policy-adapter-interfaces.md).
 **Why it might be novel:** The architectural pattern itself (workflow router → skill/policy doc → model/tool selection) is essentially what the **Claude Agent SDK** already does. So as architecture, low novelty. The plausibly-novel piece is the *pedagogy-specific* application — workflow policies for "Socratic question generation," "rung-laddered hint generation," "anti-praise grading," "interaction-aware profile update."
 **Patentability signal:** weak. This is mostly the strategy-pattern + DI applied to LLM orchestration. The pedagogy-specific policies might be patentable in combination but not as architecture.
 **Open questions:** are the pedagogy-specific policies independently novel enough to file separately? Probably not until they're implemented and tested.

@@ -33,7 +33,7 @@
 - (−) Carries the cost of building 4 policy interfaces + their default impls in MVP, even though the "real" implementations land in v1.
 
 **Owner:** user (Rahul) — confirmed 2026-04-25 ("Path A confirmed.")
-**Related:** STORY-052, STORY-053, STORY-054, STORY-055, STORY-056, STORY-057. The 6 entries in [`docs/vision/NOVEL_IDEAS.md`](../vision/NOVEL_IDEAS.md) from the same conversation. ADR-0006 (forthcoming) on single-agent orchestration.
+**Related:** STORY-052, STORY-053, STORY-054, STORY-055, STORY-056, STORY-057. The 6 entries in [`docs/vision/NOVEL_IDEAS.md`](../vision/NOVEL_IDEAS.md) from the same conversation. [ADR-0006](../architecture/ADR-0006-agentic-orchestration.md) records the single-agent orchestration shape that those interfaces plug into.
 
 ---
 

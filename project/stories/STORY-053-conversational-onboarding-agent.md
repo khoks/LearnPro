@@ -21,7 +21,7 @@ Implements **Q1B** from the MVP scope discussion. NOVEL_IDEAS candidate (#1 in t
 ## Scope
 
 - Tutor agent invoked at first login from STORY-005 hand-off.
-- Workflow loaded via the agentic-orchestration policy doc (depends on ADR-0006).
+- Workflow loaded via the agentic-orchestration policy doc (per [ADR-0006](../../docs/architecture/ADR-0006-agentic-orchestration.md)).
 - Initial consequential questions (subset of original 5): target role, time budget, primary goal.
 - Drill-down logic: based on each answer, decide what to ask next or whether to skip ahead.
 - Graceful exit: if the user types something like "I'd rather start", "later", or just stops engaging for ~60s, the agent acknowledges and routes to the dashboard with whatever profile fields it has captured so far.
@@ -45,7 +45,7 @@ Implements **Q1B** from the MVP scope discussion. NOVEL_IDEAS candidate (#1 in t
 
 ## Dependencies
 
-- Blocked by: [STORY-005](./STORY-005-auth-and-onboarding.md) (auth + bootstrap profile shell), STORY-009 (LLM gateway), STORY-013 (profile schema), [STORY-057](./STORY-057-policy-adapter-interfaces.md) (`AutonomyPolicy` interface so the agent uses `AlwaysConfirm` baseline mode initially), and ADR-0006 (orchestration pattern).
+- Blocked by: [STORY-005](./STORY-005-auth-and-onboarding.md) (auth + bootstrap profile shell), STORY-009 (LLM gateway), STORY-013 (profile schema), [STORY-057](./STORY-057-policy-adapter-interfaces.md) (`AutonomyPolicy` interface so the agent uses `AlwaysConfirm` baseline mode initially), and [ADR-0006](../../docs/architecture/ADR-0006-agentic-orchestration.md) (orchestration pattern).
 - Blocks: STORY-021 (career-aware onboarding interview — that Story extends this one).
 
 ## Notes

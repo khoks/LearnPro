@@ -206,6 +206,7 @@ LearnPro/
 - [ADR-0003 — LLM provider primary (Anthropic) via `LLMProvider` interface](./ADR-0003-llm-provider.md)
 - [ADR-0004 — Database stack (Postgres + pgvector + Redis)](./ADR-0004-database.md)
 - [ADR-0005 — License (BSL 1.1)](./ADR-0005-license.md)
+- [ADR-0006 — Agentic orchestration: single-agent harness with workflow-routed model selection](./ADR-0006-agentic-orchestration.md)
 - [Groomed feature catalog](../vision/GROOMED_FEATURES.md)
 - [Recommended additions](../vision/RECOMMENDED_ADDITIONS.md)
 - [MVP scope](../roadmap/MVP.md)
