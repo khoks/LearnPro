@@ -2,14 +2,14 @@
 id: STORY-052
 title: Monorepo skeleton + dev Docker Compose
 type: story
-status: backlog
+status: in-progress
 priority: P0
 estimate: L
 parent: EPIC-019
 phase: mvp
 tags: [foundation, monorepo, docker, dx]
 created: 2026-04-25
-updated: 2026-04-25
+updated: 2026-04-26
 ---
 
 ## Description
@@ -68,3 +68,4 @@ This is foundational infrastructure, not a user-facing feature, but it is the pr
 ## Activity log
 
 - 2026-04-25 — created (Path A scope confirmation)
+- 2026-04-26 — picked up; scaffolding created (apps/web, apps/api, 6 packages, dev compose, CI); smoke verified locally (`pnpm install`, `pnpm typecheck`, `pnpm test`, `pnpm lint` all green)

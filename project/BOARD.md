@@ -1,6 +1,6 @@
 # LearnPro Board
 
-> **Last updated:** 2026-04-25 (Path A scope locked — adaptive policies behind swappable interfaces; 7 new MVP Stories filed under EPIC-019/EPIC-004/EPIC-005/EPIC-016; STORY-005 re-scoped; STORY-058 done.)
+> **Last updated:** 2026-04-26 (STORY-052 in-progress — monorepo skeleton scaffolded, smoke verified locally, opening PR.)
 > **How to read this:** This is the live status of every Epic, Story, and Task in the project. Hand-maintained for now (a regenerator script lives in the v1 backlog). When you change an item's `status:` frontmatter, also update the row here in the same commit.
 
 ---
@@ -12,6 +12,7 @@
 | [EPIC-018](epics/EPIC-018-repo-automation.md) | Repo automation & Claude Code skills | epic | scaffolding | P1 | — | claude |
 | [STORY-051](stories/STORY-051-claude-skills-and-stop-hook.md) | `harvest-knowledge` + `work-tracking` skills + Stop hook | story | scaffolding | P1 | M | claude |
 | [EPIC-019](epics/EPIC-019-build-foundation.md) | Build foundation — monorepo, dev env, shared interfaces | epic | mvp | P0 | — | claude |
+| [STORY-052](stories/STORY-052-monorepo-skeleton.md) | Monorepo skeleton + dev Docker Compose + CI | story | mvp | P0 | L | claude |
 
 ---
 
@@ -21,7 +22,6 @@ Path A locked 2026-04-25. EPIC-019 (foundation) must land first since every othe
 
 | ID | Title | Epic | Phase | Priority | Est |
 |----|-------|------|------|----------|-----|
-| [STORY-052](stories/STORY-052-monorepo-skeleton.md) | Monorepo skeleton + dev Docker Compose (Postgres/pgvector/Redis/MinIO/Piston) + CI | EPIC-019 | mvp | P0 | L |
 | [STORY-057](stories/STORY-057-policy-adapter-interfaces.md) | Policy-adapter interfaces (`Scoring`, `Tone`, `Difficulty`, `Autonomy`) + deterministic defaults | EPIC-019 | mvp | P0 | L |
 | [STORY-005](stories/STORY-005-auth-and-onboarding.md) | Auth.js + bootstrap profile shell (re-scoped — onboarding split to STORY-053) | EPIC-002 | mvp | P0 | M |
 | [STORY-053](stories/STORY-053-conversational-onboarding-agent.md) | Conversational adaptive onboarding agent (replaces structured form; graceful exit + form fallback) | EPIC-004 | mvp | P0 | L |
