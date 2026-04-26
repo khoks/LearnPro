@@ -13,6 +13,7 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
+    "@learnpro/scoring": "workspace:*",
     "@learnpro/shared": "workspace:*",
     "fastify": "^5.2.0"
   },
