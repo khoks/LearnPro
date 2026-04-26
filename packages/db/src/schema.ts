@@ -5,6 +5,7 @@ import {
   index,
   integer,
   jsonb,
+  numeric,
   pgEnum,
   pgTable,
   primaryKey,
@@ -47,6 +48,9 @@ export const agentRoleEnum = pgEnum("agent_role", [
 ]);
 
 export const submissionLanguageEnum = pgEnum("submission_language", ["python", "typescript"]);
+
+// Mirrors `LLMTelemetryEvent.task` in @learnpro/llm — the four entry points the gateway exposes.
+export const agentTaskEnum = pgEnum("agent_task", ["complete", "stream", "embed", "tool_call"]);
 
 export const organizations = pgTable("organizations", {
   id: text("id").primaryKey(),
@@ -210,13 +214,19 @@ export const agent_calls = pgTable(
     id: uuid("id").primaryKey().defaultRandom(),
     org_id: orgId(),
     user_id: uuid("user_id").references(() => users.id, { onDelete: "set null" }),
+    session_id: text("session_id"),
     episode_id: uuid("episode_id").references(() => episodes.id, { onDelete: "set null" }),
     provider: text("provider").notNull(),
     model: text("model").notNull(),
     role: agentRoleEnum("role"),
+    task: agentTaskEnum("task").notNull().default("complete"),
     prompt_version: text("prompt_version"),
     input_tokens: integer("input_tokens").notNull().default(0),
     output_tokens: integer("output_tokens").notNull().default(0),
+    cached_tokens: integer("cached_tokens"),
+    cost_usd: numeric("cost_usd", { precision: 18, scale: 8 }).notNull().default("0"),
+    pricing_version: text("pricing_version").notNull().default("unknown"),
+    tool_used: text("tool_used"),
     latency_ms: integer("latency_ms").notNull().default(0),
     ok: boolean("ok").notNull().default(true),
     called_at: timestamp("called_at", { withTimezone: true }).notNull().defaultNow(),

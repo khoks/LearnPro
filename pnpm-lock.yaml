@@ -118,6 +118,9 @@ importers:
 
   packages/db:
     dependencies:
+      '@learnpro/llm':
+        specifier: workspace:*
+        version: link:../llm
       drizzle-orm:
         specifier: ^0.36.4
         version: 0.36.4(@types/pg@8.20.0)(@types/react@19.2.14)(pg@8.20.0)(react@19.2.5)
