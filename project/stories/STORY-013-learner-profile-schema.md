@@ -2,7 +2,7 @@
 id: STORY-013
 title: Learner profile schema (per-concept skill, episodic log, org_id everywhere)
 type: story
-status: in-progress
+status: done
 priority: P0
 estimate: M
 parent: EPIC-005
@@ -47,3 +47,4 @@ Every table has `org_id NOT NULL DEFAULT 'self'` and a `created_at`. This is the
 
 - 2026-04-25 — created
 - 2026-04-26 — picked up; designing Drizzle schema (organizations, users, profiles, concepts, skill_scores, episodes with pgvector embedding column, tracks, problems, submissions, agent_calls, notifications) + initial migration + seed + `org_id NOT NULL DEFAULT 'self'` on every table.
+- 2026-04-26 — done. Landed in PR #11 (commit `69f5938`). 11 tables, 4 enums, 11 FKs, 12 indexes generated as `migrations/0000_furry_sway.sql`. `runMigrations()` enables `pgvector` before applying SQL. Idempotent seed inserts demo org/user/profile/concept/skill_score/track/problem/episode. 19 schema-introspection unit tests assert SaaS-readiness invariants + pgvector dimension + enum membership + FK/PK shapes. Unblocks STORY-005 (auth), STORY-011 (tutor agent), STORY-014 (pgvector index).
