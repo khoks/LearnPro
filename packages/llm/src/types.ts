@@ -28,6 +28,7 @@ export const CompleteRequestSchema = z.object({
   temperature: z.number().min(0).max(2).default(0.7),
   user_id: z.string().optional(),
   prompt_version: z.string().optional(),
+  session_id: z.string().optional(),
 });
 export type CompleteRequest = z.infer<typeof CompleteRequestSchema>;
 
@@ -101,9 +102,14 @@ export const LLMTelemetryEventSchema = z.object({
   role: LLMRoleSchema.optional(),
   prompt_version: z.string().optional(),
   user_id: z.string().optional(),
+  session_id: z.string().optional(),
   task: z.enum(["complete", "stream", "embed", "tool_call"]),
   input_tokens: z.number().int().min(0),
   output_tokens: z.number().int().min(0),
+  cached_tokens: z.number().int().min(0).optional(),
+  cost_usd: z.number().min(0),
+  pricing_version: z.string(),
+  tool_used: z.string().optional(),
   latency_ms: z.number().int().min(0),
   ok: z.boolean(),
   decided_at: z.string(),

@@ -1,6 +1,6 @@
 # LearnPro Board
 
-> **Last updated:** 2026-04-26 (STORY-006 done — Monaco-based `/playground` page in `apps/web` with language selector + Run button + result panel; wiring path browser → Next.js Route Handler `/api/sandbox/run` → Fastify `/sandbox/run`. Re-scoped on pickup: WebSocket streaming split into [STORY-059](./stories/STORY-059-sandbox-streaming.md); Submit/hidden-tests deferred to [STORY-016](./stories/STORY-016-seed-bank.md); problem-language follow rewires when STORY-016 lands.)
+> **Last updated:** 2026-04-26 (STORY-012 done — versioned `MODEL_PRICING` table + `costFor()`, per-user `DailyTokenBudget` with Opus → Sonnet → Haiku tier ladder, `BudgetGatedLLMProvider` decorator wrapping any `LLMProvider`, `LLMTelemetryEvent` extended with `cost_usd`/`pricing_version`/`session_id`/`tool_used`/`cached_tokens`. DB-backed sink + `agent_calls` migration split into [STORY-060](./stories/STORY-060-agent-calls-db-sink.md) so STORY-012 stays at S.)
 > **How to read this:** This is the live status of every Epic, Story, and Task in the project. Hand-maintained for now (a regenerator script lives in the v1 backlog). When you change an item's `status:` frontmatter, also update the row here in the same commit.
 
 ---
@@ -31,7 +31,6 @@ Path A locked 2026-04-25. EPIC-019 (foundation) must land first since every othe
 |----|-------|------|-------|----------|-----|
 | [STORY-010](stories/STORY-010-sandbox-hardening.md) | Verify sandbox hardening checklist (no-net, ro rootfs, cgroups, seccomp, non-root) | EPIC-003 | mvp | P0 | M |
 | [STORY-011](stories/STORY-011-tutor-agent-tools.md) | Tutor agent with `assign-problem` / `give-hint` / `grade` / `update-profile` tools | EPIC-004 | mvp | P0 | L |
-| [STORY-012](stories/STORY-012-cost-telemetry.md) | Per-call LLM cost & latency telemetry + per-user daily token budget | EPIC-004 | mvp | P0 | S |
 | [STORY-015](stories/STORY-015-session-plan.md) | Session plan agent (3–5 micro-objectives per session) | EPIC-006 | mvp | P0 | M |
 | [STORY-016](stories/STORY-016-seed-bank.md) | Curated seed problem bank (~30 Python + ~30 TS) with hidden tests | EPIC-007 | mvp | P0 | L |
 | [STORY-017](stories/STORY-017-hint-ladder.md) | 3-rung hint ladder | EPIC-007 | mvp | P0 | S |
@@ -48,6 +47,7 @@ Path A locked 2026-04-25. EPIC-019 (foundation) must land first since every othe
 | [STORY-054](stories/STORY-054-adaptive-autonomy-controller.md) | Adaptive autonomy controller (per-user confidence → Low/Medium/High ask-vs-act bands) | EPIC-004 | mvp | P0 | M |
 | [STORY-055](stories/STORY-055-rich-interaction-telemetry-schema.md) | Rich interaction telemetry schema (cursor focus, voice opt-in, edits/reverts → `interactions` table) | EPIC-005 | mvp | P0 | M |
 | [STORY-056](stories/STORY-056-data-retention-and-redaction.md) | Data retention & redaction pipeline (raw 90d / voice 30d / episodes indefinite + PII redaction) | EPIC-016 | mvp | P0 | M |
+| [STORY-060](stories/STORY-060-agent-calls-db-sink.md) | DB-backed `UsageStore` + `agent_calls` table (split from STORY-012) | EPIC-004 | mvp | P0 | S |
 
 ---
 
@@ -90,10 +90,11 @@ These stories were filed during EPIC-017 Phase C from the expanded idea catalog 
 
 ## Recently Done
 
-STORY-006 (Monaco editor + Run button + result panel) landed 2026-04-26 — first user-facing feature in `apps/web`. STORY-008 (TypeScript sandbox runner via Piston) landed 2026-04-26. STORY-007 (Python sandbox runner via Piston) landed 2026-04-26 (PR #14) — first feature Story under EPIC-003. STORY-013 (learner profile schema) landed 2026-04-26 (PR #11) — first feature Story under EPIC-005. STORY-009 (LLM gateway) landed 2026-04-26 (PR #9) — first feature Story under EPIC-004. EPIC-019 (foundation) closed 2026-04-26 with STORY-052 (monorepo skeleton, PR #5) and STORY-057 (policy adapters, PR #7). GitHub repo + PR workflow landed 2026-04-25 (PR #1, STORY-058). EPIC-017 product grooming closed in full on 2026-04-25 (Phases A + B + C). EPIC-001 closed on 2026-04-25 (initial scaffolding commit `c1e17a1`). Phase A commit: `bbf7300`.
+STORY-012 (per-call LLM cost telemetry + per-user daily token budget) landed 2026-04-26 — versioned `MODEL_PRICING` + `costFor()` calculator, `DailyTokenBudget` with Opus → Sonnet → Haiku tier ladder + downgrade at 80%, `BudgetGatedLLMProvider` decorator. DB-backed sink + `agent_calls` migration split into [STORY-060](./stories/STORY-060-agent-calls-db-sink.md). STORY-006 (Monaco editor + Run button + result panel) landed 2026-04-26 — first user-facing feature in `apps/web`. STORY-008 (TypeScript sandbox runner via Piston) landed 2026-04-26. STORY-007 (Python sandbox runner via Piston) landed 2026-04-26 (PR #14) — first feature Story under EPIC-003. STORY-013 (learner profile schema) landed 2026-04-26 (PR #11) — first feature Story under EPIC-005. STORY-009 (LLM gateway) landed 2026-04-26 (PR #9) — first feature Story under EPIC-004. EPIC-019 (foundation) closed 2026-04-26 with STORY-052 (monorepo skeleton, PR #5) and STORY-057 (policy adapters, PR #7). GitHub repo + PR workflow landed 2026-04-25 (PR #1, STORY-058). EPIC-017 product grooming closed in full on 2026-04-25 (Phases A + B + C). EPIC-001 closed on 2026-04-25 (initial scaffolding commit `c1e17a1`). Phase A commit: `bbf7300`.
 
 | ID | Title | Done |
 |----|-------|------|
+| [STORY-012](stories/STORY-012-cost-telemetry.md) | Per-call LLM cost & latency telemetry + per-user daily token budget (DB sink → STORY-060) | 2026-04-26 |
 | [STORY-006](stories/STORY-006-monaco-editor.md) | Monaco editor + Run button + result panel (`/playground` → Next.js proxy → Fastify `/sandbox/run`) | 2026-04-26 |
 | [STORY-008](stories/STORY-008-typescript-runner.md) | TypeScript sandbox runner via Piston (TS-specific unit/integration/API tests on top of STORY-007 infra) | 2026-04-26 |
 | [STORY-007](stories/STORY-007-python-runner.md) | Python sandbox runner via Piston (`SandboxProvider` + `PistonSandboxProvider` + `POST /sandbox/run`) | 2026-04-26 |

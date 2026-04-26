@@ -1,6 +1,7 @@
 import { LLMRequestError, NotImplementedError } from "./errors.js";
 import type { LLMProvider } from "./provider.js";
 import { DEFAULT_ROLE_MODEL_MAP, resolveModel, type RoleModelMap } from "./models.js";
+import { costFor } from "./pricing.js";
 import { NullLLMTelemetrySink } from "./telemetry.js";
 import { DEFAULT_RETRY, withRetry, type RetryOptions } from "./retry.js";
 import {
@@ -219,6 +220,7 @@ export class AnthropicProvider implements LLMProvider {
         usage: out.usage,
         start,
         ok: true,
+        ...(tool_calls[0] !== undefined && { tool_used: tool_calls[0].name }),
       });
       return out;
     } catch (err) {
@@ -241,19 +243,29 @@ export class AnthropicProvider implements LLMProvider {
     usage: { input_tokens: number; output_tokens: number };
     start: number;
     ok: boolean;
+    tool_used?: string;
   }): void {
+    const cost = costFor({
+      model: opts.model,
+      input_tokens: opts.usage.input_tokens,
+      output_tokens: opts.usage.output_tokens,
+    });
     this.telemetry.record({
       provider: this.name,
       model: opts.model,
       task: opts.task,
       input_tokens: opts.usage.input_tokens,
       output_tokens: opts.usage.output_tokens,
+      cost_usd: cost.cost_usd,
+      pricing_version: cost.pricing_version,
       latency_ms: Math.max(0, this.now() - opts.start),
       ok: opts.ok,
       decided_at: new Date(this.now()).toISOString(),
       ...(opts.req.role !== undefined && { role: opts.req.role }),
       ...(opts.req.user_id !== undefined && { user_id: opts.req.user_id }),
+      ...(opts.req.session_id !== undefined && { session_id: opts.req.session_id }),
       ...(opts.req.prompt_version !== undefined && { prompt_version: opts.req.prompt_version }),
+      ...(opts.tool_used !== undefined && { tool_used: opts.tool_used }),
     });
   }
 }
