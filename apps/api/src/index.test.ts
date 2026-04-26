@@ -24,4 +24,12 @@ describe("apps/api", () => {
     });
     await app.close();
   });
+
+  it("GET /llm reports the wired provider name", async () => {
+    const app = buildServer();
+    const res = await app.inject({ method: "GET", url: "/llm" });
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toEqual({ provider: "anthropic" });
+    await app.close();
+  });
 });
