@@ -1,6 +1,6 @@
 # LearnPro Board
 
-> **Last updated:** 2026-04-26 (STORY-052 in-progress — monorepo skeleton scaffolded, smoke verified locally, opening PR.)
+> **Last updated:** 2026-04-26 (STORY-052 done — monorepo skeleton + dev compose + CI live on `main`. EPIC-019 1/2 Stories complete; STORY-057 next.)
 > **How to read this:** This is the live status of every Epic, Story, and Task in the project. Hand-maintained for now (a regenerator script lives in the v1 backlog). When you change an item's `status:` frontmatter, also update the row here in the same commit.
 
 ---
@@ -12,7 +12,6 @@
 | [EPIC-018](epics/EPIC-018-repo-automation.md) | Repo automation & Claude Code skills | epic | scaffolding | P1 | — | claude |
 | [STORY-051](stories/STORY-051-claude-skills-and-stop-hook.md) | `harvest-knowledge` + `work-tracking` skills + Stop hook | story | scaffolding | P1 | M | claude |
 | [EPIC-019](epics/EPIC-019-build-foundation.md) | Build foundation — monorepo, dev env, shared interfaces | epic | mvp | P0 | — | claude |
-| [STORY-052](stories/STORY-052-monorepo-skeleton.md) | Monorepo skeleton + dev Docker Compose + CI | story | mvp | P0 | L | claude |
 
 ---
 
@@ -98,10 +97,11 @@ These stories were filed during EPIC-017 Phase C from the expanded idea catalog 
 
 ## Recently Done
 
-GitHub repo + PR workflow landed 2026-04-25 (PR #1, STORY-058). EPIC-017 product grooming closed in full on 2026-04-25 (Phases A + B + C). EPIC-001 closed on 2026-04-25 (initial scaffolding commit `c1e17a1`). Phase A commit: `bbf7300`.
+Monorepo foundation landed 2026-04-26 (PR #5, STORY-052). GitHub repo + PR workflow landed 2026-04-25 (PR #1, STORY-058). EPIC-017 product grooming closed in full on 2026-04-25 (Phases A + B + C). EPIC-001 closed on 2026-04-25 (initial scaffolding commit `c1e17a1`). Phase A commit: `bbf7300`.
 
 | ID | Title | Done |
 |----|-------|------|
+| [STORY-052](stories/STORY-052-monorepo-skeleton.md) | Monorepo skeleton + dev Docker Compose + CI | 2026-04-26 |
 | [STORY-058](stories/STORY-058-github-repo-and-pr-workflow.md) | GitHub repo + PR-based workflow + branch protection | 2026-04-25 |
 | [EPIC-017](epics/EPIC-017-product-discovery.md) | Product discovery, competitive positioning, and feature grooming | 2026-04-25 |
 | [STORY-030](stories/STORY-030-backlog-expansion.md) | Backlog expansion — 116-idea catalog + 20 stories filed (Phase C) | 2026-04-25 |
