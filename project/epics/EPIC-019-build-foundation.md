@@ -46,7 +46,7 @@ Stand up the foundational build infrastructure that every other code Story depen
 
 - [`docs/architecture/ARCHITECTURE.md`](../../docs/architecture/ARCHITECTURE.md)
 - [`docs/decisions/DECISIONS_LOG.md`](../../docs/decisions/DECISIONS_LOG.md) — 2026-04-25 Path A entry
-- ADR-0006 (forthcoming) — single-agent harness with workflow-routed model selection
+- [ADR-0006](../../docs/architecture/ADR-0006-agentic-orchestration.md) — single-agent harness with workflow-routed model selection
 
 ## Activity log
 
