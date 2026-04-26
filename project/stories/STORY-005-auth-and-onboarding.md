@@ -1,40 +1,35 @@
 ---
 id: STORY-005
-title: Auth.js + 5-question onboarding
+title: Auth.js + bootstrap profile shell (conversational onboarding moved to STORY-053)
 type: story
 status: backlog
 priority: P0
 estimate: M
 parent: EPIC-002
 phase: mvp
-tags: [auth, onboarding, nextauth]
+tags: [auth, profile, nextauth]
 created: 2026-04-25
 updated: 2026-04-25
 ---
 
 ## Description
 
-The first thing a new user sees. Auth.js (NextAuth) with **email magic link** + **GitHub OAuth** (the audience uses GitHub — making them sign in with it is signal-positive and reduces friction). After auth, a 5-question onboarding flow seeds the learner profile:
+The first thing a new user sees. Auth.js (NextAuth) with **email magic link** + **GitHub OAuth** (the audience uses GitHub — making them sign in with it is signal-positive and reduces friction). After auth, **bootstrap an empty profile row** with sensible defaults so downstream agents have a row to read / write against; **then hand off to the conversational onboarding agent** ([STORY-053](./STORY-053-conversational-onboarding-agent.md)) which populates target role, time budget, languages-known, etc. through a candid chat.
 
-1. Target role (e.g., "backend engineer", "ML engineer", "switching from data analyst").
-2. Languages already known + comfort level (1–5 each).
-3. Time budget per day (15 / 30 / 60 / 90+ minutes).
-4. Primary goal (interview prep / new job / hobby / academic).
-5. Self-assessed level (beginner / intermediate / advanced).
-
-These answers seed the initial track recommendation, daily reminder time, and difficulty bias.
+This Story originally also included a 5-question structured form, but per the **Path A scope conversation (2026-04-25)** the form was replaced with the conversational onboarding agent and split into [STORY-053](./STORY-053-conversational-onboarding-agent.md). STORY-005 is now strictly **auth + profile-shell bootstrap + hand-off**.
 
 ## Acceptance criteria
 
 - [ ] Email magic link sign-in works end-to-end (verify email arrives, click logs in).
 - [ ] GitHub OAuth sign-in works end-to-end.
-- [ ] Onboarding renders only on first login; subsequent logins go to the dashboard.
-- [ ] Onboarding answers persist to the `profiles` table with `org_id` defaulted on self-hosted.
-- [ ] Skipping any question is allowed; defaults are recorded.
+- [ ] On first login, a `profiles` row is created with `org_id` defaulted on self-hosted and all optional fields nullable.
+- [ ] First login routes to [STORY-053](./STORY-053-conversational-onboarding-agent.md)'s conversational onboarding agent (or the minimal fallback structured form if the LLM provider is unavailable — the fallback is owned by STORY-053).
+- [ ] Subsequent logins route directly to the dashboard.
 
 ## Dependencies
 
-- Blocked by: STORY-013 (learner profile schema must exist).
+- Blocked by: STORY-013 (learner profile schema must exist), [STORY-052](./STORY-052-monorepo-skeleton.md) (skeleton).
+- Blocks: [STORY-053](./STORY-053-conversational-onboarding-agent.md) (conversational onboarding hands off from here).
 
 ## Tasks
 
@@ -43,3 +38,4 @@ These answers seed the initial track recommendation, daily reminder time, and di
 ## Activity log
 
 - 2026-04-25 — created
+- 2026-04-25 — re-scoped: structured-form onboarding split into [STORY-053](./STORY-053-conversational-onboarding-agent.md) (conversational onboarding agent) per Path A scope confirmation. STORY-005 is now strictly auth + profile-shell bootstrap.

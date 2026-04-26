@@ -8,6 +8,35 @@
 
 ---
 
+## 2026-04-25 — Path A: architecture-complete MVP, adaptive policies behind swappable interfaces
+
+**Context:** During the Path A vs. Path B Q&A, the user committed to several adaptive / GenAI-driven systems for the platform: GenAI evolutionary scoring (Q1E), multi-dimensional personalized difficulty (Q2A) and skill score (Q2B), conversational adaptive onboarding (Q1B), adaptive agentic autonomy (Q1C), adaptive tutor tone (Q1G), rich interaction telemetry (Q2G). Each is bigger than the original deterministic MVP scope. Shipping all of them *live* at MVP would mean ~6 months of build with no real user data to feed any of the adaptive systems — they would behave erratically until telemetry caught up.
+
+**Decision:** Ship MVP as **architecture-complete** but **adaptive-policy-deferred**:
+- All adaptive systems get **interfaces** in MVP (`ScoringPolicy`, `TonePolicy`, `DifficultyPolicy`, `AutonomyPolicy`) — see STORY-057.
+- Each interface ships with a **deterministic default implementation** (e.g., difficulty = ELO + EWMA, tone = warm-coach default, autonomy = always-confirm).
+- Each interface ships with the **operator-injectable rules slot** so the policy is config-driven on day 1.
+- The **rich data-capture schema** (telemetry, profile dimensions) is **MVP-critical** — much cheaper to capture rich data from day 1 than retrofit later (STORY-055).
+- The **GenAI implementations** of each policy ship as v1 work — once telemetry is feeding them.
+- Conversational onboarding (STORY-053) is treated separately from auth / profile-shell (STORY-005); STORY-005 reduced to auth + bootstrap.
+
+**Alternatives considered:**
+- **Path B (full-adaptive MVP)** — Ship GenAI scoring / difficulty / tone / autonomy / onboarding all live at MVP. Real risk of erratic behavior in the cold-start window before telemetry catches up; high failure mode. Rejected.
+- **Defer adaptive interfaces entirely to v1** — Ship a fully deterministic MVP without the policy-adapter pattern. Cheaper short-term, but every adaptive feature in v1 becomes a refactor rather than a config flip. Rejected — the interface cost in MVP is small, the v1 dividend is large.
+
+**Consequences:**
+- (+) MVP is testable end-to-end with deterministic policies; honest about what's adaptive yet.
+- (+) Each adaptive system has a clean swap-in path; "deterministic → GenAI" is a DI binding change, not a rewrite.
+- (+) Telemetry capture begins from user 1 — no retrofit for v1 personalization.
+- (+) Operator-injectable rules give a tuning surface even before GenAI lands.
+- (−) MVP doesn't visibly demonstrate the "novel" features; a third-party demo would show "yet another LeetCode" unless the pluggability story is told well.
+- (−) Carries the cost of building 4 policy interfaces + their default impls in MVP, even though the "real" implementations land in v1.
+
+**Owner:** user (Rahul) — confirmed 2026-04-25 ("Path A confirmed.")
+**Related:** STORY-052, STORY-053, STORY-054, STORY-055, STORY-056, STORY-057. The 6 entries in [`docs/vision/NOVEL_IDEAS.md`](../vision/NOVEL_IDEAS.md) from the same conversation. ADR-0006 (forthcoming) on single-agent orchestration.
+
+---
+
 ## 2026-04-25 — Auto-trigger work-tracking and harvest-knowledge via Stop hook
 
 **Context:** The user wants the project's vision/architecture/decisions docs and the JIRA-style Epic/Story/Task system kept up-to-date *automatically* after every conversation, without relying on memory or manual prompts. Skills cannot self-invoke in Claude Code.

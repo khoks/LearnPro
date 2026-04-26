@@ -41,6 +41,8 @@ Two related concerns under one Epic:
 
 ## Stories under this Epic
 
+- [STORY-056](../stories/STORY-056-data-retention-and-redaction.md) — Data retention & redaction pipeline (raw transcripts + episodic summaries) (MVP)
+
 (STORY-010 — Verify sandbox hardening checklist — lives under EPIC-003 since it's a sandbox capability, but contributes here.)
 
 (Anti-cheat stories will be created when v1 work begins.)
@@ -74,3 +76,4 @@ Alternatives considered (no sandboxing for MVP, surfacing security as a UI featu
 ## Activity log
 
 - 2026-04-25 — created
+- 2026-04-25 — Path A scope: added [STORY-056](../stories/STORY-056-data-retention-and-redaction.md). Keeping both raw + episodic memories raises privacy blast-radius enough to need a real retention + redaction policy as MVP, not v1.

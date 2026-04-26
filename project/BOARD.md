@@ -1,6 +1,6 @@
 # LearnPro Board
 
-> **Last updated:** 2026-04-25 (EPIC-018 repo automation underway — `harvest-knowledge` + `work-tracking` skills + Stop hook landed; STORY-051 in-progress.)
+> **Last updated:** 2026-04-25 (Path A scope locked — adaptive policies behind swappable interfaces; 7 new MVP Stories filed under EPIC-019/EPIC-004/EPIC-005/EPIC-016; STORY-005 re-scoped; STORY-058 done.)
 > **How to read this:** This is the live status of every Epic, Story, and Task in the project. Hand-maintained for now (a regenerator script lives in the v1 backlog). When you change an item's `status:` frontmatter, also update the row here in the same commit.
 
 ---
@@ -11,20 +11,24 @@
 |----|-------|------|-------|----------|-----|-------|
 | [EPIC-018](epics/EPIC-018-repo-automation.md) | Repo automation & Claude Code skills | epic | scaffolding | P1 | — | claude |
 | [STORY-051](stories/STORY-051-claude-skills-and-stop-hook.md) | `harvest-knowledge` + `work-tracking` skills + Stop hook | story | scaffolding | P1 | M | claude |
+| [EPIC-019](epics/EPIC-019-build-foundation.md) | Build foundation — monorepo, dev env, shared interfaces | epic | mvp | P0 | — | claude |
 
 ---
 
 ## Up Next (Ready) — MVP build begins here
 
-EPIC-017 closed. The next session picks up MVP work. Recommended order (each is a Story under EPIC-002 / EPIC-003 / EPIC-004):
+Path A locked 2026-04-25. EPIC-019 (foundation) must land first since every other code Story depends on the workspace skeleton + policy interfaces. Recommended build order:
 
-| ID | Title | Type | Phase | Priority | Est |
-|----|-------|------|-------|----------|-----|
-| [STORY-005](stories/STORY-005-auth-and-onboarding.md) | Auth.js + 5-question onboarding | story | mvp | P0 | M |
-| [STORY-006](stories/STORY-006-monaco-editor.md) | Monaco editor + run button + result panel | story | mvp | P0 | M |
-| [STORY-007](stories/STORY-007-python-runner.md) | Python sandbox runner via Piston | story | mvp | P0 | M |
-| [STORY-008](stories/STORY-008-typescript-runner.md) | TypeScript sandbox runner via Piston | story | mvp | P0 | S |
-| [STORY-009](stories/STORY-009-llm-gateway.md) | `LLMProvider` interface + Anthropic adapter | story | mvp | P0 | M |
+| ID | Title | Epic | Phase | Priority | Est |
+|----|-------|------|------|----------|-----|
+| [STORY-052](stories/STORY-052-monorepo-skeleton.md) | Monorepo skeleton + dev Docker Compose (Postgres/pgvector/Redis/MinIO/Piston) + CI | EPIC-019 | mvp | P0 | L |
+| [STORY-057](stories/STORY-057-policy-adapter-interfaces.md) | Policy-adapter interfaces (`Scoring`, `Tone`, `Difficulty`, `Autonomy`) + deterministic defaults | EPIC-019 | mvp | P0 | L |
+| [STORY-005](stories/STORY-005-auth-and-onboarding.md) | Auth.js + bootstrap profile shell (re-scoped — onboarding split to STORY-053) | EPIC-002 | mvp | P0 | M |
+| [STORY-053](stories/STORY-053-conversational-onboarding-agent.md) | Conversational adaptive onboarding agent (replaces structured form; graceful exit + form fallback) | EPIC-004 | mvp | P0 | L |
+| [STORY-006](stories/STORY-006-monaco-editor.md) | Monaco editor + run button + result panel | EPIC-002 | mvp | P0 | M |
+| [STORY-007](stories/STORY-007-python-runner.md) | Python sandbox runner via Piston | EPIC-003 | mvp | P0 | M |
+| [STORY-008](stories/STORY-008-typescript-runner.md) | TypeScript sandbox runner via Piston | EPIC-003 | mvp | P0 | S |
+| [STORY-009](stories/STORY-009-llm-gateway.md) | `LLMProvider` interface + Anthropic adapter | EPIC-004 | mvp | P0 | M |
 
 ---
 
@@ -50,6 +54,9 @@ EPIC-017 closed. The next session picks up MVP work. Recommended order (each is 
 | [STORY-025](stories/STORY-025-responsive-web.md) | Responsive web app (Windows browser baseline) | EPIC-013 | mvp | P1 | S |
 | [STORY-026](stories/STORY-026-data-export.md) | GDPR-style JSON data export endpoint | EPIC-002 | mvp | P1 | S |
 | [STORY-027](stories/STORY-027-accessibility-baseline.md) | Accessibility baseline (keyboard nav, Monaco screen-reader labels) | EPIC-002 | mvp | P1 | S |
+| [STORY-054](stories/STORY-054-adaptive-autonomy-controller.md) | Adaptive autonomy controller (per-user confidence → Low/Medium/High ask-vs-act bands) | EPIC-004 | mvp | P0 | M |
+| [STORY-055](stories/STORY-055-rich-interaction-telemetry-schema.md) | Rich interaction telemetry schema (cursor focus, voice opt-in, edits/reverts → `interactions` table) | EPIC-005 | mvp | P0 | M |
+| [STORY-056](stories/STORY-056-data-retention-and-redaction.md) | Data retention & redaction pipeline (raw 90d / voice 30d / episodes indefinite + PII redaction) | EPIC-016 | mvp | P0 | M |
 
 ---
 
@@ -91,10 +98,11 @@ These stories were filed during EPIC-017 Phase C from the expanded idea catalog 
 
 ## Recently Done
 
-EPIC-017 product grooming closed in full on 2026-04-25 (Phases A + B + C). EPIC-001 closed on 2026-04-25 (initial scaffolding commit `c1e17a1`). Phase A commit: `bbf7300`.
+GitHub repo + PR workflow landed 2026-04-25 (PR #1, STORY-058). EPIC-017 product grooming closed in full on 2026-04-25 (Phases A + B + C). EPIC-001 closed on 2026-04-25 (initial scaffolding commit `c1e17a1`). Phase A commit: `bbf7300`.
 
 | ID | Title | Done |
 |----|-------|------|
+| [STORY-058](stories/STORY-058-github-repo-and-pr-workflow.md) | GitHub repo + PR-based workflow + branch protection | 2026-04-25 |
 | [EPIC-017](epics/EPIC-017-product-discovery.md) | Product discovery, competitive positioning, and feature grooming | 2026-04-25 |
 | [STORY-030](stories/STORY-030-backlog-expansion.md) | Backlog expansion — 116-idea catalog + 20 stories filed (Phase C) | 2026-04-25 |
 | [STORY-029](stories/STORY-029-ux-deep-dive.md) | Per-feature UX deep-dive on MVP epics (Phase A) | 2026-04-25 |
@@ -163,3 +171,4 @@ _(none)_
 | [EPIC-016](epics/EPIC-016-security-and-anti-cheat.md) | Security & anti-cheat | backlog | mvp | P0 |
 | [EPIC-017](epics/EPIC-017-product-discovery.md) | Product discovery, competitive positioning, and feature grooming | done | scaffolding | P0 |
 | [EPIC-018](epics/EPIC-018-repo-automation.md) | Repo automation & Claude Code skills | in-progress | scaffolding | P1 |
+| [EPIC-019](epics/EPIC-019-build-foundation.md) | Build foundation — monorepo, dev env, shared interfaces | in-progress | mvp | P0 |

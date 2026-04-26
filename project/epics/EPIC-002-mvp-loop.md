@@ -21,7 +21,7 @@ If this loop works, LearnPro has product-market fit signal. If it doesn't, no am
 This Epic is the **integration** Epic — it depends on EPIC-003 (sandbox), EPIC-004 (tutor agent), EPIC-005 (profile), EPIC-007 (problems), EPIC-009 (track content), EPIC-011 (gamification), EPIC-012 (notifications). It glues them together into a usable product.
 
 Specifically owned here:
-- Onboarding flow (5 questions).
+- Auth + profile-shell bootstrap ([STORY-005](../stories/STORY-005-auth-and-onboarding.md)). The conversational onboarding agent itself was re-scoped out of this Epic on 2026-04-25 (Path A) and now lives in EPIC-004 as [STORY-053](../stories/STORY-053-conversational-onboarding-agent.md).
 - Track selection screen.
 - Editor + run + grade page (the main user surface).
 - Progress dashboard.
@@ -37,7 +37,7 @@ Specifically owned here:
 
 ## Stories under this Epic
 
-- STORY-005 — Implement onboarding questionnaire (5 questions)
+- [STORY-005](../stories/STORY-005-auth-and-onboarding.md) — Auth.js + bootstrap profile shell (re-scoped 2026-04-25; conversational onboarding moved to STORY-053)
 - STORY-006 — Build editor + run + grade page (main user surface)
 - STORY-007 — Heuristic difficulty tuner orchestrating next-problem selection
 
@@ -69,3 +69,4 @@ Alternatives considered (skill-test pre-quiz, single Run-Submit button, tutor-le
 ## Activity log
 
 - 2026-04-25 — created
+- 2026-04-25 — STORY-005 re-scoped to auth + profile-shell only; conversational onboarding agent split into [STORY-053](../stories/STORY-053-conversational-onboarding-agent.md) under EPIC-004 (Path A scope confirmation).
