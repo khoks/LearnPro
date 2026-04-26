@@ -6,6 +6,9 @@ coverage/
 pnpm-lock.yaml
 *.tsbuildinfo
 
+# Drizzle-generated migrations + metadata — owned by drizzle-kit, regenerated on schema change.
+packages/db/migrations/
+
 # Hand-authored docs / project-tracking markdown — preserve author formatting.
 # Code-adjacent markdown (e.g. inside packages/) stays formatted.
 *.md
