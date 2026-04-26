@@ -2,7 +2,7 @@
 id: STORY-057
 title: Policy-adapter interfaces (Scoring, Tone, Difficulty, Autonomy) + deterministic defaults
 type: story
-status: in-progress
+status: done
 priority: P0
 estimate: L
 parent: EPIC-019
@@ -10,6 +10,7 @@ phase: mvp
 tags: [foundation, interfaces, policy, adaptive, novel]
 created: 2026-04-25
 updated: 2026-04-26
+done: 2026-04-26
 ---
 
 ## Description
@@ -81,3 +82,4 @@ Each interface lives in `packages/scoring` (the package name covers more than ju
 
 - 2026-04-25 — created (Path A scope confirmation)
 - 2026-04-26 — picked up; designing 4 interfaces + deterministic defaults + DI registry + telemetry hook + POLICIES.md.
+- 2026-04-26 — done (PR #7). 4 policies + 21 unit tests + DI wired into apps/api + `/policies` smoke endpoint + LEARNPRO_POLICY_CONFIG env-driven config. EPIC-019 now fully done.
