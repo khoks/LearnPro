@@ -1,6 +1,6 @@
 # LearnPro Board
 
-> **Last updated:** 2026-04-26 (EPIC-019 closed — foundation done. Next: feature Stories under EPIC-002/003/004/005.)
+> **Last updated:** 2026-04-26 (STORY-009 in-progress — LLM gateway / `LLMProvider` interface + Anthropic adapter under EPIC-004.)
 > **How to read this:** This is the live status of every Epic, Story, and Task in the project. Hand-maintained for now (a regenerator script lives in the v1 backlog). When you change an item's `status:` frontmatter, also update the row here in the same commit.
 
 ---
@@ -11,6 +11,7 @@
 |----|-------|------|-------|----------|-----|-------|
 | [EPIC-018](epics/EPIC-018-repo-automation.md) | Repo automation & Claude Code skills | epic | scaffolding | P1 | — | claude |
 | [STORY-051](stories/STORY-051-claude-skills-and-stop-hook.md) | `harvest-knowledge` + `work-tracking` skills + Stop hook | story | scaffolding | P1 | M | claude |
+| [STORY-009](stories/STORY-009-llm-gateway.md) | `LLMProvider` interface + Anthropic adapter | story | mvp | P0 | M | claude |
 
 ---
 
@@ -25,7 +26,6 @@ Path A locked 2026-04-25. EPIC-019 (foundation) must land first since every othe
 | [STORY-006](stories/STORY-006-monaco-editor.md) | Monaco editor + run button + result panel | EPIC-002 | mvp | P0 | M |
 | [STORY-007](stories/STORY-007-python-runner.md) | Python sandbox runner via Piston | EPIC-003 | mvp | P0 | M |
 | [STORY-008](stories/STORY-008-typescript-runner.md) | TypeScript sandbox runner via Piston | EPIC-003 | mvp | P0 | S |
-| [STORY-009](stories/STORY-009-llm-gateway.md) | `LLMProvider` interface + Anthropic adapter | EPIC-004 | mvp | P0 | M |
 
 ---
 

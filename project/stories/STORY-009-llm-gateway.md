@@ -2,14 +2,14 @@
 id: STORY-009
 title: LLMProvider interface + Anthropic adapter
 type: story
-status: backlog
+status: in-progress
 priority: P0
 estimate: M
 parent: EPIC-004
 phase: mvp
 tags: [llm, anthropic, provider-abstraction]
 created: 2026-04-25
-updated: 2026-04-25
+updated: 2026-04-26
 ---
 
 ## Description
@@ -26,12 +26,12 @@ Calls are routed by **role**, not by hardcoded model name: `tutor` → Opus, `gr
 
 ## Acceptance criteria
 
-- [ ] `LLMProvider` interface exported from `packages/llm`.
-- [ ] Anthropic adapter implements all 4 methods.
-- [ ] OpenAI + Ollama adapter stubs throw `NotImplementedError`.
-- [ ] Role → model mapping lives in `packages/llm/src/models.ts`.
-- [ ] Integration test: a real Anthropic call returns a non-empty response.
-- [ ] No code outside `packages/llm` imports the Anthropic SDK directly.
+- [x] `LLMProvider` interface exported from `packages/llm`.
+- [x] Anthropic adapter implements all 4 methods (`embed` throws `NotImplementedError` deliberately — embedding service is deferred per ADR-0003).
+- [x] OpenAI + Ollama adapter stubs throw `NotImplementedError`.
+- [x] Role → model mapping lives in `packages/llm/src/models.ts`.
+- [x] Integration test: a real Anthropic call returns a non-empty response (gated on `ANTHROPIC_API_KEY`; skipped in CI by default).
+- [x] No code outside `packages/llm` imports the Anthropic SDK directly (the `@anthropic-ai/sdk` import lives only in `anthropic-sdk-transport.ts`).
 
 ## Dependencies
 
@@ -44,3 +44,4 @@ Calls are routed by **role**, not by hardcoded model name: `tutor` → Opus, `gr
 ## Activity log
 
 - 2026-04-25 — created
+- 2026-04-26 — picked up; designing `LLMProvider` interface + Anthropic adapter + role→model mapping + telemetry hook + provider registry. OpenAI/Ollama as stubs.
