@@ -2,7 +2,7 @@
 id: STORY-009
 title: LLMProvider interface + Anthropic adapter
 type: story
-status: in-progress
+status: done
 priority: P0
 estimate: M
 parent: EPIC-004
@@ -10,6 +10,7 @@ phase: mvp
 tags: [llm, anthropic, provider-abstraction]
 created: 2026-04-25
 updated: 2026-04-26
+done: 2026-04-26
 ---
 
 ## Description
@@ -45,3 +46,4 @@ Calls are routed by **role**, not by hardcoded model name: `tutor` → Opus, `gr
 
 - 2026-04-25 — created
 - 2026-04-26 — picked up; designing `LLMProvider` interface + Anthropic adapter + role→model mapping + telemetry hook + provider registry. OpenAI/Ollama as stubs.
+- 2026-04-26 — done (PR #9). 4-method LLMProvider + AnthropicProvider (injectable transport) + OpenAI/Ollama stubs + role→model routing + telemetry hook + retry-with-backoff + `LEARNPRO_LLM_CONFIG` env-driven config + DI wired into `apps/api` + `/llm` smoke endpoint. 32 unit tests + 1 gated integration test. `embed()` deferred per ADR-0003.
