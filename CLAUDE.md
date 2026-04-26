@@ -1,5 +1,7 @@
 # CLAUDE.md — Project context for Claude Code sessions
 
+> **Phase: MVP build (active since 2026-04-25).** Application code in `apps/`, `packages/`, and `services/` is now welcome. PR-per-Story workflow into [`khoks/LearnPro`](https://github.com/khoks/LearnPro) is enforced — see "PR workflow" below.
+
 This file is the entry point for any Claude Code session working in this repo. Read it first. Read [`project/BOARD.md`](./project/BOARD.md) second.
 
 ---
@@ -102,6 +104,29 @@ Types: `feat`, `fix`, `refactor`, `chore`, `docs`, `test`, `perf`, `ci`, `build`
 
 ---
 
+## PR workflow
+
+All changes land via PRs into `main` on [`khoks/LearnPro`](https://github.com/khoks/LearnPro). Branch protection enforces this (PR required, 0 reviews needed, linear history, no force-push, no deletion). The assistant is authorized to **self-merge** *after* the design / requirement / algorithm / tech-stack alignment for the work has happened conversationally with the user.
+
+**Branch naming:**
+
+- Story work: `story/NNN-kebab-slug` — e.g. `story/052-monorepo-skeleton`
+- Chore (no Story): `chore/<slug>` — e.g. `chore/lift-no-code-rule`
+- Hotfix: `fix/<slug>`
+
+**PR title:** same as commit style — `feat(scope): summary [STORY-NNN]`. Use **squash-merge** (linear history is enforced).
+
+**PR body:** the [template](./.github/PULL_REQUEST_TEMPLATE.md) is auto-applied. Fill in all sections; tick the checklist honestly.
+
+**When to pause and ask before merging:**
+
+- Architectural decisions worthy of an ADR (push to a separate PR; let the user read first)
+- New external dependencies, services, or paid integrations
+- Anything that meaningfully changes a previously-locked decision in this file or in `docs/decisions/`
+- Anything the user has explicitly asked to review
+
+---
+
 ## OS notes (Windows-first, but writing for cross-platform)
 
 - Primary dev environment is Windows 11 with WSL2 for Docker.
@@ -130,11 +155,11 @@ Every "while we're at it…" idea is a chance to bloat the MVP into oblivion. Re
 
 ## Things to never do (without explicit user approval)
 
-- `git push` to a remote (no remote is configured yet anyway)
-- `git remote add`
-- Run `pnpm install`, `npm install`, or otherwise materialize `node_modules/`
-- Install Docker images or run docker-compose
-- Write any `.ts`, `.tsx`, or `.py` source files until the MVP build session begins
+- `git push --force` to any branch (linear history is enforced on `main`; ask first if you genuinely need a force-push elsewhere)
+- `git remote add` (origin is `khoks/LearnPro`; do not add additional remotes)
+- Direct push to `main` (branch protection requires PR; use the PR workflow)
+- Run `pnpm install`, `npm install`, or otherwise materialize `node_modules/` *outside* of an active Story that requires it (e.g. STORY-052 monorepo skeleton). Inform-then-do is fine within scope.
+- Install Docker images or run docker-compose *outside* of an active Story that requires it. Inform-then-do is fine within scope.
 - Use `--privileged` on any Docker invocation, ever
 - Commit with `--no-verify` or any hook bypass
 
