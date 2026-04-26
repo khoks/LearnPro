@@ -39,6 +39,33 @@ export {
 export { InMemoryLLMTelemetrySink, NullLLMTelemetrySink } from "./telemetry.js";
 
 export {
+  ANTHROPIC_SONNET,
+  MODEL_PRICING,
+  PRICING_VERSION,
+  costFor,
+  type CostInput,
+  type CostResult,
+  type ModelPrice,
+} from "./pricing.js";
+
+export {
+  DailyTokenBudget,
+  InMemoryUsageStore,
+  MODEL_TIERS,
+  type DailyTokenBudgetOptions,
+  type DailyUsage,
+  type DecideModelInput,
+  type DecideModelResult,
+  type ModelTier,
+  type UsageStore,
+} from "./budget.js";
+
+export {
+  BudgetGatedLLMProvider,
+  type BudgetGatedLLMProviderOptions,
+} from "./budget-gated-provider.js";
+
+export {
   ChatMessageSchema,
   ChatRoleSchema,
   CompleteRequestSchema,

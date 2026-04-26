@@ -7,6 +7,7 @@ import {
 } from "./anthropic.js";
 import { InMemoryLLMTelemetrySink } from "./telemetry.js";
 import { ANTHROPIC_HAIKU, ANTHROPIC_OPUS } from "./models.js";
+import { PRICING_VERSION } from "./pricing.js";
 import { LLMRequestError, NotImplementedError } from "./errors.js";
 
 class FakeTransport implements AnthropicTransport {
@@ -148,7 +149,7 @@ describe("AnthropicProvider.complete", () => {
     ).rejects.toBeInstanceOf(LLMRequestError);
   });
 
-  it("emits telemetry on success including role and prompt_version", async () => {
+  it("emits telemetry on success including role, prompt_version, and cost", async () => {
     const sink = new InMemoryLLMTelemetrySink();
     const transport = new FakeTransport(baseResponse);
     const provider = new AnthropicProvider({ transport, telemetry: sink });
@@ -156,6 +157,7 @@ describe("AnthropicProvider.complete", () => {
       messages: [{ role: "user", content: "hi" }],
       role: "tutor",
       user_id: "u1",
+      session_id: "sess-42",
       prompt_version: "tutor@v3",
       max_tokens: 16,
       temperature: 0,
@@ -166,9 +168,28 @@ describe("AnthropicProvider.complete", () => {
     expect(ev.role).toBe("tutor");
     expect(ev.prompt_version).toBe("tutor@v3");
     expect(ev.user_id).toBe("u1");
+    expect(ev.session_id).toBe("sess-42");
     expect(ev.input_tokens).toBe(11);
     expect(ev.output_tokens).toBe(7);
     expect(ev.ok).toBe(true);
+    // Haiku pricing: (11*1 + 7*5) / 1M = 0.000046
+    expect(ev.cost_usd).toBe(0.000046);
+    expect(ev.pricing_version).toBe(PRICING_VERSION);
+  });
+
+  it("emits cost=0 + known_model=false fallback for an unknown model", async () => {
+    const sink = new InMemoryLLMTelemetrySink();
+    const transport = new FakeTransport({ ...baseResponse, model: "made-up-model" });
+    const provider = new AnthropicProvider({ transport, telemetry: sink });
+    await provider.complete({
+      messages: [{ role: "user", content: "hi" }],
+      role: "tutor",
+      user_id: "u1",
+      max_tokens: 16,
+      temperature: 0,
+    });
+    expect(sink.events[0]?.cost_usd).toBe(0);
+    expect(sink.events[0]?.pricing_version).toBe(PRICING_VERSION);
   });
 });
 
@@ -225,6 +246,33 @@ describe("AnthropicProvider.toolCall", () => {
     expect(res.tool_calls[0]?.input).toEqual({ rung: 2, focus: "off-by-one" });
     expect(res.finish_reason).toBe("tool_use");
     expect(transport.lastParams?.tool_choice).toEqual({ type: "auto" });
+  });
+
+  it("records tool_used in telemetry when a tool is invoked", async () => {
+    const sink = new InMemoryLLMTelemetrySink();
+    const transport = new FakeTransport({
+      model: ANTHROPIC_OPUS,
+      stop_reason: "tool_use",
+      usage: { input_tokens: 12, output_tokens: 4 },
+      content: [
+        {
+          type: "tool_use",
+          id: "tool_01",
+          name: "give-hint",
+          input: { rung: 1 },
+        },
+      ],
+    });
+    const provider = new AnthropicProvider({ transport, telemetry: sink });
+    await provider.toolCall({
+      messages: [{ role: "user", content: "stuck" }],
+      role: "tutor",
+      max_tokens: 64,
+      temperature: 0,
+      tools: [{ name: "give-hint", description: "x", input_schema: { type: "object" } }],
+      tool_choice: "auto",
+    });
+    expect(sink.events[0]?.tool_used).toBe("give-hint");
   });
 });
 
