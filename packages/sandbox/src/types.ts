@@ -24,6 +24,8 @@ export const SandboxRunRequestSchema = z.object({
     .default(DEFAULT_OUTPUT_LIMIT_BYTES),
 });
 export type SandboxRunRequest = z.infer<typeof SandboxRunRequestSchema>;
+// Pre-parse shape: callers pass this and zod fills in defaults at the boundary.
+export type SandboxRunRequestInput = z.input<typeof SandboxRunRequestSchema>;
 
 export const SandboxRunResponseSchema = z.object({
   stdout: z.string(),
