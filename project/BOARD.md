@@ -1,6 +1,6 @@
 # LearnPro Board
 
-> **Last updated:** 2026-04-26 (STORY-008 done — TypeScript sandbox runner via Piston. Most of the wiring landed in STORY-007; this Story added TS-specific unit/integration/API tests proving `console.log('hello')` round-trips and timeout classification works for TS.)
+> **Last updated:** 2026-04-26 (STORY-006 done — Monaco-based `/playground` page in `apps/web` with language selector + Run button + result panel; wiring path browser → Next.js Route Handler `/api/sandbox/run` → Fastify `/sandbox/run`. Re-scoped on pickup: WebSocket streaming split into [STORY-059](./stories/STORY-059-sandbox-streaming.md); Submit/hidden-tests deferred to [STORY-016](./stories/STORY-016-seed-bank.md); problem-language follow rewires when STORY-016 lands.)
 > **How to read this:** This is the live status of every Epic, Story, and Task in the project. Hand-maintained for now (a regenerator script lives in the v1 backlog). When you change an item's `status:` frontmatter, also update the row here in the same commit.
 
 ---
@@ -22,7 +22,6 @@ Path A locked 2026-04-25. EPIC-019 (foundation) must land first since every othe
 |----|-------|------|------|----------|-----|
 | [STORY-005](stories/STORY-005-auth-and-onboarding.md) | Auth.js + bootstrap profile shell (re-scoped — onboarding split to STORY-053) | EPIC-002 | mvp | P0 | M |
 | [STORY-053](stories/STORY-053-conversational-onboarding-agent.md) | Conversational adaptive onboarding agent (replaces structured form; graceful exit + form fallback) | EPIC-004 | mvp | P0 | L |
-| [STORY-006](stories/STORY-006-monaco-editor.md) | Monaco editor + run button + result panel | EPIC-002 | mvp | P0 | M |
 
 ---
 
@@ -74,6 +73,7 @@ These stories were filed during EPIC-017 Phase C from the expanded idea catalog 
 | [STORY-044](stories/STORY-044-pwa-baseline.md) | PWA baseline (manifest + service worker + offline shell) | EPIC-013 | v1 | P1 | M |
 | [STORY-045](stories/STORY-045-email-digests.md) | Email digest channel (weekly recap + grace-day notices) | EPIC-012 | v1 | P2 | S |
 | [STORY-046](stories/STORY-046-daily-weekly-plans.md) | Daily and weekly plan views (multi-horizon planning UI) | EPIC-006 | v1 | P1 | M |
+| [STORY-059](stories/STORY-059-sandbox-streaming.md) | Live stdout/stderr streaming for sandbox runs (split from STORY-006 — Piston is request/response) | EPIC-003 | v1 | P1 | M |
 
 ## Backlog (v2 — filed via Phase C)
 
@@ -90,10 +90,11 @@ These stories were filed during EPIC-017 Phase C from the expanded idea catalog 
 
 ## Recently Done
 
-STORY-008 (TypeScript sandbox runner via Piston) landed 2026-04-26. STORY-007 (Python sandbox runner via Piston) landed 2026-04-26 (PR #14) — first feature Story under EPIC-003. STORY-013 (learner profile schema) landed 2026-04-26 (PR #11) — first feature Story under EPIC-005. STORY-009 (LLM gateway) landed 2026-04-26 (PR #9) — first feature Story under EPIC-004. EPIC-019 (foundation) closed 2026-04-26 with STORY-052 (monorepo skeleton, PR #5) and STORY-057 (policy adapters, PR #7). GitHub repo + PR workflow landed 2026-04-25 (PR #1, STORY-058). EPIC-017 product grooming closed in full on 2026-04-25 (Phases A + B + C). EPIC-001 closed on 2026-04-25 (initial scaffolding commit `c1e17a1`). Phase A commit: `bbf7300`.
+STORY-006 (Monaco editor + Run button + result panel) landed 2026-04-26 — first user-facing feature in `apps/web`. STORY-008 (TypeScript sandbox runner via Piston) landed 2026-04-26. STORY-007 (Python sandbox runner via Piston) landed 2026-04-26 (PR #14) — first feature Story under EPIC-003. STORY-013 (learner profile schema) landed 2026-04-26 (PR #11) — first feature Story under EPIC-005. STORY-009 (LLM gateway) landed 2026-04-26 (PR #9) — first feature Story under EPIC-004. EPIC-019 (foundation) closed 2026-04-26 with STORY-052 (monorepo skeleton, PR #5) and STORY-057 (policy adapters, PR #7). GitHub repo + PR workflow landed 2026-04-25 (PR #1, STORY-058). EPIC-017 product grooming closed in full on 2026-04-25 (Phases A + B + C). EPIC-001 closed on 2026-04-25 (initial scaffolding commit `c1e17a1`). Phase A commit: `bbf7300`.
 
 | ID | Title | Done |
 |----|-------|------|
+| [STORY-006](stories/STORY-006-monaco-editor.md) | Monaco editor + Run button + result panel (`/playground` → Next.js proxy → Fastify `/sandbox/run`) | 2026-04-26 |
 | [STORY-008](stories/STORY-008-typescript-runner.md) | TypeScript sandbox runner via Piston (TS-specific unit/integration/API tests on top of STORY-007 infra) | 2026-04-26 |
 | [STORY-007](stories/STORY-007-python-runner.md) | Python sandbox runner via Piston (`SandboxProvider` + `PistonSandboxProvider` + `POST /sandbox/run`) | 2026-04-26 |
 | [STORY-014](stories/STORY-014-pgvector-schema.md) | pgvector IVFFlat index on `episodes.embedding` (column landed in STORY-013) | 2026-04-26 |

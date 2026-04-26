@@ -38,6 +38,7 @@ export {
   type SandboxKilledBy,
   type SandboxLanguage,
   type SandboxRunRequest,
+  type SandboxRunRequestInput,
   type SandboxRunResponse,
   type SandboxTelemetryEvent,
   type SandboxTelemetrySink,
