@@ -99,6 +99,46 @@ describe("PistonSandboxProvider.run — happy path", () => {
     expect(transport.lastParams?.run_memory_limit).toBe(256 * 1024 * 1024);
     expect(transport.lastParams?.run_timeout).toBe(5_000);
   });
+
+  it("runs typescript and routes to the typescript language spec (STORY-008)", async () => {
+    const transport = new FakePistonTransport(
+      ok({ stdout: "hello\n" }, DEFAULT_PISTON_LANGUAGES.typescript.pistonVersion),
+    );
+    const provider = new PistonSandboxProvider({ transport });
+    const res = await provider.run({
+      language: "typescript",
+      code: "console.log('hello')",
+      time_limit_ms: 5_000,
+      memory_limit_mb: 128,
+      output_limit_bytes: 64 * 1024,
+    });
+    expect(transport.lastParams?.language).toBe(DEFAULT_PISTON_LANGUAGES.typescript.pistonLanguage);
+    expect(transport.lastParams?.version).toBe(DEFAULT_PISTON_LANGUAGES.typescript.pistonVersion);
+    expect(transport.lastParams?.files[0]?.name).toBe(DEFAULT_PISTON_LANGUAGES.typescript.filename);
+    expect(res.stdout).toBe("hello\n");
+    expect(res.language).toBe("typescript");
+    expect(res.runtime_version).toBe(DEFAULT_PISTON_LANGUAGES.typescript.pistonVersion);
+    expect(res.killed_by).toBeNull();
+  });
+
+  it("classifies typescript timeout the same way as python (STORY-008)", async () => {
+    const transport = new FakePistonTransport(
+      ok(
+        { stdout: "", stderr: "", code: null, signal: "SIGKILL", message: "Run timed out" },
+        DEFAULT_PISTON_LANGUAGES.typescript.pistonVersion,
+      ),
+    );
+    const provider = new PistonSandboxProvider({ transport });
+    const res = await provider.run({
+      language: "typescript",
+      code: "while(true){}",
+      time_limit_ms: 1_000,
+      memory_limit_mb: 128,
+      output_limit_bytes: 64 * 1024,
+    });
+    expect(res.killed_by).toBe("timeout");
+    expect(res.language).toBe("typescript");
+  });
 });
 
 describe("PistonSandboxProvider.run — failure classification", () => {

@@ -15,7 +15,7 @@
 ## Languages (MVP)
 
 - `python` → Piston `python@3.10.0`
-- `typescript` → Piston `typescript@5.0.3` (used by STORY-008)
+- `typescript` → Piston `typescript@5.0.3` (uses Piston's built-in `ts-node`-based runner — no separate `tsc` step in MVP)
 
 Override per-language versions through `SandboxConfig.languages`.
 
@@ -27,6 +27,5 @@ Override per-language versions through `SandboxConfig.languages`.
 
 ## What lives elsewhere
 
-- **TS runner specifics**: STORY-008.
 - **Hardening verification (no-net, ro rootfs, cgroups, seccomp, non-root)**: STORY-010 — every bullet from the ADR-0002 hardening checklist gets an automated breakout test in `packages/sandbox/test/breakout/`.
 - **API wiring**: `apps/api/src/index.ts` exposes `GET /sandbox` (provider name) and `POST /sandbox/run` (zod-validated body → run result).
