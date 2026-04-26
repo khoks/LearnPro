@@ -662,7 +662,7 @@ Owns: XP, streak, progress bars. **Plus the explicit absence of dark patterns.**
 ### Streak
 
 - One day on streak = at least one solved problem.
-- **Grace days: 2 per calendar month, auto-applied.** If you miss a day and have grace remaining, the streak doesn't break — a small message says "we used a grace day; you have 1 left this month."
+- **Grace days: 3 per calendar month, auto-applied.** If you miss a day and have grace remaining, the streak doesn't break — a small message says "we used a grace day; you have 2 left this month."
 - **No public streak leaderboard.** No "you've broken your 14-day streak!" guilt-trip notification. (See EPIC-012 for the exact notification copy rules.)
 - Streak counter shows in the top bar from day 2 onward.
 
@@ -722,7 +722,7 @@ Owns: the in-app notification center, browser Web Push, quiet hours.
 |---|---|
 | "Your 30-min session is waiting." | "🔥🔥 You're about to LOSE your streak! 🔥🔥" |
 | "Yesterday you got better at list comprehensions. Tomorrow we'll try dict comprehensions." | "Don't let your hard work go to waste!" |
-| "You used a grace day — 1 left this month." | "You missed yesterday — get back on track!" |
+| "You used a grace day — 2 left this month." | "You missed yesterday — get back on track!" |
 | "List comprehensions: mastered." | "🏆 ACHIEVEMENT UNLOCKED 🏆" |
 
 **Tone:** factual, brief, respectful of user's time. Same tutor voice rules apply.
