@@ -35,4 +35,21 @@ describeIfPiston("PistonSandboxProvider (integration — requires PISTON_URL)", 
     });
     expect(res.killed_by).toBe("timeout");
   }, 30_000);
+
+  it("runs typescript console.log('hello') and returns expected stdout (STORY-008)", async () => {
+    const provider = new PistonSandboxProvider({
+      transport: new PistonHttpTransport({ baseUrl: baseUrl! }),
+    });
+    const res = await provider.run({
+      language: "typescript",
+      code: "console.log('hello')",
+      time_limit_ms: 10_000,
+      memory_limit_mb: 256,
+      output_limit_bytes: 64 * 1024,
+    });
+    expect(res.stdout.trim()).toBe("hello");
+    expect(res.exit_code).toBe(0);
+    expect(res.language).toBe("typescript");
+    expect(res.killed_by).toBeNull();
+  }, 30_000);
 });

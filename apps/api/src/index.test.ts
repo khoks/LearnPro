@@ -92,4 +92,28 @@ describe("apps/api", () => {
     expect(res.statusCode).toBe(400);
     await app.close();
   });
+
+  it("POST /sandbox/run accepts language=typescript (STORY-008)", async () => {
+    const sandbox = new FakeSandbox((req) => ({
+      stdout: "ts ok\n",
+      stderr: "",
+      exit_code: 0,
+      duration_ms: 8,
+      killed_by: null,
+      language: req.language,
+      runtime_version: "5.0.3",
+    }));
+    const app = buildServer({ sandbox });
+    const res = await app.inject({
+      method: "POST",
+      url: "/sandbox/run",
+      payload: { language: "typescript", code: "console.log('ts ok')" },
+    });
+    expect(res.statusCode).toBe(200);
+    const body = res.json() as SandboxRunResponse;
+    expect(body.language).toBe("typescript");
+    expect(body.stdout).toBe("ts ok\n");
+    expect(sandbox.lastReq?.language).toBe("typescript");
+    await app.close();
+  });
 });
