@@ -1,0 +1,8 @@
+# Code ownership.
+# https://docs.github.com/en/repositories/managing-your-repositories-settings-and-features/customizing-your-repository/about-code-owners
+#
+# Solo dev for now: @khoks owns everything.
+# When contributors join, replace `*` with path-scoped rules
+# (e.g. `apps/web/        @frontend-team`).
+
+*       @khoks
