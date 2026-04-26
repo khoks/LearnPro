@@ -64,3 +64,11 @@ docker-compose.override.yml
 .cache/
 tmp/
 *.log
+
+# --- Claude Code ---
+# Local-only settings overrides; team-wide settings.json IS committed.
+.claude/settings.local.json
+# Per-session marker files written by the Stop hook (see .claude/hooks/).
+.claude/state/
+# Local-only memory directory (auto-memory, see CLAUDE.md system prompt).
+.claude/memory/

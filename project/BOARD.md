@@ -1,13 +1,16 @@
 # LearnPro Board
 
-> **Last updated:** 2026-04-25 (EPIC-017 product grooming closed in full — Phases A + B + C done. MVP build is the next session.)
+> **Last updated:** 2026-04-25 (EPIC-018 repo automation underway — `harvest-knowledge` + `work-tracking` skills + Stop hook landed; STORY-051 in-progress.)
 > **How to read this:** This is the live status of every Epic, Story, and Task in the project. Hand-maintained for now (a regenerator script lives in the v1 backlog). When you change an item's `status:` frontmatter, also update the row here in the same commit.
 
 ---
 
 ## In Progress
 
-_(none — product grooming complete; pick a Story from "Up Next" to begin MVP build)_
+| ID | Title | Type | Phase | Priority | Est | Owner |
+|----|-------|------|-------|----------|-----|-------|
+| [EPIC-018](epics/EPIC-018-repo-automation.md) | Repo automation & Claude Code skills | epic | scaffolding | P1 | — | claude |
+| [STORY-051](stories/STORY-051-claude-skills-and-stop-hook.md) | `harvest-knowledge` + `work-tracking` skills + Stop hook | story | scaffolding | P1 | M | claude |
 
 ---
 
@@ -159,3 +162,4 @@ _(none)_
 | [EPIC-015](epics/EPIC-015-saas-readiness.md) | SaaS readiness primitives (`org_id`, adapters, data export) | backlog | mvp | P1 |
 | [EPIC-016](epics/EPIC-016-security-and-anti-cheat.md) | Security & anti-cheat | backlog | mvp | P0 |
 | [EPIC-017](epics/EPIC-017-product-discovery.md) | Product discovery, competitive positioning, and feature grooming | done | scaffolding | P0 |
+| [EPIC-018](epics/EPIC-018-repo-automation.md) | Repo automation & Claude Code skills | in-progress | scaffolding | P1 |

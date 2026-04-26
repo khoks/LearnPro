@@ -36,6 +36,22 @@ LearnPro is an adaptive, AI-tutored, self-hosted learning platform that teaches 
 - **MVP scope**: [`docs/roadmap/MVP.md`](./docs/roadmap/MVP.md).
 - **Phased roadmap**: [`docs/roadmap/ROADMAP.md`](./docs/roadmap/ROADMAP.md).
 - **Live work tracking**: [`project/BOARD.md`](./project/BOARD.md). **Read this every session before starting work.**
+- **Decisions log** (lighter-weight than ADRs): [`docs/decisions/DECISIONS_LOG.md`](./docs/decisions/DECISIONS_LOG.md). Maintained automatically by the `harvest-knowledge` skill.
+- **Novel / patentable ideas log**: [`docs/vision/NOVEL_IDEAS.md`](./docs/vision/NOVEL_IDEAS.md). Same skill maintains it.
+- **Product strategy docs**: [`docs/product/COMPETITIVE.md`](./docs/product/COMPETITIVE.md), [`docs/product/DIFFERENTIATORS.md`](./docs/product/DIFFERENTIATORS.md), [`docs/product/UX_DETAILS.md`](./docs/product/UX_DETAILS.md).
+
+---
+
+## Auto-housekeeping at session end
+
+A project-scoped `Stop` hook in [`.claude/settings.json`](./.claude/settings.json) blocks the first stop attempt of each session and reminds Claude to run two skills before ending:
+
+1. [**`harvest-knowledge`**](./.claude/skills/harvest-knowledge/SKILL.md) — extracts vision / architecture / decisions / novel ideas from the conversation and updates the matching docs.
+2. [**`work-tracking`**](./.claude/skills/work-tracking/SKILL.md) — sweeps the conversation for new requirements / scope / status changes and updates Epics / Stories / Tasks + `BOARD.md`.
+
+Once both have run (or you've explicitly skipped each with a one-line reason), `mkdir -p .claude/state && touch .claude/state/housekept-<session_id>` to release the hook so the session can stop. The hook also no-ops when `stop_hook_active=true` so it can never loop.
+
+If you change `.claude/settings.json` mid-session, open the `/hooks` menu once or restart Claude Code so the watcher picks it up.
 
 ---
 
