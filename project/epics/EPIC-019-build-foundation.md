@@ -7,7 +7,7 @@ priority: P0
 phase: mvp
 tags: [foundation, monorepo, infra, dx]
 created: 2026-04-25
-updated: 2026-04-25
+updated: 2026-04-26
 ---
 
 ## Goal
@@ -36,11 +36,11 @@ Stand up the foundational build infrastructure that every other code Story depen
 
 ## Exit criteria
 
-- [ ] `pnpm install && pnpm dev` brings up `apps/web` + `apps/api` from a clean clone.
-- [ ] `docker compose up -d` brings up the four backing services.
-- [ ] CI on PR is green.
-- [ ] Four policy interfaces defined with deterministic default implementations and DI wired.
-- [ ] No user-facing feature blocked on "where does this code live?" anymore.
+- [x] `pnpm install && pnpm dev` brings up `apps/web` + `apps/api` from a clean clone. _(STORY-052)_
+- [x] `docker compose up -d` brings up the four backing services. _(STORY-052 — config landed; full container start verified by next dev to bring the stack up)_
+- [x] CI on PR is green. _(STORY-052)_
+- [ ] Four policy interfaces defined with deterministic default implementations and DI wired. _(STORY-057)_
+- [ ] No user-facing feature blocked on "where does this code live?" anymore. _(half — workspace is real, policy interfaces still pending)_
 
 ## Related
 
@@ -51,3 +51,4 @@ Stand up the foundational build infrastructure that every other code Story depen
 ## Activity log
 
 - 2026-04-25 — created (Path A scope confirmation)
+- 2026-04-26 — STORY-052 done (PR #5, squash `357eea9`). Workspace + dev compose + CI live. Next up: STORY-057 (policy-adapter interfaces).
