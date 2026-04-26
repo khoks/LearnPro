@@ -8,7 +8,34 @@ Self-hosted-first, open-source under [BSL 1.1](./LICENSE) (auto-converts to Apac
 
 ## Status
 
-**Pre-MVP — scaffolding only.** No application code yet. The repo currently contains the vision, architecture, roadmap, and an in-repo project tracking system. MVP build kicks off next.
+**MVP build — foundation phase.** The monorepo skeleton + dev Docker stack are live ([STORY-052](./project/stories/STORY-052-monorepo-skeleton.md)). Application features land Story-by-Story per the [board](./project/BOARD.md).
+
+## Quick start (dev)
+
+Prerequisites: Node 20+ (pnpm enforced via `packageManager`), pnpm 9, Docker Desktop with the WSL2 backend on Windows (or Docker Engine on Linux/Mac).
+
+```bash
+# 1. Install dependencies (creates .pnpm-store + node_modules — both gitignored)
+pnpm install
+
+# 2. Start the local dev stack (Postgres+pgvector / Redis / MinIO / Piston)
+docker compose -f infra/docker/docker-compose.dev.yaml up -d
+
+# 3. Boot apps/web (port 3000) and apps/api (port 4000)
+pnpm dev
+```
+
+Smoke check:
+- Web: <http://localhost:3000> and <http://localhost:3000/health>
+- API: <http://localhost:4000/health>
+
+Single-command Windows variant:
+
+```powershell
+./scripts/windows/dev-up.ps1
+```
+
+(Mac / Linux: `./scripts/mac/dev-up.sh` or `./scripts/linux/dev-up.sh`.)
 
 ## Where to look
 
