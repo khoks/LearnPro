@@ -15,3 +15,8 @@ export {
   seedDemo,
   type SeedResult,
 } from "./seed.js";
+export {
+  DrizzleLLMTelemetrySink,
+  type DrizzleLLMTelemetrySinkOptions,
+} from "./llm-telemetry-sink.js";
+export { DrizzleUsageStore, type DrizzleUsageStoreOptions } from "./llm-usage-store.js";

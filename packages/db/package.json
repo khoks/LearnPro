@@ -18,6 +18,7 @@
     "db:seed": "tsx src/seed.ts"
   },
   "dependencies": {
+    "@learnpro/llm": "workspace:*",
     "drizzle-orm": "^0.36.4",
     "pg": "^8.13.1"
   },

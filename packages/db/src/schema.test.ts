@@ -2,7 +2,9 @@ import { getTableColumns, getTableName } from "drizzle-orm";
 import { getTableConfig } from "drizzle-orm/pg-core";
 import { describe, expect, it } from "vitest";
 import {
+  agent_calls,
   agentRoleEnum,
+  agentTaskEnum,
   ALL_TABLES,
   concepts,
   episodes,
@@ -87,6 +89,30 @@ describe("schema: enums", () => {
 
   it("submission_language is python + typescript (MVP scope)", () => {
     expect(submissionLanguageEnum.enumValues).toEqual(["python", "typescript"]);
+  });
+
+  it("agent_task mirrors LLMTelemetryEventSchema.task in @learnpro/llm", () => {
+    expect(agentTaskEnum.enumValues).toEqual(["complete", "stream", "embed", "tool_call"]);
+  });
+});
+
+describe("schema: agent_calls (telemetry sink target — STORY-012/060)", () => {
+  it("carries every LLMTelemetryEvent field needed for cost analytics", () => {
+    const cols = getTableColumns(agent_calls);
+    expect(cols.session_id).toBeDefined();
+    expect(cols.task).toBeDefined();
+    expect(cols.task.notNull).toBe(true);
+    expect(cols.cached_tokens).toBeDefined();
+    expect(cols.cost_usd).toBeDefined();
+    expect(cols.cost_usd.notNull).toBe(true);
+    expect(cols.pricing_version).toBeDefined();
+    expect(cols.pricing_version.notNull).toBe(true);
+    expect(cols.tool_used).toBeDefined();
+  });
+
+  it("cost_usd uses numeric for float-safe storage (precision 18, scale 8)", () => {
+    const cols = getTableColumns(agent_calls);
+    expect(cols.cost_usd.getSQLType()).toBe("numeric(18, 8)");
   });
 });
 

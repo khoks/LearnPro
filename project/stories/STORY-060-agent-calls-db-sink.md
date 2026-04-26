@@ -2,7 +2,7 @@
 id: STORY-060
 title: DB-backed `UsageStore` + `agent_calls` table (split from STORY-012)
 type: story
-status: backlog
+status: done
 priority: P0
 estimate: S
 parent: EPIC-004
@@ -37,16 +37,16 @@ Splitting this out keeps STORY-012 within its S estimate (interface + decorator 
 
 ## Acceptance criteria
 
-- [ ] `agent_calls` Drizzle migration lands in `packages/db` with all `LLMTelemetryEvent` fields + `id`, `org_id`, `created_at`.
-- [ ] `DrizzleLLMTelemetrySink` writes one row per event; failures are logged but never thrown.
-- [ ] `DrizzleUsageStore.today()` aggregates today's tokens per user against UTC midnight; covered by an integration test against a real Postgres (Docker Compose).
-- [ ] API exposes `GET /llm/usage/today` returning `{ used_tokens, limit_tokens, ratio }` for the authenticated user (used by the UI nag at >80%, friendly block at 100%).
-- [ ] When the budget is exceeded, the API responds 429 with `{ error: "daily_budget_exceeded", message: "..." }` rather than letting `TokenBudgetExceededError` leak as a 500.
-- [ ] Manual smoke: with `LEARNPRO_DAILY_TOKEN_LIMIT=100` and a real Anthropic key, hitting the playground twice triggers the friendly message on call #2.
+- [x] `agent_calls` Drizzle migration lands in `packages/db` with all `LLMTelemetryEvent` fields + `id`, `org_id`, `called_at`. Migration `0002_agent_calls_telemetry.sql` adds `session_id`, `task` (new `agent_task` enum: complete/stream/embed/tool_call), `cached_tokens`, `cost_usd numeric(18,8)`, `pricing_version`, `tool_used`. Existing columns (provider/model/role/prompt_version/input_tokens/output_tokens/latency_ms/ok/called_at/user_id/episode_id) carried forward from STORY-013.
+- [x] `DrizzleLLMTelemetrySink` writes one row per event; failures are logged but never thrown. Implemented in `packages/db/src/llm-telemetry-sink.ts` with a fire-and-forget `.catch(logger)` so a Postgres outage never takes down an LLM call. Optional fields are conditionally spread (no spurious `null` rows). `cost_usd` is passed as a string via `toFixed(8)` to avoid float64 round-trip through the pg driver.
+- [x] `DrizzleUsageStore.today()` aggregates today's tokens per user against UTC midnight; covered by an integration test against a real Postgres (Docker Compose). 5 integration tests in `llm-usage-store.test.ts`, gated by `DATABASE_URL` so `pnpm test` still passes in CI without a DB. Run locally: `DATABASE_URL=postgresql://learnpro:learnpro@localhost:5432/learnpro pnpm --filter @learnpro/db test`.
+- [ ] API exposes `GET /llm/usage/today` returning `{ used_tokens, limit_tokens, ratio }` for the authenticated user (used by the UI nag at >80%, friendly block at 100%). **Deferred to STORY-005** — needs a `user_id` from auth middleware. Spec'd in this Story's "Dependencies" as acceptable.
+- [ ] When the budget is exceeded, the API responds 429 with `{ error: "daily_budget_exceeded", message: "..." }` rather than letting `TokenBudgetExceededError` leak as a 500. **Deferred to STORY-005** — same auth dependency.
+- [ ] Manual smoke: with `LEARNPRO_DAILY_TOKEN_LIMIT=100` and a real Anthropic key, hitting the playground twice triggers the friendly message on call #2. **Deferred to STORY-005** — needs the API wiring above.
 
 ## Dependencies
 
-- Blocked by: STORY-005 (Auth.js — needs a `user_id` to attribute usage to) **or** a stub auth middleware that pins a fixed `user_id` for dev. Acceptable to land the table + sink without auth, with the API wiring deferred until STORY-005.
+- Blocked by: STORY-005 (Auth.js — needs a `user_id` to attribute usage to) **or** a stub auth middleware that pins a fixed `user_id` for dev. Acceptable to land the table + sink without auth, with the API wiring deferred until STORY-005. ✅ Took the latter path: table + sink + store land now, API wiring lands with STORY-005.
 - Blocks: nothing structural, but deferring it past 100 daily users would be expensive.
 
 ## Notes
@@ -56,3 +56,5 @@ Filed during STORY-012 close-out (2026-04-26). The interfaces (`UsageStore`, `LL
 ## Activity log
 
 - 2026-04-26 — created (split from STORY-012).
+- 2026-04-26 — picked up. Extended `agent_calls` table with the 6 STORY-012 columns + new `agent_task` enum (Drizzle migration `0002_agent_calls_telemetry.sql` auto-generated via `drizzle-kit generate` — diffs against the snapshot, no DB needed). Added `@learnpro/llm` workspace dep to `packages/db` so it can implement the interfaces. Built `DrizzleLLMTelemetrySink` (fire-and-forget insert, error-logged + swallowed, conditional optional spread, `cost_usd` as string for numeric precision) and `DrizzleUsageStore` (`today()` runs `sum(input + output) WHERE user_id = $1 AND called_at >= start_of_utc_day`; `record()` is intentionally a no-op since the sink is the single source of truth — otherwise every call would double-count). Tests: 6 unit tests for the sink (full mapping / optional-omit / org_id stamping / cost formatting / error swallowing / unparseable-decided_at fallback) + 5 integration tests for the store (zero-state / aggregation / yesterday boundary / per-user isolation / record no-op) gated by `DATABASE_URL`. Schema test extended to assert all new columns present + cost_usd is `numeric(18, 8)` + `agent_task` enum mirrors `LLMTelemetryEventSchema.task`.
+- 2026-04-26 — done. API wiring (3 ACs) deferred to STORY-005 per the in-spec dependency note.
