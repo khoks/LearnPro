@@ -1,4 +1,5 @@
 import { getTableColumns, getTableName } from "drizzle-orm";
+import { getTableConfig } from "drizzle-orm/pg-core";
 import { describe, expect, it } from "vitest";
 import {
   agentRoleEnum,
@@ -49,6 +50,13 @@ describe("schema: episodes.embedding (pgvector)", () => {
   it("episodes embedding column is nullable (filled lazily by reflection job)", () => {
     const cols = getTableColumns(episodes);
     expect(cols.embedding?.notNull).toBe(false);
+  });
+
+  it("declares an IVFFlat index on embedding using cosine ops (STORY-014)", () => {
+    const config = getTableConfig(episodes);
+    const ivfIndex = config.indexes.find((i) => i.config.name === "episodes_embedding_ivfflat_idx");
+    expect(ivfIndex, "IVFFlat index on episodes.embedding missing").toBeDefined();
+    expect(ivfIndex?.config.method).toBe("ivfflat");
   });
 });
 

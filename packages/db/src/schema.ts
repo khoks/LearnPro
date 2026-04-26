@@ -180,6 +180,9 @@ export const episodes = pgTable(
   (t) => ({
     user_started_idx: index("episodes_user_started_idx").on(t.user_id, t.started_at),
     problem_idx: index("episodes_problem_idx").on(t.problem_id),
+    embedding_ivfflat_idx: index("episodes_embedding_ivfflat_idx")
+      .using("ivfflat", t.embedding.op("vector_cosine_ops"))
+      .with({ lists: 100 }),
   }),
 );
 

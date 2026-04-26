@@ -1,6 +1,6 @@
 # LearnPro Board
 
-> **Last updated:** 2026-04-26 (STORY-013 done — Drizzle schema landed in PR #11 with 11 tables, pgvector embedding column, idempotent seed, 19 schema tests. EPIC-005 first feature done. Unblocks STORY-005 (auth) and STORY-014 (pgvector index).)
+> **Last updated:** 2026-04-26 (STORY-014 done — IVFFlat index on `episodes.embedding` (cosine ops, lists=100). Picking up STORY-007 next (Python sandbox runner via Piston).)
 > **How to read this:** This is the live status of every Epic, Story, and Task in the project. Hand-maintained for now (a regenerator script lives in the v1 backlog). When you change an item's `status:` frontmatter, also update the row here in the same commit.
 
 ---
@@ -35,7 +35,6 @@ Path A locked 2026-04-25. EPIC-019 (foundation) must land first since every othe
 | [STORY-010](stories/STORY-010-sandbox-hardening.md) | Verify sandbox hardening checklist (no-net, ro rootfs, cgroups, seccomp, non-root) | EPIC-003 | mvp | P0 | M |
 | [STORY-011](stories/STORY-011-tutor-agent-tools.md) | Tutor agent with `assign-problem` / `give-hint` / `grade` / `update-profile` tools | EPIC-004 | mvp | P0 | L |
 | [STORY-012](stories/STORY-012-cost-telemetry.md) | Per-call LLM cost & latency telemetry + per-user daily token budget | EPIC-004 | mvp | P0 | S |
-| [STORY-014](stories/STORY-014-pgvector-schema.md) | pgvector column on `episodes` (schema only — retrieval comes in v1) | EPIC-005 | mvp | P1 | XS |
 | [STORY-015](stories/STORY-015-session-plan.md) | Session plan agent (3–5 micro-objectives per session) | EPIC-006 | mvp | P0 | M |
 | [STORY-016](stories/STORY-016-seed-bank.md) | Curated seed problem bank (~30 Python + ~30 TS) with hidden tests | EPIC-007 | mvp | P0 | L |
 | [STORY-017](stories/STORY-017-hint-ladder.md) | 3-rung hint ladder | EPIC-007 | mvp | P0 | S |
@@ -97,6 +96,7 @@ STORY-013 (learner profile schema) landed 2026-04-26 (PR #11) — first feature 
 
 | ID | Title | Done |
 |----|-------|------|
+| [STORY-014](stories/STORY-014-pgvector-schema.md) | pgvector IVFFlat index on `episodes.embedding` (column landed in STORY-013) | 2026-04-26 |
 | [STORY-013](stories/STORY-013-learner-profile-schema.md) | Learner profile schema (per-concept skill, episodic log, `org_id` everywhere) | 2026-04-26 |
 | [STORY-009](stories/STORY-009-llm-gateway.md) | `LLMProvider` interface + Anthropic adapter | 2026-04-26 |
 | [EPIC-019](epics/EPIC-019-build-foundation.md) | Build foundation — monorepo, dev env, shared interfaces | 2026-04-26 |
