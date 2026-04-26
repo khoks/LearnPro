@@ -1,6 +1,6 @@
 # LearnPro Board
 
-> **Last updated:** 2026-04-26 (STORY-057 in-progress — policy-adapter interfaces + deterministic defaults; foundation Epic finishing.)
+> **Last updated:** 2026-04-26 (EPIC-019 closed — foundation done. Next: feature Stories under EPIC-002/003/004/005.)
 > **How to read this:** This is the live status of every Epic, Story, and Task in the project. Hand-maintained for now (a regenerator script lives in the v1 backlog). When you change an item's `status:` frontmatter, also update the row here in the same commit.
 
 ---
@@ -11,8 +11,6 @@
 |----|-------|------|-------|----------|-----|-------|
 | [EPIC-018](epics/EPIC-018-repo-automation.md) | Repo automation & Claude Code skills | epic | scaffolding | P1 | — | claude |
 | [STORY-051](stories/STORY-051-claude-skills-and-stop-hook.md) | `harvest-knowledge` + `work-tracking` skills + Stop hook | story | scaffolding | P1 | M | claude |
-| [EPIC-019](epics/EPIC-019-build-foundation.md) | Build foundation — monorepo, dev env, shared interfaces | epic | mvp | P0 | — | claude |
-| [STORY-057](stories/STORY-057-policy-adapter-interfaces.md) | Policy-adapter interfaces (`Scoring`/`Tone`/`Difficulty`/`Autonomy`) + deterministic defaults | story | mvp | P0 | L | claude |
 
 ---
 
@@ -97,10 +95,12 @@ These stories were filed during EPIC-017 Phase C from the expanded idea catalog 
 
 ## Recently Done
 
-Monorepo foundation landed 2026-04-26 (PR #5, STORY-052). GitHub repo + PR workflow landed 2026-04-25 (PR #1, STORY-058). EPIC-017 product grooming closed in full on 2026-04-25 (Phases A + B + C). EPIC-001 closed on 2026-04-25 (initial scaffolding commit `c1e17a1`). Phase A commit: `bbf7300`.
+EPIC-019 (foundation) closed 2026-04-26 with STORY-052 (monorepo skeleton, PR #5) and STORY-057 (policy adapters, PR #7). GitHub repo + PR workflow landed 2026-04-25 (PR #1, STORY-058). EPIC-017 product grooming closed in full on 2026-04-25 (Phases A + B + C). EPIC-001 closed on 2026-04-25 (initial scaffolding commit `c1e17a1`). Phase A commit: `bbf7300`.
 
 | ID | Title | Done |
 |----|-------|------|
+| [EPIC-019](epics/EPIC-019-build-foundation.md) | Build foundation — monorepo, dev env, shared interfaces | 2026-04-26 |
+| [STORY-057](stories/STORY-057-policy-adapter-interfaces.md) | Policy-adapter interfaces + deterministic defaults | 2026-04-26 |
 | [STORY-052](stories/STORY-052-monorepo-skeleton.md) | Monorepo skeleton + dev Docker Compose + CI | 2026-04-26 |
 | [STORY-058](stories/STORY-058-github-repo-and-pr-workflow.md) | GitHub repo + PR-based workflow + branch protection | 2026-04-25 |
 | [EPIC-017](epics/EPIC-017-product-discovery.md) | Product discovery, competitive positioning, and feature grooming | 2026-04-25 |
@@ -171,4 +171,4 @@ _(none)_
 | [EPIC-016](epics/EPIC-016-security-and-anti-cheat.md) | Security & anti-cheat | backlog | mvp | P0 |
 | [EPIC-017](epics/EPIC-017-product-discovery.md) | Product discovery, competitive positioning, and feature grooming | done | scaffolding | P0 |
 | [EPIC-018](epics/EPIC-018-repo-automation.md) | Repo automation & Claude Code skills | in-progress | scaffolding | P1 |
-| [EPIC-019](epics/EPIC-019-build-foundation.md) | Build foundation — monorepo, dev env, shared interfaces | in-progress | mvp | P0 |
+| [EPIC-019](epics/EPIC-019-build-foundation.md) | Build foundation — monorepo, dev env, shared interfaces | done | mvp | P0 |
