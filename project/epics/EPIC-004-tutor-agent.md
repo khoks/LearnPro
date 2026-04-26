@@ -47,6 +47,8 @@ Provide the LLM-powered tutor that drives the adaptive loop: assigns problems, g
 - STORY-011 — Implement `LLMProvider` interface + Anthropic adapter (MVP)
 - STORY-012 — Build tutor agent with 4 tools (MVP)
 - STORY-013 — Set up prompt registry + cost telemetry (MVP)
+- [STORY-053](../stories/STORY-053-conversational-onboarding-agent.md) — Conversational adaptive onboarding agent (MVP — replaces structured form from STORY-005)
+- [STORY-054](../stories/STORY-054-adaptive-autonomy-controller.md) — Adaptive autonomy controller (per-user confidence → ask-vs-act bands, MVP — deterministic banded version)
 
 ## Exit criteria (MVP)
 
@@ -80,3 +82,4 @@ The tutor identity, the question-vs-reveal heuristic, the frustration handler, a
 ## Activity log
 
 - 2026-04-25 — created
+- 2026-04-25 — Path A scope: added [STORY-053](../stories/STORY-053-conversational-onboarding-agent.md) (conversational onboarding) and [STORY-054](../stories/STORY-054-adaptive-autonomy-controller.md) (adaptive autonomy controller). Both are MVP-scope and use the policy-adapter interfaces from [STORY-057](../stories/STORY-057-policy-adapter-interfaces.md).

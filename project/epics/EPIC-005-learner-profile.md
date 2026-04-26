@@ -40,6 +40,7 @@ Without this, "adaptive" is hand-waving. With this, every other Epic has the sub
 
 - STORY-014 — Design profile schema (users, profiles, episodes, scores) (MVP)
 - STORY-015 — Implement skill graph schema (concepts + prerequisites) (MVP)
+- [STORY-055](../stories/STORY-055-rich-interaction-telemetry-schema.md) — Rich interaction telemetry schema + capture (MVP — `interactions` table feeds adaptive policies)
 
 ## Exit criteria (MVP)
 
@@ -72,3 +73,4 @@ Alternatives considered (single composite level, user-set self-rating, full grap
 ## Activity log
 
 - 2026-04-25 — created
+- 2026-04-25 — Path A scope: added [STORY-055](../stories/STORY-055-rich-interaction-telemetry-schema.md). Rich interaction telemetry (cursor focus, voice opt-in, edits/reverts) now MVP-critical — much cheaper to capture from day 1 than retrofit for v1 personalization.
