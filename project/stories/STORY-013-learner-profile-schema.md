@@ -2,14 +2,14 @@
 id: STORY-013
 title: Learner profile schema (per-concept skill, episodic log, org_id everywhere)
 type: story
-status: backlog
+status: in-progress
 priority: P0
 estimate: M
 parent: EPIC-005
 phase: mvp
 tags: [schema, drizzle, profile, postgres]
 created: 2026-04-25
-updated: 2026-04-25
+updated: 2026-04-26
 ---
 
 ## Description
@@ -46,3 +46,4 @@ Every table has `org_id NOT NULL DEFAULT 'self'` and a `created_at`. This is the
 ## Activity log
 
 - 2026-04-25 — created
+- 2026-04-26 — picked up; designing Drizzle schema (organizations, users, profiles, concepts, skill_scores, episodes with pgvector embedding column, tracks, problems, submissions, agent_calls, notifications) + initial migration + seed + `org_id NOT NULL DEFAULT 'self'` on every table.
