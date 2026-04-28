@@ -20,3 +20,7 @@ export {
   type DrizzleLLMTelemetrySinkOptions,
 } from "./llm-telemetry-sink.js";
 export { DrizzleUsageStore, type DrizzleUsageStoreOptions } from "./llm-usage-store.js";
+export {
+  DrizzleInteractionStore,
+  type DrizzleInteractionStoreOptions,
+} from "./interaction-store.js";

@@ -9,6 +9,8 @@ import {
   concepts,
   episodes,
   finalOutcomeEnum,
+  interactions,
+  interactionTypeEnum,
   notificationChannelEnum,
   notifications,
   ORG_SCOPED_TABLES,
@@ -94,6 +96,20 @@ describe("schema: enums", () => {
   it("agent_task mirrors LLMTelemetryEventSchema.task in @learnpro/llm", () => {
     expect(agentTaskEnum.enumValues).toEqual(["complete", "stream", "embed", "tool_call"]);
   });
+
+  it("interaction_type mirrors InteractionTypeSchema in @learnpro/shared (STORY-055)", () => {
+    expect(interactionTypeEnum.enumValues).toEqual([
+      "cursor_focus",
+      "voice",
+      "edit",
+      "revert",
+      "run",
+      "submit",
+      "hint_request",
+      "hint_received",
+      "autonomy_decision",
+    ]);
+  });
 });
 
 describe("schema: agent_calls (telemetry sink target — STORY-012/060)", () => {
@@ -113,6 +129,41 @@ describe("schema: agent_calls (telemetry sink target — STORY-012/060)", () => 
   it("cost_usd uses numeric for float-safe storage (precision 18, scale 8)", () => {
     const cols = getTableColumns(agent_calls);
     expect(cols.cost_usd.getSQLType()).toBe("numeric(18, 8)");
+  });
+});
+
+describe("schema: interactions (STORY-055 telemetry sink target)", () => {
+  it("carries id / org_id / user_id / episode_id / type / payload / t / created_at", () => {
+    const cols = getTableColumns(interactions);
+    expect(cols.id?.primary).toBe(true);
+    expect(cols.org_id?.notNull).toBe(true);
+    expect(cols.user_id).toBeDefined();
+    expect(cols.user_id?.notNull).toBe(false); // nullable until auth lands (STORY-005)
+    expect(cols.episode_id).toBeDefined();
+    expect(cols.episode_id?.notNull).toBe(false); // nullable for the playground (no episode flow yet)
+    expect(cols.type?.notNull).toBe(true);
+    expect(cols.payload?.notNull).toBe(true);
+    expect(cols.t?.notNull).toBe(true);
+    expect(cols.created_at?.notNull).toBe(true);
+  });
+
+  it("payload uses jsonb (per-event-type shape lives in the Zod discriminated union)", () => {
+    const cols = getTableColumns(interactions);
+    expect(cols.payload?.getSQLType()).toBe("jsonb");
+  });
+
+  it("declares (episode_id, t) and (user_id, t) indexes for tutor / per-user scans", () => {
+    const config = getTableConfig(interactions);
+    const names = config.indexes.map((i) => i.config.name);
+    expect(names).toContain("interactions_episode_t_idx");
+    expect(names).toContain("interactions_user_t_idx");
+  });
+
+  it("episodes carries an interactions_summary jsonb for fast tutor-time reads", () => {
+    const cols = getTableColumns(episodes);
+    expect(cols.interactions_summary).toBeDefined();
+    expect(cols.interactions_summary?.getSQLType()).toBe("jsonb");
+    expect(cols.interactions_summary?.notNull).toBe(false);
   });
 });
 

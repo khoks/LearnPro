@@ -22,6 +22,13 @@
       "when": 1777242828037,
       "tag": "0002_agent_calls_telemetry",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1777243626910,
+      "tag": "0003_interactions",
+      "breakpoints": true
     }
   ]
 }

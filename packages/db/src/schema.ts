@@ -52,6 +52,19 @@ export const submissionLanguageEnum = pgEnum("submission_language", ["python", "
 // Mirrors `LLMTelemetryEvent.task` in @learnpro/llm — the four entry points the gateway exposes.
 export const agentTaskEnum = pgEnum("agent_task", ["complete", "stream", "embed", "tool_call"]);
 
+// Mirrors `InteractionType` in @learnpro/shared — the 9 event kinds the client can emit.
+export const interactionTypeEnum = pgEnum("interaction_type", [
+  "cursor_focus",
+  "voice",
+  "edit",
+  "revert",
+  "run",
+  "submit",
+  "hint_request",
+  "hint_received",
+  "autonomy_decision",
+]);
+
 export const organizations = pgTable("organizations", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
@@ -180,6 +193,7 @@ export const episodes = pgTable(
     final_outcome: finalOutcomeEnum("final_outcome"),
     time_to_solve_ms: bigint("time_to_solve_ms", { mode: "number" }),
     embedding: vector("embedding", { dimensions: 1536 }),
+    interactions_summary: jsonb("interactions_summary"),
   },
   (t) => ({
     user_started_idx: index("episodes_user_started_idx").on(t.user_id, t.started_at),
@@ -236,6 +250,24 @@ export const agent_calls = pgTable(
   }),
 );
 
+export const interactions = pgTable(
+  "interactions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    org_id: orgId(),
+    user_id: uuid("user_id").references(() => users.id, { onDelete: "set null" }),
+    episode_id: uuid("episode_id").references(() => episodes.id, { onDelete: "cascade" }),
+    type: interactionTypeEnum("type").notNull(),
+    payload: jsonb("payload").notNull(),
+    t: timestamp("t", { withTimezone: true }).notNull().defaultNow(),
+    created_at: createdAt(),
+  },
+  (table) => ({
+    episode_t_idx: index("interactions_episode_t_idx").on(table.episode_id, table.t),
+    user_t_idx: index("interactions_user_t_idx").on(table.user_id, table.t),
+  }),
+);
+
 export const notifications = pgTable(
   "notifications",
   {
@@ -273,6 +305,8 @@ export type Submission = typeof submissions.$inferSelect;
 export type NewSubmission = typeof submissions.$inferInsert;
 export type AgentCall = typeof agent_calls.$inferSelect;
 export type NewAgentCall = typeof agent_calls.$inferInsert;
+export type Interaction = typeof interactions.$inferSelect;
+export type NewInteraction = typeof interactions.$inferInsert;
 export type Notification = typeof notifications.$inferSelect;
 export type NewNotification = typeof notifications.$inferInsert;
 
@@ -287,6 +321,7 @@ export const ALL_TABLES = [
   episodes,
   submissions,
   agent_calls,
+  interactions,
   notifications,
 ] as const;
 
@@ -300,6 +335,7 @@ export const ORG_SCOPED_TABLES = [
   episodes,
   submissions,
   agent_calls,
+  interactions,
   notifications,
 ] as const;
 
