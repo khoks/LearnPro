@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+export * from "./interactions.js";
+
 export const HealthPayloadSchema = z.object({
   ok: z.literal(true),
   service: z.string(),

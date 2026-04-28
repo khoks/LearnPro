@@ -4,6 +4,7 @@ import { useCallback, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import type { SandboxLanguage, SandboxRunResponse } from "@learnpro/sandbox";
 import { runSandbox, type RunSandboxResult } from "../../lib/run-sandbox";
+import { useInteractionCapture, type MonacoLikeEditor } from "../../lib/use-interaction-capture";
 import { statusFor } from "./status";
 
 const Editor = dynamic(() => import("@monaco-editor/react").then((m) => m.Editor), {
@@ -40,6 +41,8 @@ export function PlaygroundClient() {
   const [code, setCode] = useState<string>(STARTERS.python);
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState<RunSandboxResult | null>(null);
+  const [voiceOptIn, setVoiceOptIn] = useState(false);
+  const capture = useInteractionCapture();
 
   const onLanguageChange = useCallback((next: SandboxLanguage) => {
     setLanguage(next);
@@ -47,13 +50,31 @@ export function PlaygroundClient() {
     setResult(null);
   }, []);
 
+  const onEditorMount = useCallback(
+    (editor: unknown) => {
+      // Monaco's `IStandaloneCodeEditor` matches our structural `MonacoLikeEditor` shape.
+      capture.attach(editor as MonacoLikeEditor);
+    },
+    [capture],
+  );
+
   const onRun = useCallback(async () => {
     setRunning(true);
     setResult(null);
     const r = await runSandbox({ language, code });
     setResult(r);
     setRunning(false);
-  }, [language, code]);
+    if (r.ok) {
+      const dur = r.result.duration_ms;
+      // Sandbox returns `exit_code: null` when the process was killed (e.g. timeout). Stamp -1
+      // as a sentinel so the telemetry has a real number to aggregate on.
+      const exit_code = r.result.exit_code ?? -1;
+      capture.emit({
+        type: "run",
+        payload: dur !== null ? { language, exit_code, duration_ms: dur } : { language, exit_code },
+      });
+    }
+  }, [language, code, capture]);
 
   const status = useMemo(() => statusFor(result), [result]);
 
@@ -93,6 +114,18 @@ export function PlaygroundClient() {
         <span aria-live="polite" style={{ color: status.color, fontWeight: 600 }}>
           {status.label}
         </span>
+        <label
+          style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 6 }}
+          title="Voice capture is opt-in. Transcript ingestion lands once redaction is in place (STORY-056)."
+        >
+          <input
+            type="checkbox"
+            checked={voiceOptIn}
+            onChange={(e) => setVoiceOptIn(e.target.checked)}
+            aria-label="Enable voice capture (preview)"
+          />
+          <span style={{ fontSize: 13, color: "#555" }}>Voice (preview)</span>
+        </label>
       </div>
 
       <div
@@ -105,6 +138,7 @@ export function PlaygroundClient() {
           value={code}
           theme="vs-dark"
           onChange={(v) => setCode(v ?? "")}
+          onMount={onEditorMount}
           options={{
             minimap: { enabled: false },
             fontSize: 14,

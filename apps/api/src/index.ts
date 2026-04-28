@@ -1,5 +1,11 @@
 import Fastify from "fastify";
-import { healthPayload } from "@learnpro/shared";
+import {
+  healthPayload,
+  InteractionsBatchSchema,
+  type InteractionEvent,
+  type InteractionStore,
+  type StoredInteraction,
+} from "@learnpro/shared";
 import {
   buildPolicyRegistry,
   loadPolicyConfigFromEnv,
@@ -26,6 +32,16 @@ export interface BuildServerOptions {
   policies?: PolicyRegistry;
   llm?: LLMProvider;
   sandbox?: SandboxProvider;
+  interactionStore?: InteractionStore;
+}
+
+// Default impl when no store is provided — drops events on the floor. Useful for tests and
+// for the dev playground when no DB is configured. The DB-backed `DrizzleInteractionStore`
+// gets wired in once apps/api gets a DB client (post-STORY-005).
+class NoopInteractionStore implements InteractionStore {
+  async recordBatch(): Promise<void> {
+    // intentional drop
+  }
 }
 
 function defaultLLM(): LLMProvider {
@@ -67,6 +83,7 @@ export function buildServer(opts: BuildServerOptions = {}) {
     opts.policies ?? buildPolicyRegistry({ config: loadPolicyConfigFromEnv(process.env) });
   const llm = opts.llm ?? defaultLLM();
   const sandbox = opts.sandbox ?? defaultSandbox();
+  const interactionStore = opts.interactionStore ?? new NoopInteractionStore();
 
   app.get("/health", async () => healthPayload({ service: "api" }));
 
@@ -99,6 +116,33 @@ export function buildServer(opts: BuildServerOptions = {}) {
         return reply.code(502).send({ error: "sandbox_unavailable", message: err.message });
       }
       throw err;
+    }
+  });
+
+  // STORY-055 — batched ingestion of rich interaction telemetry (cursor focus / edits / reverts /
+  // run / submit / hint / autonomy decisions). Auth attribution lands with STORY-005; until then
+  // the route accepts anonymous events (`user_id` null) so the playground can ship telemetry today.
+  app.post("/v1/interactions", async (req, reply) => {
+    const parsed = InteractionsBatchSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return reply.code(400).send({ error: "invalid_request", issues: parsed.error.issues });
+    }
+    const now = new Date();
+    const stored: StoredInteraction[] = parsed.data.events.map((e: InteractionEvent) => ({
+      type: e.type,
+      payload: e.payload,
+      t: e.t ? new Date(e.t) : now,
+      user_id: null,
+      episode_id: e.episode_id ?? null,
+    }));
+    try {
+      await interactionStore.recordBatch(stored);
+      return reply.code(202).send({ accepted: stored.length });
+    } catch (err) {
+      req.log.error({ err }, "interaction store error");
+      return reply
+        .code(503)
+        .send({ error: "interactions_unavailable", message: "telemetry store rejected the batch" });
     }
   });
 

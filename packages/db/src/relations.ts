@@ -3,6 +3,7 @@ import {
   agent_calls,
   concepts,
   episodes,
+  interactions,
   notifications,
   organizations,
   problems,
@@ -19,6 +20,7 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   episodes: many(episodes),
   skill_scores: many(skill_scores),
   agent_calls: many(agent_calls),
+  interactions: many(interactions),
   notifications: many(notifications),
 }));
 
@@ -55,6 +57,7 @@ export const episodesRelations = relations(episodes, ({ one, many }) => ({
   problem: one(problems, { fields: [episodes.problem_id], references: [problems.id] }),
   submissions: many(submissions),
   agent_calls: many(agent_calls),
+  interactions: many(interactions),
 }));
 
 export const submissionsRelations = relations(submissions, ({ one }) => ({
@@ -64,6 +67,11 @@ export const submissionsRelations = relations(submissions, ({ one }) => ({
 export const agentCallsRelations = relations(agent_calls, ({ one }) => ({
   user: one(users, { fields: [agent_calls.user_id], references: [users.id] }),
   episode: one(episodes, { fields: [agent_calls.episode_id], references: [episodes.id] }),
+}));
+
+export const interactionsRelations = relations(interactions, ({ one }) => ({
+  user: one(users, { fields: [interactions.user_id], references: [users.id] }),
+  episode: one(episodes, { fields: [interactions.episode_id], references: [episodes.id] }),
 }));
 
 export const notificationsRelations = relations(notifications, ({ one }) => ({
