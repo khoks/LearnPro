@@ -2,6 +2,7 @@ import { getTableColumns, getTableName } from "drizzle-orm";
 import { getTableConfig } from "drizzle-orm/pg-core";
 import { describe, expect, it } from "vitest";
 import {
+  accounts,
   agent_calls,
   agentRoleEnum,
   agentTaskEnum,
@@ -18,11 +19,13 @@ import {
   problems,
   profiles,
   SELF_HOSTED_ORG_ID,
+  sessions,
   skill_scores,
   submissionLanguageEnum,
   submissions,
   tracks,
   users,
+  verificationTokens,
 } from "./schema.js";
 
 describe("schema: SaaS-readiness primitive (org_id everywhere)", () => {
@@ -226,5 +229,52 @@ describe("schema: SaaS-readiness invariants", () => {
       expect(orgId.notNull, `${getTableName(table)}.org_id must be NOT NULL`).toBe(true);
       expect(orgId.default, `${getTableName(table)}.org_id must default to 'self'`).toBe("self");
     }
+  });
+});
+
+describe("schema: Auth.js drizzle-adapter tables (STORY-005)", () => {
+  it("accounts mirrors @auth/drizzle-adapter columns with composite PK on (provider, providerAccountId)", () => {
+    const cols = getTableColumns(accounts);
+    expect(cols.userId?.notNull).toBe(true);
+    expect(cols.provider?.notNull).toBe(true);
+    expect(cols.providerAccountId?.notNull).toBe(true);
+    expect(cols.type?.notNull).toBe(true);
+    expect(cols.refresh_token).toBeDefined();
+    expect(cols.access_token).toBeDefined();
+    expect(cols.expires_at).toBeDefined();
+    expect(cols.token_type).toBeDefined();
+    expect(cols.scope).toBeDefined();
+    expect(cols.id_token).toBeDefined();
+    expect(cols.session_state).toBeDefined();
+  });
+
+  it("sessions has sessionToken PK + userId FK + expires (used by cross-app session lookup)", () => {
+    const cols = getTableColumns(sessions);
+    expect(cols.sessionToken?.primary).toBe(true);
+    expect(cols.userId?.notNull).toBe(true);
+    expect(cols.expires?.notNull).toBe(true);
+  });
+
+  it("verificationTokens has identifier + token + expires (used by email magic link)", () => {
+    const cols = getTableColumns(verificationTokens);
+    expect(cols.identifier?.notNull).toBe(true);
+    expect(cols.token?.notNull).toBe(true);
+    expect(cols.expires?.notNull).toBe(true);
+  });
+
+  it("users carries Auth.js-required name / emailVerified / image columns", () => {
+    const cols = getTableColumns(users);
+    expect(cols.name).toBeDefined();
+    expect(cols.emailVerified).toBeDefined();
+    expect(cols.image).toBeDefined();
+  });
+
+  it("auth tables (accounts/sessions/verificationTokens) are excluded from ORG_SCOPED_TABLES", () => {
+    expect(ORG_SCOPED_TABLES as readonly unknown[]).not.toContain(accounts);
+    expect(ORG_SCOPED_TABLES as readonly unknown[]).not.toContain(sessions);
+    expect(ORG_SCOPED_TABLES as readonly unknown[]).not.toContain(verificationTokens);
+    expect(ALL_TABLES).toContain(accounts);
+    expect(ALL_TABLES).toContain(sessions);
+    expect(ALL_TABLES).toContain(verificationTokens);
   });
 });

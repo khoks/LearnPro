@@ -13,6 +13,8 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
+    "@fastify/cookie": "^11.0.1",
+    "@learnpro/db": "workspace:^",
     "@learnpro/llm": "workspace:*",
     "@learnpro/sandbox": "workspace:*",
     "@learnpro/scoring": "workspace:*",

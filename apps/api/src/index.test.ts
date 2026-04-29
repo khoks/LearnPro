@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
 import type { InteractionStore, StoredInteraction } from "@learnpro/shared";
+import {
+  InMemoryUsageStore,
+  TokenBudgetExceededError,
+  type LLMProvider,
+} from "@learnpro/llm";
 import type { SandboxProvider, SandboxRunRequest, SandboxRunResponse } from "@learnpro/sandbox";
 import { buildServer } from "./index.js";
 

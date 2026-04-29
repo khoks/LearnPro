@@ -24,3 +24,9 @@ export {
   DrizzleInteractionStore,
   type DrizzleInteractionStoreOptions,
 } from "./interaction-store.js";
+export { bootstrapProfile, type BootstrapProfileOptions } from "./profile-bootstrap.js";
+export {
+  findSessionUser,
+  type FindSessionUserOptions,
+  type SessionUser,
+} from "./session-lookup.js";
