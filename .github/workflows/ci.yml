@@ -36,5 +36,8 @@ jobs:
       - name: Test
         run: pnpm test
 
+      - name: Build
+        run: pnpm --filter @learnpro/web build
+
       - name: Format check
         run: pnpm format:check
