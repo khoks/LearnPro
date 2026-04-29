@@ -70,14 +70,37 @@ services:
     restart: unless-stopped
 
   piston:
+    # Hardening posture per ADR-0002 / STORY-010. Piston *itself* needs network + a writable
+    # /piston volume for installed language packages, so we cannot drop those — but every other
+    # hardening lever is pulled here as defense-in-depth for the host.
+    #
+    # Per-execution isolation (no-net for the user program, ro rootfs, cgroup CPU/mem/pids,
+    # wall-clock kill, output cap, drop caps inside the run, non-root run-uid, seccomp on the
+    # spawned process) is enforced by Piston *internally* on each /api/v2/execute. The breakout
+    # suite in packages/sandbox/test/breakout/ verifies that enforcement against a live Piston
+    # when LEARNPRO_REQUIRE_PISTON=1; otherwise it runs structurally against a stub provider.
     image: ghcr.io/engineer-man/piston
     container_name: learnpro-piston
+    # Pin a non-root user inside the container. The Piston image creates a `piston` user; map to
+    # 1000:1000 to ensure non-root regardless of upstream defaults.
+    user: "1000:1000"
     ports:
       - "2000:2000"
     volumes:
       - piston-data:/piston
     tmpfs:
-      - /tmp
+      # tmpfs mounts vanish between container restarts (checklist item: tmpfs /tmp).
+      - /tmp:rw,size=64m,mode=1777
+    cap_drop:
+      - ALL
+    security_opt:
+      # Equivalent to --security-opt=no-new-privileges:true. Together with cap_drop=ALL this
+      # blocks setuid escalation inside the container.
+      - no-new-privileges:true
+    pids_limit: 256
+    mem_limit: 1g
+    cpus: 2.0
+    # We deliberately do NOT pass --privileged anywhere — STORY-010 AC-4 grep enforces this.
     restart: unless-stopped
 
 volumes:
