@@ -1,0 +1,38 @@
+slug: group-by-length
+name: Group strings by length
+language: python
+difficulty: 3
+track: python-fundamentals
+concept_tags:
+  - lists
+  - dicts
+  - dict-iteration
+expected_median_time_to_solve_ms: 210000
+statement: |
+  Write `solve(words)` that returns a dictionary mapping each length (as a
+  string, e.g. `"3"`) to the list of words of that length, preserving the
+  original order within each group.
+starter_code: |
+  def solve(words):
+      pass
+reference_solution: |
+  def solve(words):
+      out = {}
+      for w in words:
+          n = str(len(w))
+          out.setdefault(n, []).append(w)
+      return out
+public_examples:
+  - input: [["a", "bb", "cc", "ddd"]]
+    expected: {"1": ["a"], "2": ["bb", "cc"], "3": ["ddd"]}
+  - input: [["hi", "ok"]]
+    expected: {"2": ["hi", "ok"]}
+hidden_tests:
+  - input: [[]]
+    expected: {}
+  - input: [[""]]
+    expected: {"0": [""]}
+  - input: [["a", "b", "c"]]
+    expected: {"1": ["a", "b", "c"]}
+  - input: [["one", "two", "three", "four"]]
+    expected: {"3": ["one", "two"], "5": ["three"], "4": ["four"]}

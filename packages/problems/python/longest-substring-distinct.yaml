@@ -1,0 +1,48 @@
+slug: longest-substring-distinct
+name: Longest substring with distinct chars
+language: python
+difficulty: 4
+track: python-fundamentals
+concept_tags:
+  - strings
+  - dicts
+  - sliding-window
+expected_median_time_to_solve_ms: 480000
+statement: |
+  Write `solve(s)` that returns the length of the longest contiguous substring
+  of `s` containing no repeated characters.
+starter_code: |
+  def solve(s):
+      pass
+reference_solution: |
+  def solve(s):
+      last = {}
+      best = 0
+      lo = 0
+      for i, c in enumerate(s):
+          if c in last and last[c] >= lo:
+              lo = last[c] + 1
+          last[c] = i
+          if i - lo + 1 > best:
+              best = i - lo + 1
+      return best
+public_examples:
+  - input: "abcabcbb"
+    expected: 3
+  - input: "bbbbb"
+    expected: 1
+hidden_tests:
+  - input: ""
+    expected: 0
+  - input: "a"
+    expected: 1
+  - input: "pwwkew"
+    expected: 3
+  - input: "abcdef"
+    expected: 6
+  - input: "dvdf"
+    expected: 3
+  - input: "aabbcc"
+    expected: 2
+  - input: "tmmzuxt"
+    expected: 5

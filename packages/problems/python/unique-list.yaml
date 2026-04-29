@@ -1,0 +1,41 @@
+slug: unique-list
+name: Unique list (preserve order)
+language: python
+difficulty: 3
+track: python-fundamentals
+concept_tags:
+  - lists
+  - dicts
+  - sets
+expected_median_time_to_solve_ms: 150000
+statement: |
+  Write `solve(items)` that returns a new list containing only the first
+  occurrence of each element in `items`, preserving the original order.
+starter_code: |
+  def solve(items):
+      pass
+reference_solution: |
+  def solve(items):
+      seen = set()
+      out = []
+      for x in items:
+          if x not in seen:
+              seen.add(x)
+              out.append(x)
+      return out
+public_examples:
+  - input: [[1, 2, 1, 3, 2]]
+    expected: [1, 2, 3]
+  - input: [["a", "b", "a", "c"]]
+    expected: ["a", "b", "c"]
+hidden_tests:
+  - input: [[]]
+    expected: []
+  - input: [[1, 1, 1, 1]]
+    expected: [1]
+  - input: [[1, 2, 3]]
+    expected: [1, 2, 3]
+  - input: [[3, 1, 2, 3, 1, 2]]
+    expected: [3, 1, 2]
+  - input: [[0, -1, 0, -1, 0]]
+    expected: [0, -1]

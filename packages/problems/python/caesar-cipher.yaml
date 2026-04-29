@@ -1,0 +1,47 @@
+slug: caesar-cipher
+name: Caesar cipher
+language: python
+difficulty: 3
+track: python-fundamentals
+concept_tags:
+  - strings
+  - string-manipulation
+  - modulo
+expected_median_time_to_solve_ms: 300000
+statement: |
+  Write `solve(s, shift)` that returns the Caesar cipher of `s`, shifting each
+  letter forward by `shift` positions in the alphabet. Letter case is preserved.
+  Non-letter characters pass through unchanged. `shift` may be negative or
+  larger than 26.
+starter_code: |
+  def solve(s, shift):
+      pass
+reference_solution: |
+  def solve(s, shift):
+      out = []
+      for c in s:
+          if "a" <= c <= "z":
+              out.append(chr((ord(c) - ord("a") + shift) % 26 + ord("a")))
+          elif "A" <= c <= "Z":
+              out.append(chr((ord(c) - ord("A") + shift) % 26 + ord("A")))
+          else:
+              out.append(c)
+      return "".join(out)
+public_examples:
+  - input: ["abc", 1]
+    expected: "bcd"
+  - input: ["xyz", 3]
+    expected: "abc"
+hidden_tests:
+  - input: ["", 5]
+    expected: ""
+  - input: ["abc", 0]
+    expected: "abc"
+  - input: ["abc", 26]
+    expected: "abc"
+  - input: ["abc", -1]
+    expected: "zab"
+  - input: ["Hello, World!", 5]
+    expected: "Mjqqt, Btwqi!"
+  - input: ["abc", 27]
+    expected: "bcd"

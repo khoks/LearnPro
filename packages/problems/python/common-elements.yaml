@@ -1,0 +1,43 @@
+slug: common-elements
+name: Common elements
+language: python
+difficulty: 3
+track: python-fundamentals
+concept_tags:
+  - lists
+  - sets
+  - control-flow
+expected_median_time_to_solve_ms: 180000
+statement: |
+  Write `solve(a, b)` that returns the elements that appear in both lists `a`
+  and `b`, preserving the order from `a`. Each common element should appear
+  at most once in the output.
+starter_code: |
+  def solve(a, b):
+      pass
+reference_solution: |
+  def solve(a, b):
+      bs = set(b)
+      seen = set()
+      out = []
+      for x in a:
+          if x in bs and x not in seen:
+              out.append(x)
+              seen.add(x)
+      return out
+public_examples:
+  - input: [[1, 2, 3], [2, 3, 4]]
+    expected: [2, 3]
+  - input: [[1, 2, 3], [4, 5, 6]]
+    expected: []
+hidden_tests:
+  - input: [[], []]
+    expected: []
+  - input: [[1, 1, 2], [1, 1, 2]]
+    expected: [1, 2]
+  - input: [[1, 2, 3], []]
+    expected: []
+  - input: [[3, 1, 2], [2, 1, 3]]
+    expected: [3, 1, 2]
+  - input: [["a", "b", "c"], ["c", "a"]]
+    expected: ["a", "c"]

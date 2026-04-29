@@ -1,0 +1,38 @@
+slug: merge-dicts
+name: Merge two dictionaries
+language: python
+difficulty: 3
+track: python-fundamentals
+concept_tags:
+  - dicts
+  - dict-iteration
+expected_median_time_to_solve_ms: 180000
+statement: |
+  Write `solve(a, b)` that returns a new dict containing all key/value pairs from
+  both `a` and `b`. When the same key appears in both, the value from `b` should win.
+  The original dictionaries must not be mutated.
+starter_code: |
+  def solve(a, b):
+      pass
+reference_solution: |
+  def solve(a, b):
+      out = dict(a)
+      for k, v in b.items():
+          out[k] = v
+      return out
+public_examples:
+  - input: [{"a": 1}, {"b": 2}]
+    expected: {"a": 1, "b": 2}
+  - input: [{"a": 1}, {"a": 2}]
+    expected: {"a": 2}
+hidden_tests:
+  - input: [{}, {}]
+    expected: {}
+  - input: [{"x": 5}, {}]
+    expected: {"x": 5}
+  - input: [{}, {"y": 7}]
+    expected: {"y": 7}
+  - input: [{"a": 1, "b": 2}, {"b": 99, "c": 3}]
+    expected: {"a": 1, "b": 99, "c": 3}
+  - input: [{"k": "old"}, {"k": "new"}]
+    expected: {"k": "new"}

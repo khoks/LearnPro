@@ -1,0 +1,35 @@
+slug: sum-two-numbers
+name: Sum two numbers
+language: python
+difficulty: 1
+track: python-fundamentals
+concept_tags:
+  - variables
+  - arithmetic
+expected_median_time_to_solve_ms: 60000
+statement: |
+  Write a function `solve(a, b)` that returns the sum of two integers.
+
+  Example: `solve(2, 3)` returns `5`.
+starter_code: |
+  def solve(a, b):
+      pass
+reference_solution: |
+  def solve(a, b):
+      return a + b
+public_examples:
+  - input: [2, 3]
+    expected: 5
+  - input: [-1, 1]
+    expected: 0
+hidden_tests:
+  - input: [0, 0]
+    expected: 0
+  - input: [100, 250]
+    expected: 350
+  - input: [-50, -50]
+    expected: -100
+  - input: [2147483647, 1]
+    expected: 2147483648
+  - input: [-7, 7]
+    expected: 0

@@ -1,0 +1,38 @@
+slug: count-substring
+name: Count non-overlapping substring occurrences
+language: python
+difficulty: 3
+track: python-fundamentals
+concept_tags:
+  - strings
+  - string-manipulation
+expected_median_time_to_solve_ms: 180000
+statement: |
+  Write `solve(haystack, needle)` that returns the number of times `needle` appears
+  in `haystack` as a non-overlapping substring. If `needle` is empty, return `0`.
+starter_code: |
+  def solve(haystack, needle):
+      pass
+reference_solution: |
+  def solve(haystack, needle):
+      if not needle:
+          return 0
+      return haystack.count(needle)
+public_examples:
+  - input: ["abababa", "aba"]
+    expected: 2
+  - input: ["hello world", "o"]
+    expected: 2
+hidden_tests:
+  - input: ["", "x"]
+    expected: 0
+  - input: ["xyz", ""]
+    expected: 0
+  - input: ["aaaa", "aa"]
+    expected: 2
+  - input: ["abcabc", "abc"]
+    expected: 2
+  - input: ["mississippi", "issi"]
+    expected: 1
+  - input: ["banana", "na"]
+    expected: 2

@@ -1,0 +1,37 @@
+slug: sum-list
+name: Sum a list of integers
+language: python
+difficulty: 1
+track: python-fundamentals
+concept_tags:
+  - lists
+  - arithmetic
+expected_median_time_to_solve_ms: 60000
+statement: |
+  Write `solve(nums)` that returns the sum of all integers in `nums`.
+  An empty list sums to 0.
+starter_code: |
+  def solve(nums):
+      pass
+reference_solution: |
+  def solve(nums):
+      total = 0
+      for n in nums:
+          total += n
+      return total
+public_examples:
+  - input: [[1, 2, 3]]
+    expected: 6
+  - input: [[]]
+    expected: 0
+hidden_tests:
+  - input: [[10]]
+    expected: 10
+  - input: [[-5, 5]]
+    expected: 0
+  - input: [[100, 200, 300]]
+    expected: 600
+  - input: [[-1, -2, -3]]
+    expected: -6
+  - input: [[0, 0, 0, 0]]
+    expected: 0

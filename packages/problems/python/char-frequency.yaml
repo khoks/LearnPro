@@ -1,0 +1,38 @@
+slug: char-frequency
+name: Character frequency
+language: python
+difficulty: 3
+track: python-fundamentals
+concept_tags:
+  - strings
+  - dicts
+  - dict-iteration
+expected_median_time_to_solve_ms: 180000
+statement: |
+  Write `solve(s)` that returns a dictionary mapping each character in `s` to
+  the number of times it appears.
+starter_code: |
+  def solve(s):
+      pass
+reference_solution: |
+  def solve(s):
+      counts = {}
+      for c in s:
+          counts[c] = counts.get(c, 0) + 1
+      return counts
+public_examples:
+  - input: "abca"
+    expected: {"a": 2, "b": 1, "c": 1}
+  - input: "hello"
+    expected: {"h": 1, "e": 1, "l": 2, "o": 1}
+hidden_tests:
+  - input: ""
+    expected: {}
+  - input: "a"
+    expected: {"a": 1}
+  - input: "aaaa"
+    expected: {"a": 4}
+  - input: "ABab"
+    expected: {"A": 1, "B": 1, "a": 1, "b": 1}
+  - input: "  "
+    expected: {" ": 2}

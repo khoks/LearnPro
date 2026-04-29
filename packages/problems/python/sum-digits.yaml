@@ -1,0 +1,39 @@
+slug: sum-digits
+name: Sum of digits
+language: python
+difficulty: 2
+track: python-fundamentals
+concept_tags:
+  - arithmetic
+  - control-flow
+  - modulo
+expected_median_time_to_solve_ms: 120000
+statement: |
+  Write `solve(n)` that returns the sum of the decimal digits of the
+  non-negative integer `n`. For example, the digit sum of `123` is `6`.
+starter_code: |
+  def solve(n):
+      pass
+reference_solution: |
+  def solve(n):
+      total = 0
+      while n > 0:
+          total += n % 10
+          n //= 10
+      return total
+public_examples:
+  - input: 123
+    expected: 6
+  - input: 0
+    expected: 0
+hidden_tests:
+  - input: 9
+    expected: 9
+  - input: 10
+    expected: 1
+  - input: 99
+    expected: 18
+  - input: 1000000
+    expected: 1
+  - input: 99999
+    expected: 45
