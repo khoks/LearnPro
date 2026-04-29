@@ -42,4 +42,5 @@ LLM-generated **variants** of these seeds come in v1 once the eval harness can v
 
 ## Activity log
 
-- 2026-04-25 — created
+- 2026-04-25 — created.
+- 2026-04-28 — partial attempt via parallel-agent dispatch (alongside STORY-005 + STORY-010). Agent stopped mid-work due to usage cap. Salvaged WIP preserved on `origin/story/016-seed-problem-bank` (commit message starts `wip(problems): ...`). Shipped on that branch: full `packages/problems/` scaffold (Zod `ProblemDefSchema` with kebab-case slug + concept-tag enforcement, YAML loader with language-dir validation, `validateProblems` runner with Python + TS sandbox harnesses that emit `__LEARNPRO_PASS__` / `__LEARNPRO_FAIL__` verdict tokens), and 33 Python YAMLs covering variables / control flow / strings / lists / dicts / classes / errors / etc. **Still TODO:** ~30 TypeScript YAMLs, the test suite (schema parse / distribution / slug uniqueness / loader idempotency / reference-solution validation), `pnpm install` to materialize `js-yaml`. Resume from the WIP branch — do NOT restart.

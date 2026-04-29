@@ -8,6 +8,31 @@
 
 ---
 
+## 2026-04-28 — Parallel agent dispatch via worktrees: brief for cap-driven mid-work termination
+
+**Context:** Tried to pick up STORY-005 (auth), STORY-016 (seed bank), STORY-010 (sandbox hardening) in parallel by launching three `general-purpose` agents in `isolation: "worktree"` mode. All three hit a model-usage cap mid-work (the Anthropic-side daily allotment, not a project-side rate limit) and stopped before committing or pushing. STORY-010 left a fully-formed test suite in its worktree (38 tests, 13 files, hardened docker-compose) that the parent session was able to verify + ship as PR #21. STORY-016 left 33 Python YAMLs + complete Zod schema/loader/validator scaffold (no TS YAMLs, no tests) — preserved as a WIP commit on `origin/story/016-seed-problem-bank`. STORY-005 wrote substantial Auth.js + Drizzle-adapter + profile-bootstrap code into the parent worktree's working dir (worktree creation failed for that one) — preserved as a WIP commit on `origin/story/005-auth-and-profile-shell` with TODOs flagged in its body.
+
+**Decision:** When dispatching parallel agents that each implement a meaningful Story, brief them to:
+1. **Commit incrementally** (a "WIP" commit after each major section — schema, then loader, then tests — not just at the end). The harness preserves the worktree only if changes were made; nothing keeps an in-progress agent's uncommitted work safe from a cap-driven stop.
+2. **Push the WIP branch to origin early** so the work is recoverable even if the local worktree is later pruned.
+3. **Always check the worktree before declaring loss.** A "completed" agent task may mean "ran out of usage tokens" rather than "finished the work" — the tool result message is identical from the runtime's POV. Inspect `git worktree list` AND `git status` in the parent repo (the agent may have written outside the worktree if isolation silently failed) before re-launching.
+
+**Alternatives considered:**
+- **Sequential dispatch (one agent at a time)** — simpler bookkeeping, no cap-collapse risk, but loses the parallelism speedup that motivated the worktree pattern. Reject when budget allows parallelism; fall back to this when caps are tight.
+- **Smaller per-agent scope** — break each Story into pieces small enough to finish before the cap. Works but adds Story-tracker churn (more split STORY-NNN files). Acceptable for L+/XL Stories; over-engineering for S/M.
+- **Auto-resume on cap** — not currently a runtime feature. Would require an external watcher.
+
+**Consequences:**
+- (+) Future parallel batches preserve partial work even on cap collapse.
+- (+) Salvageability is the default, not a recovery exercise.
+- (−) Slight per-agent prompt overhead for the "commit incrementally" instructions.
+- Operational follow-up: STORY-010 landed; STORY-005 + STORY-016 sit on WIP branches awaiting their next session for completion.
+
+**Owner:** assistant — observed 2026-04-28 during the parallel-batch attempt.
+**Related:** STORY-010 (the one that landed despite the cap, via main-session salvage); STORY-005 + STORY-016 WIP branches; the harness `isolation: "worktree"` semantics.
+
+---
+
 ## 2026-04-25 — Path A: architecture-complete MVP, adaptive policies behind swappable interfaces
 
 **Context:** During the Path A vs. Path B Q&A, the user committed to several adaptive / GenAI-driven systems for the platform: GenAI evolutionary scoring (Q1E), multi-dimensional personalized difficulty (Q2A) and skill score (Q2B), conversational adaptive onboarding (Q1B), adaptive agentic autonomy (Q1C), adaptive tutor tone (Q1G), rich interaction telemetry (Q2G). Each is bigger than the original deterministic MVP scope. Shipping all of them *live* at MVP would mean ~6 months of build with no real user data to feed any of the adaptive systems — they would behave erratically until telemetry caught up.
