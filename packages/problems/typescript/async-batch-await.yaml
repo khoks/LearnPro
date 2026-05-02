@@ -1,0 +1,40 @@
+slug: async-batch-await
+name: Resolve async batch
+language: typescript
+difficulty: 4
+track: typescript-fundamentals
+concept_tags:
+  - async
+  - promises
+  - arrays
+expected_median_time_to_solve_ms: 360000
+statement: |
+  Write an async function `solve(values: number[]): Promise<number[]>` that
+  wraps each input number in a resolved promise, awaits them all in parallel
+  via `Promise.all`, and returns the doubled values in input order.
+starter_code: |
+  async function solve(values: number[]): Promise<number[]> {
+      // TODO
+      return [];
+  }
+reference_solution: |
+  async function solve(values: number[]): Promise<number[]> {
+      const promises = values.map((n) => Promise.resolve(n * 2));
+      return await Promise.all(promises);
+  }
+public_examples:
+  - input: [[1, 2, 3]]
+    expected: [2, 4, 6]
+  - input: [[]]
+    expected: []
+hidden_tests:
+  - input: [[0]]
+    expected: [0]
+  - input: [[5]]
+    expected: [10]
+  - input: [[-1, -2]]
+    expected: [-2, -4]
+  - input: [[10, 20, 30, 40]]
+    expected: [20, 40, 60, 80]
+  - input: [[100]]
+    expected: [200]
