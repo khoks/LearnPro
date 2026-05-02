@@ -307,10 +307,11 @@ describe("apps/api", () => {
         name: "fake-budget-blown",
         complete: async () => blow(),
         // The generator throws on entry, so the `yield` is unreachable — but ESLint's `require-yield`
-        // can't see that. Including a never-reached `yield` placates the rule without changing behavior.
+        // can't see that. Including a never-reached `yield` shaped like a real `StreamChunk`
+        // satisfies both the lint rule and the LLMProvider type.
         stream: async function* () {
           blow();
-          yield { type: "text", text: "" };
+          yield { delta: "", done: true };
         },
         embed: async () => blow(),
         toolCall: async () => blow(),
