@@ -78,3 +78,25 @@ describe("loadProblems — Python distribution", () => {
     expect(hard).toBeLessThanOrEqual(8);
   });
 });
+
+describe("loadProblems — TypeScript distribution", () => {
+  const ts = loadProblems().filter((p) => p.language === "typescript");
+
+  it("has at least 30 TypeScript problems", () => {
+    expect(ts.length).toBeGreaterThanOrEqual(30);
+  });
+
+  it("difficulty distribution roughly matches the spec (TypeScript)", () => {
+    const easy = ts.filter((p) => p.difficulty <= 2).length;
+    const mid = ts.filter((p) => p.difficulty === 3).length;
+    const hard = ts.filter((p) => p.difficulty >= 4).length;
+
+    // Spec target per language: ~10 L1-2, ~15 L3, ~5 L4-5; tolerance ±2 each side.
+    expect(easy, `expected ~10 L1-2 TypeScript problems (got ${easy})`).toBeGreaterThanOrEqual(8);
+    expect(easy).toBeLessThanOrEqual(13);
+    expect(mid, `expected ~15 L3 TypeScript problems (got ${mid})`).toBeGreaterThanOrEqual(11);
+    expect(mid).toBeLessThanOrEqual(17);
+    expect(hard, `expected ~5 L4-5 TypeScript problems (got ${hard})`).toBeGreaterThanOrEqual(3);
+    expect(hard).toBeLessThanOrEqual(8);
+  });
+});

@@ -1,0 +1,50 @@
+slug: binary-search-ts
+name: Binary search (TypeScript)
+language: typescript
+difficulty: 3
+track: typescript-fundamentals
+concept_tags:
+  - arrays
+  - control-flow
+  - algorithms
+expected_median_time_to_solve_ms: 300000
+statement: |
+  Write `solve(nums: number[], target: number): number` that returns the
+  index of `target` in the sorted array `nums` using binary search, or
+  `-1` if the target is not found. Do not use `nums.indexOf()`.
+starter_code: |
+  function solve(nums: number[], target: number): number {
+      // TODO
+      return -1;
+  }
+reference_solution: |
+  function solve(nums: number[], target: number): number {
+      let lo = 0;
+      let hi = nums.length - 1;
+      while (lo <= hi) {
+          const mid = (lo + hi) >> 1;
+          const v = nums[mid]!;
+          if (v === target) return mid;
+          if (v < target) lo = mid + 1;
+          else hi = mid - 1;
+      }
+      return -1;
+  }
+public_examples:
+  - input: [[1, 3, 5, 7, 9], 5]
+    expected: 2
+  - input: [[1, 3, 5, 7, 9], 4]
+    expected: -1
+hidden_tests:
+  - input: [[], 5]
+    expected: -1
+  - input: [[1], 1]
+    expected: 0
+  - input: [[1], 2]
+    expected: -1
+  - input: [[1, 2, 3, 4, 5], 1]
+    expected: 0
+  - input: [[1, 2, 3, 4, 5], 5]
+    expected: 4
+  - input: [[-10, -5, 0, 5, 10], 0]
+    expected: 2
