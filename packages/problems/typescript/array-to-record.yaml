@@ -1,0 +1,47 @@
+slug: array-to-record
+name: Array to record by id
+language: typescript
+difficulty: 3
+track: typescript-fundamentals
+concept_tags:
+  - arrays
+  - objects
+  - records
+expected_median_time_to_solve_ms: 210000
+statement: |
+  Given an array of items each with a unique numeric `id` field and a `name`
+  field, write `solve(items)` that returns a `Record<string, string>` mapping
+  each item's `id` (as a string) to its `name`.
+
+  Items have shape `{ id: number, name: string }`.
+starter_code: |
+  type Item = { id: number; name: string };
+  function solve(items: Item[]): Record<string, string> {
+      // TODO
+      return {};
+  }
+reference_solution: |
+  type Item = { id: number; name: string };
+  function solve(items: Item[]): Record<string, string> {
+      const out: Record<string, string> = {};
+      for (const it of items) {
+          out[String(it.id)] = it.name;
+      }
+      return out;
+  }
+public_examples:
+  - input: [[{"id": 1, "name": "alice"}, {"id": 2, "name": "bob"}]]
+    expected: {"1": "alice", "2": "bob"}
+  - input: [[]]
+    expected: {}
+hidden_tests:
+  - input: [[{"id": 0, "name": "zero"}]]
+    expected: {"0": "zero"}
+  - input: [[{"id": 99, "name": ""}]]
+    expected: {"99": ""}
+  - input: [[{"id": -1, "name": "neg"}, {"id": 1, "name": "pos"}]]
+    expected: {"-1": "neg", "1": "pos"}
+  - input: [[{"id": 1000000, "name": "big"}]]
+    expected: {"1000000": "big"}
+  - input: [[{"id": 1, "name": "a"}, {"id": 2, "name": "b"}, {"id": 3, "name": "c"}]]
+    expected: {"1": "a", "2": "b", "3": "c"}

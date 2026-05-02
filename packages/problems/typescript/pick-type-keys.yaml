@@ -1,0 +1,51 @@
+slug: pick-type-keys
+name: Pick keys from an object
+language: typescript
+difficulty: 3
+track: typescript-fundamentals
+concept_tags:
+  - objects
+  - records
+  - utility-types
+expected_median_time_to_solve_ms: 210000
+statement: |
+  Write `solve(obj, keys)` that returns a new `Record<string, unknown>`
+  containing only the entries whose keys appear in `keys`. Keys not present
+  in `obj` are ignored. Do not mutate `obj`.
+starter_code: |
+  function solve(
+      obj: Record<string, unknown>,
+      keys: string[],
+  ): Record<string, unknown> {
+      // TODO
+      return {};
+  }
+reference_solution: |
+  function solve(
+      obj: Record<string, unknown>,
+      keys: string[],
+  ): Record<string, unknown> {
+      const out: Record<string, unknown> = {};
+      for (const k of keys) {
+          if (Object.prototype.hasOwnProperty.call(obj, k)) {
+              out[k] = obj[k];
+          }
+      }
+      return out;
+  }
+public_examples:
+  - input: [{"a": 1, "b": 2, "c": 3}, ["a", "c"]]
+    expected: {"a": 1, "c": 3}
+  - input: [{"x": 9}, ["y"]]
+    expected: {}
+hidden_tests:
+  - input: [{}, []]
+    expected: {}
+  - input: [{}, ["a"]]
+    expected: {}
+  - input: [{"a": 1}, []]
+    expected: {}
+  - input: [{"a": null, "b": 2}, ["a"]]
+    expected: {"a": null}
+  - input: [{"a": 1, "b": 2}, ["a", "b", "c"]]
+    expected: {"a": 1, "b": 2}

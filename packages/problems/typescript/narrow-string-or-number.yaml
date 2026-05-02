@@ -1,0 +1,43 @@
+slug: narrow-string-or-number
+name: Narrow string or number
+language: typescript
+difficulty: 3
+track: typescript-fundamentals
+concept_tags:
+  - union-types
+  - narrowing
+  - type-guards
+expected_median_time_to_solve_ms: 180000
+statement: |
+  Write a function `solve(value: string | number): string` that uses a
+  `typeof` type guard. If `value` is a string, return its uppercase form;
+  if it is a number, return its string representation prefixed with `"#"`
+  (e.g. `42` becomes `"#42"`).
+starter_code: |
+  function solve(value: string | number): string {
+      // TODO
+      return "";
+  }
+reference_solution: |
+  function solve(value: string | number): string {
+      if (typeof value === "string") {
+          return value.toUpperCase();
+      }
+      return "#" + value.toString();
+  }
+public_examples:
+  - input: "hello"
+    expected: "HELLO"
+  - input: 42
+    expected: "#42"
+hidden_tests:
+  - input: ""
+    expected: ""
+  - input: 0
+    expected: "#0"
+  - input: "Mixed Case"
+    expected: "MIXED CASE"
+  - input: -1
+    expected: "#-1"
+  - input: "123"
+    expected: "123"

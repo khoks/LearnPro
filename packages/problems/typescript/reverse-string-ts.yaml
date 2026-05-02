@@ -1,0 +1,36 @@
+slug: reverse-string-ts
+name: Reverse a string (TypeScript)
+language: typescript
+difficulty: 1
+track: typescript-fundamentals
+concept_tags:
+  - strings
+  - string-manipulation
+expected_median_time_to_solve_ms: 60000
+statement: |
+  Write a function `solve(s: string): string` that returns `s` reversed.
+starter_code: |
+  function solve(s: string): string {
+      // TODO
+      return "";
+  }
+reference_solution: |
+  function solve(s: string): string {
+      return s.split("").reverse().join("");
+  }
+public_examples:
+  - input: "hello"
+    expected: "olleh"
+  - input: "abc"
+    expected: "cba"
+hidden_tests:
+  - input: ""
+    expected: ""
+  - input: "a"
+    expected: "a"
+  - input: "racecar"
+    expected: "racecar"
+  - input: "Hello, World!"
+    expected: "!dlroW ,olleH"
+  - input: "  spaces  "
+    expected: "  secaps  "
