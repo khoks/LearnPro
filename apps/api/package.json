@@ -16,6 +16,7 @@
     "@fastify/cookie": "^11.0.1",
     "@learnpro/db": "workspace:^",
     "@learnpro/llm": "workspace:*",
+    "@learnpro/prompts": "workspace:*",
     "@learnpro/sandbox": "workspace:*",
     "@learnpro/scoring": "workspace:*",
     "@learnpro/shared": "workspace:*",

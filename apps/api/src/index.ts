@@ -27,6 +27,7 @@ import {
   SandboxRunRequestSchema,
   type SandboxProvider,
 } from "@learnpro/sandbox";
+import { registerOnboardingRoute, type OnboardingProfileWriter } from "./onboarding.js";
 import type { SessionResolver } from "./session.js";
 
 const PORT = Number(process.env["PORT"] ?? 4000);
@@ -43,6 +44,10 @@ export interface BuildServerOptions {
   sessionResolver?: SessionResolver;
   usageStore?: UsageStore;
   dailyTokenLimit?: number;
+  // Optional persistence callback for the onboarding agent. When wired, captured profile fields
+  // are written through this hook (in apps/web → @learnpro/db.updateProfileFields). Tests inject
+  // a fake to assert the call shape.
+  onboardingProfileWriter?: OnboardingProfileWriter;
 }
 
 // Default impl when no store is provided — drops events on the floor. Useful for tests and
@@ -178,6 +183,18 @@ export function buildServer(opts: BuildServerOptions = {}) {
         .code(503)
         .send({ error: "interactions_unavailable", message: "telemetry store rejected the batch" });
     }
+  });
+
+  // STORY-053 — POST /v1/onboarding/turn. Conversational onboarding agent: orchestrates a
+  // multi-turn warm-coach chat, extracts profile-field updates per turn, gracefully exits when
+  // the user disengages or caps trip. Fallback to a deterministic 3-question form when
+  // LEARNPRO_DISABLE_ONBOARDING_LLM=1 keeps onboarding never-blocking even without an LLM key.
+  registerOnboardingRoute(app, {
+    llm,
+    sessionResolver,
+    ...(opts.onboardingProfileWriter !== undefined && {
+      profileWriter: opts.onboardingProfileWriter,
+    }),
   });
 
   // STORY-060 deferred AC — friendly 429 mapping for the per-user daily token budget. Any handler
