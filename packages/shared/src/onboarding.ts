@@ -17,7 +17,12 @@ export type LanguageComfortLevel = z.infer<typeof LanguageComfortLevelSchema>;
 export const ProfileFieldUpdatesSchema = z
   .object({
     target_role: z.string().min(1).max(120).nullable(),
-    time_budget_min: z.number().int().min(1).max(24 * 60).nullable(),
+    time_budget_min: z
+      .number()
+      .int()
+      .min(1)
+      .max(24 * 60)
+      .nullable(),
     primary_goal: z.string().min(1).max(280).nullable(),
     self_assessed_level: z.string().min(1).max(60).nullable(),
     language_comfort: z.record(z.string().min(1), LanguageComfortLevelSchema).nullable(),

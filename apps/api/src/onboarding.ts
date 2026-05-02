@@ -1,8 +1,4 @@
-import {
-  ANTHROPIC_HAIKU,
-  TokenBudgetExceededError,
-  type LLMProvider,
-} from "@learnpro/llm";
+import { ANTHROPIC_HAIKU, TokenBudgetExceededError, type LLMProvider } from "@learnpro/llm";
 import { ONBOARDING_PROMPT_VERSION, ONBOARDING_SYSTEM_PROMPT } from "@learnpro/prompts";
 import {
   MAX_ONBOARDING_TOKENS,
@@ -65,7 +61,8 @@ const FALLBACK_QUESTION_TARGET_ROLE =
   "What kind of role are you preparing for? (e.g. backend SWE intern, ML engineer, career switcher)";
 const FALLBACK_QUESTION_TIME_BUDGET =
   "How many minutes per day can you realistically practice? (5-1440)";
-const FALLBACK_QUESTION_PRIMARY_GOAL = "In one sentence — what do you most want to get out of LearnPro?";
+const FALLBACK_QUESTION_PRIMARY_GOAL =
+  "In one sentence — what do you most want to get out of LearnPro?";
 const FALLBACK_CLOSEOUT = "Got it — heading to your dashboard now.";
 
 interface FallbackTurn {
@@ -220,7 +217,8 @@ export function registerOnboardingRoute(
       req.log.warn({ err }, "onboarding LLM call failed — surfacing 503");
       return reply.code(503).send({
         error: "onboarding_unavailable",
-        message: "The onboarding coach is briefly unavailable. Try again, or skip to the dashboard.",
+        message:
+          "The onboarding coach is briefly unavailable. Try again, or skip to the dashboard.",
       });
     }
 

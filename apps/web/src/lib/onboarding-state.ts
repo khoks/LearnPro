@@ -17,10 +17,7 @@ export const SEED_GREETING: OnboardingMessage = {
 export const SKIP_USER_MESSAGE = "I'd rather start now.";
 
 // Append a user message + start the request payload that hits /api/onboarding/turn.
-export function appendUserMessage(
-  history: OnboardingMessage[],
-  text: string,
-): OnboardingMessage[] {
+export function appendUserMessage(history: OnboardingMessage[], text: string): OnboardingMessage[] {
   const trimmed = text.trim();
   if (!trimmed) return history;
   return [...history, { role: "user", content: trimmed }];

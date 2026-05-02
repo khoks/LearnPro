@@ -68,10 +68,10 @@ describe("POST /api/onboarding/turn (Next.js Route Handler)", () => {
 
   it("forwards the Auth.js session cookie upstream so apps/api can resolve the user", async () => {
     const fakeFetch = vi.fn().mockResolvedValue(
-      new Response(
-        JSON.stringify({ assistant_message: "ok", captured: {}, done: false }),
-        { status: 200, headers: { "content-type": "application/json" } },
-      ),
+      new Response(JSON.stringify({ assistant_message: "ok", captured: {}, done: false }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      }),
     );
     globalThis.fetch = fakeFetch as unknown as typeof fetch;
 
@@ -110,9 +110,7 @@ describe("POST /api/onboarding/turn (Next.js Route Handler)", () => {
       .fn()
       .mockRejectedValue(new Error("connect ECONNREFUSED")) as unknown as typeof fetch;
 
-    const res = await POST(
-      postRequest({ messages: [{ role: "user", content: "hi" }] }),
-    );
+    const res = await POST(postRequest({ messages: [{ role: "user", content: "hi" }] }));
     expect(res.status).toBe(502);
     const json = (await res.json()) as { error: string };
     expect(json.error).toBe("api_unreachable");
@@ -120,15 +118,13 @@ describe("POST /api/onboarding/turn (Next.js Route Handler)", () => {
 
   it("propagates upstream non-2xx status codes through to the client (e.g. 429 budget)", async () => {
     globalThis.fetch = vi.fn().mockResolvedValue(
-      new Response(
-        JSON.stringify({ error: "daily_budget_exceeded", message: "..." }),
-        { status: 429, headers: { "content-type": "application/json" } },
-      ),
+      new Response(JSON.stringify({ error: "daily_budget_exceeded", message: "..." }), {
+        status: 429,
+        headers: { "content-type": "application/json" },
+      }),
     ) as unknown as typeof fetch;
 
-    const res = await POST(
-      postRequest({ messages: [{ role: "user", content: "hi" }] }),
-    );
+    const res = await POST(postRequest({ messages: [{ role: "user", content: "hi" }] }));
     expect(res.status).toBe(429);
     const json = (await res.json()) as { error: string };
     expect(json.error).toBe("daily_budget_exceeded");
@@ -142,19 +138,17 @@ describe("POST /api/onboarding/turn (Next.js Route Handler)", () => {
       }),
     ) as unknown as typeof fetch;
 
-    const res = await POST(
-      postRequest({ messages: [{ role: "user", content: "hi" }] }),
-    );
+    const res = await POST(postRequest({ messages: [{ role: "user", content: "hi" }] }));
     expect(res.status).toBe(401);
   });
 
   it("defaults to http://localhost:4000 when LEARNPRO_API_URL is unset", async () => {
     delete process.env["LEARNPRO_API_URL"];
     const fakeFetch = vi.fn().mockResolvedValue(
-      new Response(
-        JSON.stringify({ assistant_message: "ok", captured: {}, done: false }),
-        { status: 200, headers: { "content-type": "application/json" } },
-      ),
+      new Response(JSON.stringify({ assistant_message: "ok", captured: {}, done: false }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      }),
     );
     globalThis.fetch = fakeFetch as unknown as typeof fetch;
 

@@ -41,10 +41,7 @@ export function OnboardingClient() {
   }, [done]);
 
   const applyTurnResponse = useCallback((response: OnboardingTurnResponse) => {
-    setMessages((prev) => [
-      ...prev,
-      { role: "assistant", content: response.assistant_message },
-    ]);
+    setMessages((prev) => [...prev, { role: "assistant", content: response.assistant_message }]);
     setSubmit({ status: "idle" });
     if (response.done) setDone(true);
   }, []);
