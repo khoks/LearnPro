@@ -1,12 +1,17 @@
 import { describe, it, expect } from "vitest";
 import type { InteractionStore, StoredInteraction } from "@learnpro/shared";
-import {
-  InMemoryUsageStore,
-  TokenBudgetExceededError,
-  type LLMProvider,
-} from "@learnpro/llm";
+import { InMemoryUsageStore, TokenBudgetExceededError, type LLMProvider } from "@learnpro/llm";
 import type { SandboxProvider, SandboxRunRequest, SandboxRunResponse } from "@learnpro/sandbox";
 import { buildServer } from "./index.js";
+import type { SessionResolver } from "./session.js";
+
+const userSession =
+  (user_id: string): SessionResolver =>
+  async () => ({
+    user_id,
+    org_id: "self",
+    email: `${user_id}@learnpro.local`,
+  });
 
 class FakeInteractionStore implements InteractionStore {
   public batches: StoredInteraction[][] = [];
@@ -228,6 +233,104 @@ describe("apps/api", () => {
       });
       expect(res.statusCode).toBe(202);
       expect(res.json()).toEqual({ accepted: 1 });
+      await app.close();
+    });
+
+    it("stamps user_id from the session resolver when the request is authenticated (STORY-005)", async () => {
+      const store = new FakeInteractionStore();
+      const app = buildServer({
+        sandbox: new FakeSandbox(),
+        interactionStore: store,
+        sessionResolver: userSession("11111111-1111-1111-1111-111111111111"),
+      });
+      const res = await app.inject({
+        method: "POST",
+        url: "/v1/interactions",
+        payload: { events: [{ type: "submit", payload: { passed: true } }] },
+      });
+      expect(res.statusCode).toBe(202);
+      const batch = store.batches[0]!;
+      expect(batch[0]!.user_id).toBe("11111111-1111-1111-1111-111111111111");
+      await app.close();
+    });
+  });
+
+  describe("GET /llm/usage/today (STORY-060 deferred AC, wired in STORY-005)", () => {
+    it("returns 401 when no session", async () => {
+      const app = buildServer({ sandbox: new FakeSandbox() });
+      const res = await app.inject({ method: "GET", url: "/llm/usage/today" });
+      expect(res.statusCode).toBe(401);
+      expect(res.json()).toEqual({ error: "unauthorized" });
+      await app.close();
+    });
+
+    it("returns the running daily total + ratio for an authenticated user", async () => {
+      const usage = new InMemoryUsageStore();
+      const userId = "22222222-2222-2222-2222-222222222222";
+      await usage.record(userId, 250);
+      await usage.record(userId, 350);
+      const app = buildServer({
+        sandbox: new FakeSandbox(),
+        sessionResolver: userSession(userId),
+        usageStore: usage,
+        dailyTokenLimit: 1000,
+      });
+      const res = await app.inject({ method: "GET", url: "/llm/usage/today" });
+      expect(res.statusCode).toBe(200);
+      expect(res.json()).toEqual({ used_tokens: 600, limit_tokens: 1000, ratio: 0.6 });
+      await app.close();
+    });
+
+    it("reports ratio=0 when limit_tokens=0 (self-hosted unlimited mode) — no divide-by-zero leak", async () => {
+      const usage = new InMemoryUsageStore();
+      const userId = "33333333-3333-3333-3333-333333333333";
+      await usage.record(userId, 9999);
+      const app = buildServer({
+        sandbox: new FakeSandbox(),
+        sessionResolver: userSession(userId),
+        usageStore: usage,
+        dailyTokenLimit: 0,
+      });
+      const res = await app.inject({ method: "GET", url: "/llm/usage/today" });
+      expect(res.statusCode).toBe(200);
+      expect(res.json()).toEqual({ used_tokens: 9999, limit_tokens: 0, ratio: 0 });
+      await app.close();
+    });
+  });
+
+  describe("TokenBudgetExceededError → 429 mapping (STORY-060 deferred AC, wired in STORY-005)", () => {
+    it("translates the error into 429 daily_budget_exceeded instead of leaking 500", async () => {
+      const blow = () => {
+        throw new TokenBudgetExceededError("55555555-5555-5555-5555-555555555555", 1200, 1000);
+      };
+      const llm: LLMProvider = {
+        name: "fake-budget-blown",
+        complete: async () => blow(),
+        // The generator throws on entry, so the `yield` is unreachable — but ESLint's `require-yield`
+        // can't see that. Including a never-reached `yield` placates the rule without changing behavior.
+        stream: async function* () {
+          blow();
+          yield { type: "text", text: "" };
+        },
+        embed: async () => blow(),
+        toolCall: async () => blow(),
+      };
+      const app = buildServer({ sandbox: new FakeSandbox(), llm });
+      // Surface the error path via a deliberately-failing test route — the error handler is global,
+      // so any thrown TokenBudgetExceededError gets mapped. We register a tiny one-off route.
+      app.get("/test/blow-budget", async () => {
+        await llm.complete({
+          messages: [{ role: "user", content: "ignored" }],
+          max_tokens: 8,
+          temperature: 0,
+        });
+        return { ok: true };
+      });
+      const res = await app.inject({ method: "GET", url: "/test/blow-budget" });
+      expect(res.statusCode).toBe(429);
+      const body = res.json() as { error: string; message: string };
+      expect(body.error).toBe("daily_budget_exceeded");
+      expect(body.message).toContain("1200/1000");
       await app.close();
     });
   });

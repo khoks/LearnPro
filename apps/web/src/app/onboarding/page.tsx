@@ -16,7 +16,7 @@ export default async function OnboardingPage() {
         <a href="https://github.com/khoks/LearnPro/blob/main/project/stories/STORY-053-conversational-onboarding-agent.md">
           STORY-053
         </a>
-        . For now, your profile shell exists but target_role isn't set yet.
+        . For now, your profile shell exists but target_role isn&apos;t set yet.
       </p>
       <SignOutButton />
     </main>

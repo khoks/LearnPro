@@ -70,5 +70,7 @@ tmp/
 .claude/settings.local.json
 # Per-session marker files written by the Stop hook (see .claude/hooks/).
 .claude/state/
+# Per-agent worktree checkouts (parent-session writes these via `Agent { isolation: "worktree" }`).
+.claude/worktrees/
 # Local-only memory directory (auto-memory, see CLAUDE.md system prompt).
 .claude/memory/

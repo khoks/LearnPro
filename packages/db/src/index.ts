@@ -24,7 +24,11 @@ export {
   DrizzleInteractionStore,
   type DrizzleInteractionStoreOptions,
 } from "./interaction-store.js";
-export { bootstrapProfile, type BootstrapProfileOptions } from "./profile-bootstrap.js";
+export {
+  bootstrapProfile,
+  getProfileTargetRole,
+  type BootstrapProfileOptions,
+} from "./profile-bootstrap.js";
 export {
   findSessionUser,
   type FindSessionUserOptions,

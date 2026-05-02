@@ -1,3 +1,4 @@
+import { eq } from "drizzle-orm";
 import type { LearnProDb } from "./client.js";
 import { profiles, SELF_HOSTED_ORG_ID } from "./schema.js";
 
@@ -18,4 +19,19 @@ export async function bootstrapProfile(opts: BootstrapProfileOptions): Promise<v
       org_id: opts.org_id ?? SELF_HOSTED_ORG_ID,
     })
     .onConflictDoNothing();
+}
+
+// Reads just enough of the profile to decide post-signin routing: whether onboarding is complete.
+// Returns `null` when no profile exists yet (brand-new user before bootstrap has run, or rare
+// race). Lives in @learnpro/db so apps/web doesn't need to depend on drizzle-orm directly.
+export async function getProfileTargetRole(
+  db: LearnProDb,
+  user_id: string,
+): Promise<{ target_role: string | null } | null> {
+  const rows = await db
+    .select({ target_role: profiles.target_role })
+    .from(profiles)
+    .where(eq(profiles.user_id, user_id))
+    .limit(1);
+  return rows[0] ?? null;
 }

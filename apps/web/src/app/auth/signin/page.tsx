@@ -20,7 +20,14 @@ export default async function SignInPage({
   const githubEnabled = isGithubAuthEnabled();
 
   return (
-    <main style={{ padding: "3rem 2rem", maxWidth: 420, margin: "0 auto", fontFamily: "system-ui, sans-serif" }}>
+    <main
+      style={{
+        padding: "3rem 2rem",
+        maxWidth: 420,
+        margin: "0 auto",
+        fontFamily: "system-ui, sans-serif",
+      }}
+    >
       <h1 style={{ marginBottom: "0.25rem" }}>Sign in to LearnPro</h1>
       <p style={{ color: "#666", marginTop: 0 }}>Pick the way you prefer.</p>
 
@@ -45,7 +52,12 @@ export default async function SignInPage({
           required
           placeholder="you@example.com"
           autoComplete="email"
-          style={{ padding: "0.55rem 0.7rem", fontSize: 14, border: "1px solid #ccc", borderRadius: 4 }}
+          style={{
+            padding: "0.55rem 0.7rem",
+            fontSize: 14,
+            border: "1px solid #ccc",
+            borderRadius: 4,
+          }}
         />
         <button
           type="submit"
