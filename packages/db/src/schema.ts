@@ -14,6 +14,7 @@ import {
   uniqueIndex,
   uuid,
   vector,
+  type AnyPgColumn,
 } from "drizzle-orm/pg-core";
 
 export const SELF_HOSTED_ORG_ID = "self";
@@ -71,18 +72,68 @@ export const organizations = pgTable("organizations", {
   created_at: createdAt(),
 });
 
+// Columns named to match `@auth/drizzle-adapter`'s default Postgres schema (`name`, `emailVerified`,
+// `image`) so the adapter writes through without a custom mapping. `org_id` / `github_id` /
+// `created_at` are LearnPro-specific extensions; the adapter ignores them.
 export const users = pgTable(
   "users",
   {
     id: uuid("id").primaryKey().defaultRandom(),
     org_id: orgId(),
     email: text("email").notNull(),
+    name: text("name"),
+    emailVerified: timestamp("emailVerified", { mode: "date", withTimezone: true }),
+    image: text("image"),
     github_id: text("github_id"),
     created_at: createdAt(),
   },
   (t) => ({
     email_uniq: uniqueIndex("users_email_uniq").on(t.org_id, t.email),
     github_uniq: uniqueIndex("users_github_uniq").on(t.github_id),
+  }),
+);
+
+// `@auth/drizzle-adapter` Postgres tables. Column names + types must match exactly so the
+// adapter works without a custom mapping. See https://authjs.dev/getting-started/adapters/drizzle.
+export const accounts = pgTable(
+  "accounts",
+  {
+    userId: uuid("userId")
+      .notNull()
+      .references((): AnyPgColumn => users.id, { onDelete: "cascade" }),
+    type: text("type").notNull(),
+    provider: text("provider").notNull(),
+    providerAccountId: text("providerAccountId").notNull(),
+    refresh_token: text("refresh_token"),
+    access_token: text("access_token"),
+    expires_at: integer("expires_at"),
+    token_type: text("token_type"),
+    scope: text("scope"),
+    id_token: text("id_token"),
+    session_state: text("session_state"),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.provider, t.providerAccountId] }),
+  }),
+);
+
+export const sessions = pgTable("sessions", {
+  sessionToken: text("sessionToken").primaryKey(),
+  userId: uuid("userId")
+    .notNull()
+    .references((): AnyPgColumn => users.id, { onDelete: "cascade" }),
+  expires: timestamp("expires", { mode: "date", withTimezone: true }).notNull(),
+});
+
+export const verificationTokens = pgTable(
+  "verificationTokens",
+  {
+    identifier: text("identifier").notNull(),
+    token: text("token").notNull(),
+    expires: timestamp("expires", { mode: "date", withTimezone: true }).notNull(),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.identifier, t.token] }),
   }),
 );
 
@@ -289,6 +340,12 @@ export const notifications = pgTable(
 
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
+export type Account = typeof accounts.$inferSelect;
+export type NewAccount = typeof accounts.$inferInsert;
+export type Session = typeof sessions.$inferSelect;
+export type NewSession = typeof sessions.$inferInsert;
+export type VerificationToken = typeof verificationTokens.$inferSelect;
+export type NewVerificationToken = typeof verificationTokens.$inferInsert;
 export type Profile = typeof profiles.$inferSelect;
 export type NewProfile = typeof profiles.$inferInsert;
 export type Concept = typeof concepts.$inferSelect;
@@ -313,6 +370,9 @@ export type NewNotification = typeof notifications.$inferInsert;
 export const ALL_TABLES = [
   organizations,
   users,
+  accounts,
+  sessions,
+  verificationTokens,
   profiles,
   concepts,
   skill_scores,
@@ -325,6 +385,9 @@ export const ALL_TABLES = [
   notifications,
 ] as const;
 
+// Auth.js tables (`accounts`, `sessions`, `verificationTokens`) are intentionally NOT in this
+// list — their column names are fixed by the adapter contract and they don't carry `org_id`.
+// Tenant attribution for an Auth.js-created user happens via the `users.org_id` row.
 export const ORG_SCOPED_TABLES = [
   users,
   profiles,

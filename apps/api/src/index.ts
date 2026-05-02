@@ -14,8 +14,11 @@ import {
 import {
   AnthropicSdkTransport,
   buildLLMProvider,
+  InMemoryUsageStore,
   loadLLMConfigFromEnv,
+  TokenBudgetExceededError,
   type LLMProvider,
+  type UsageStore,
 } from "@learnpro/llm";
 import {
   buildSandboxProvider,
@@ -24,6 +27,7 @@ import {
   SandboxRunRequestSchema,
   type SandboxProvider,
 } from "@learnpro/sandbox";
+import type { SessionResolver } from "./session.js";
 
 const PORT = Number(process.env["PORT"] ?? 4000);
 const HOST = process.env["HOST"] ?? "0.0.0.0";
@@ -33,11 +37,17 @@ export interface BuildServerOptions {
   llm?: LLMProvider;
   sandbox?: SandboxProvider;
   interactionStore?: InteractionStore;
+  // Authentication is owned by apps/web (Auth.js). apps/api validates sessions by reading the
+  // shared `sessions` table directly — see buildSessionResolver in ./session.ts. Defaults to
+  // `() => null` so existing tests stay anonymous.
+  sessionResolver?: SessionResolver;
+  usageStore?: UsageStore;
+  dailyTokenLimit?: number;
 }
 
 // Default impl when no store is provided — drops events on the floor. Useful for tests and
 // for the dev playground when no DB is configured. The DB-backed `DrizzleInteractionStore`
-// gets wired in once apps/api gets a DB client (post-STORY-005).
+// gets wired in once apps/api gets a DB client.
 class NoopInteractionStore implements InteractionStore {
   async recordBatch(): Promise<void> {
     // intentional drop
@@ -77,6 +87,8 @@ function defaultSandbox(): SandboxProvider {
   return buildSandboxProvider({ config });
 }
 
+const NULL_SESSION: SessionResolver = async () => null;
+
 export function buildServer(opts: BuildServerOptions = {}) {
   const app = Fastify({ logger: true });
   const policies =
@@ -84,6 +96,10 @@ export function buildServer(opts: BuildServerOptions = {}) {
   const llm = opts.llm ?? defaultLLM();
   const sandbox = opts.sandbox ?? defaultSandbox();
   const interactionStore = opts.interactionStore ?? new NoopInteractionStore();
+  const sessionResolver = opts.sessionResolver ?? NULL_SESSION;
+  const usageStore = opts.usageStore ?? new InMemoryUsageStore();
+  const dailyTokenLimit =
+    opts.dailyTokenLimit ?? Number(process.env["LEARNPRO_DAILY_TOKEN_LIMIT"] ?? 0);
 
   app.get("/health", async () => healthPayload({ service: "api" }));
 
@@ -97,6 +113,23 @@ export function buildServer(opts: BuildServerOptions = {}) {
   app.get("/llm", async () => ({
     provider: llm.name,
   }));
+
+  // STORY-060 deferred AC — wired here in STORY-005 once auth was in place. Returns the user's
+  // running daily token total against the configured limit. `limit_tokens: 0` means unlimited
+  // (self-hosted default); `ratio` clamps to 1 in that case so callers don't divide by zero.
+  app.get("/llm/usage/today", async (req, reply) => {
+    const session = await sessionResolver(req);
+    if (!session) {
+      return reply.code(401).send({ error: "unauthorized" });
+    }
+    const used = await usageStore.today(session.user_id);
+    const ratio = dailyTokenLimit === 0 ? 0 : used / dailyTokenLimit;
+    return reply.code(200).send({
+      used_tokens: used,
+      limit_tokens: dailyTokenLimit,
+      ratio,
+    });
+  });
 
   app.get("/sandbox", async () => ({
     provider: sandbox.name,
@@ -119,20 +152,21 @@ export function buildServer(opts: BuildServerOptions = {}) {
     }
   });
 
-  // STORY-055 — batched ingestion of rich interaction telemetry (cursor focus / edits / reverts /
-  // run / submit / hint / autonomy decisions). Auth attribution lands with STORY-005; until then
-  // the route accepts anonymous events (`user_id` null) so the playground can ship telemetry today.
+  // STORY-055 — batched ingestion of rich interaction telemetry. STORY-005 wires the user_id
+  // from the cross-app session lookup; unauthenticated requests still pass through as null.
   app.post("/v1/interactions", async (req, reply) => {
     const parsed = InteractionsBatchSchema.safeParse(req.body);
     if (!parsed.success) {
       return reply.code(400).send({ error: "invalid_request", issues: parsed.error.issues });
     }
+    const session = await sessionResolver(req);
+    const userId = session?.user_id ?? null;
     const now = new Date();
     const stored: StoredInteraction[] = parsed.data.events.map((e: InteractionEvent) => ({
       type: e.type,
       payload: e.payload,
       t: e.t ? new Date(e.t) : now,
-      user_id: null,
+      user_id: userId,
       episode_id: e.episode_id ?? null,
     }));
     try {
@@ -144,6 +178,26 @@ export function buildServer(opts: BuildServerOptions = {}) {
         .code(503)
         .send({ error: "interactions_unavailable", message: "telemetry store rejected the batch" });
     }
+  });
+
+  // STORY-060 deferred AC — friendly 429 mapping for the per-user daily token budget. Any handler
+  // that calls into the LLM provider can throw `TokenBudgetExceededError`; this hook catches it
+  // before Fastify's default 500 path so the playground can render the friendly message AC from
+  // STORY-012. Non-budget errors fall through to Fastify's default error formatter.
+  app.setErrorHandler((err, req, reply) => {
+    if (err instanceof TokenBudgetExceededError) {
+      req.log.warn({ user_id: err.user_id, used: err.used, limit: err.limit }, "daily budget hit");
+      return reply.code(429).send({
+        error: "daily_budget_exceeded",
+        message: `Daily token budget reached (${err.used}/${err.limit}). Resets at UTC midnight.`,
+      });
+    }
+    req.log.error({ err }, "unhandled error");
+    const status =
+      err && typeof err === "object" && "statusCode" in err && typeof err.statusCode === "number"
+        ? err.statusCode
+        : 500;
+    return reply.code(status).send({ error: "internal_error" });
   });
 
   return app;
