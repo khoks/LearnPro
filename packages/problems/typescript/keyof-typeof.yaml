@@ -29,18 +29,18 @@ reference_solution: |
       return obj[key];
   }
 public_examples:
-  - input: [{"a": 1, "b": 2}, "a"]
+  - input: [{ "a": 1, "b": 2 }, "a"]
     expected: 1
-  - input: [{"name": "alice"}, "name"]
+  - input: [{ "name": "alice" }, "name"]
     expected: "alice"
 hidden_tests:
-  - input: [{"x": 0}, "x"]
+  - input: [{ "x": 0 }, "x"]
     expected: 0
-  - input: [{"flag": true}, "flag"]
+  - input: [{ "flag": true }, "flag"]
     expected: true
-  - input: [{"a": null}, "a"]
+  - input: [{ "a": null }, "a"]
     expected: null
-  - input: [{"k": "v", "n": 9}, "n"]
+  - input: [{ "k": "v", "n": 9 }, "n"]
     expected: 9
-  - input: [{"deep": [1, 2]}, "deep"]
+  - input: [{ "deep": [1, 2] }, "deep"]
     expected: [1, 2]

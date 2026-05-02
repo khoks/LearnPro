@@ -118,7 +118,6 @@ describe.skipIf(!REQUIRE_PISTON)(
         const failed = results.filter((r) => !r.passed);
         for (const r of failed) {
           // Surface the first failure detail so a regression is easy to read.
-          // eslint-disable-next-line no-console
           console.error(`[${r.language}/${r.slug}]`, r.failures.slice(0, 2));
         }
         expect(failed).toEqual([]);

@@ -24,15 +24,15 @@ reference_solution: |
       return out
 public_examples:
   - input: [["a", "bb", "cc", "ddd"]]
-    expected: {"1": ["a"], "2": ["bb", "cc"], "3": ["ddd"]}
+    expected: { "1": ["a"], "2": ["bb", "cc"], "3": ["ddd"] }
   - input: [["hi", "ok"]]
-    expected: {"2": ["hi", "ok"]}
+    expected: { "2": ["hi", "ok"] }
 hidden_tests:
   - input: [[]]
     expected: {}
   - input: [[""]]
-    expected: {"0": [""]}
+    expected: { "0": [""] }
   - input: [["a", "b", "c"]]
-    expected: {"1": ["a", "b", "c"]}
+    expected: { "1": ["a", "b", "c"] }
   - input: [["one", "two", "three", "four"]]
-    expected: {"3": ["one", "two"], "5": ["three"], "4": ["four"]}
+    expected: { "3": ["one", "two"], "5": ["three"], "4": ["four"] }

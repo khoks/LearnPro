@@ -34,18 +34,18 @@ reference_solution: |
       return out;
   }
 public_examples:
-  - input: [{"a": 1, "b": 2, "c": 3}, ["a", "c"]]
-    expected: {"a": 1, "c": 3}
-  - input: [{"x": 9}, ["y"]]
+  - input: [{ "a": 1, "b": 2, "c": 3 }, ["a", "c"]]
+    expected: { "a": 1, "c": 3 }
+  - input: [{ "x": 9 }, ["y"]]
     expected: {}
 hidden_tests:
   - input: [{}, []]
     expected: {}
   - input: [{}, ["a"]]
     expected: {}
-  - input: [{"a": 1}, []]
+  - input: [{ "a": 1 }, []]
     expected: {}
-  - input: [{"a": null, "b": 2}, ["a"]]
-    expected: {"a": null}
-  - input: [{"a": 1, "b": 2}, ["a", "b", "c"]]
-    expected: {"a": 1, "b": 2}
+  - input: [{ "a": null, "b": 2 }, ["a"]]
+    expected: { "a": null }
+  - input: [{ "a": 1, "b": 2 }, ["a", "b", "c"]]
+    expected: { "a": 1, "b": 2 }

@@ -25,18 +25,18 @@ reference_solution: |
       return { ...user, ...patch };
   }
 public_examples:
-  - input: [{"id": 1, "name": "alice", "active": true}, {"name": "alicia"}]
-    expected: {"id": 1, "name": "alicia", "active": true}
-  - input: [{"id": 1, "name": "alice", "active": true}, {}]
-    expected: {"id": 1, "name": "alice", "active": true}
+  - input: [{ "id": 1, "name": "alice", "active": true }, { "name": "alicia" }]
+    expected: { "id": 1, "name": "alicia", "active": true }
+  - input: [{ "id": 1, "name": "alice", "active": true }, {}]
+    expected: { "id": 1, "name": "alice", "active": true }
 hidden_tests:
-  - input: [{"id": 0, "name": "", "active": false}, {"id": 5}]
-    expected: {"id": 5, "name": "", "active": false}
-  - input: [{"id": 1, "name": "a", "active": true}, {"active": false}]
-    expected: {"id": 1, "name": "a", "active": false}
-  - input: [{"id": 1, "name": "a", "active": true}, {"id": 2, "name": "b", "active": false}]
-    expected: {"id": 2, "name": "b", "active": false}
-  - input: [{"id": 1, "name": "x", "active": true}, {"name": ""}]
-    expected: {"id": 1, "name": "", "active": true}
-  - input: [{"id": -1, "name": "neg", "active": false}, {"id": 0}]
-    expected: {"id": 0, "name": "neg", "active": false}
+  - input: [{ "id": 0, "name": "", "active": false }, { "id": 5 }]
+    expected: { "id": 5, "name": "", "active": false }
+  - input: [{ "id": 1, "name": "a", "active": true }, { "active": false }]
+    expected: { "id": 1, "name": "a", "active": false }
+  - input: [{ "id": 1, "name": "a", "active": true }, { "id": 2, "name": "b", "active": false }]
+    expected: { "id": 2, "name": "b", "active": false }
+  - input: [{ "id": 1, "name": "x", "active": true }, { "name": "" }]
+    expected: { "id": 1, "name": "", "active": true }
+  - input: [{ "id": -1, "name": "neg", "active": false }, { "id": 0 }]
+    expected: { "id": 0, "name": "neg", "active": false }

@@ -27,18 +27,18 @@ reference_solution: |
       return input.user?.profile?.name ?? "unknown";
   }
 public_examples:
-  - input: {"user": {"profile": {"name": "alice"}}}
+  - input: { "user": { "profile": { "name": "alice" } } }
     expected: "alice"
   - input: {}
     expected: "unknown"
 hidden_tests:
-  - input: {"user": {}}
+  - input: { "user": {} }
     expected: "unknown"
-  - input: {"user": {"profile": {}}}
+  - input: { "user": { "profile": {} } }
     expected: "unknown"
-  - input: {"user": {"profile": {"name": ""}}}
+  - input: { "user": { "profile": { "name": "" } } }
     expected: ""
-  - input: {"user": {"profile": {"name": "bob"}}}
+  - input: { "user": { "profile": { "name": "bob" } } }
     expected: "bob"
-  - input: {"user": {"profile": {"name": "carol"}}}
+  - input: { "user": { "profile": { "name": "carol" } } }
     expected: "carol"

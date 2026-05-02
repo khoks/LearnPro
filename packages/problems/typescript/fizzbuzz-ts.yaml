@@ -42,7 +42,24 @@ hidden_tests:
   - input: 1
     expected: ["1"]
   - input: 15
-    expected: ["1", "2", "Fizz", "4", "Buzz", "Fizz", "7", "8", "Fizz", "Buzz", "11", "Fizz", "13", "14", "FizzBuzz"]
+    expected:
+      [
+        "1",
+        "2",
+        "Fizz",
+        "4",
+        "Buzz",
+        "Fizz",
+        "7",
+        "8",
+        "Fizz",
+        "Buzz",
+        "11",
+        "Fizz",
+        "13",
+        "14",
+        "FizzBuzz",
+      ]
   - input: 6
     expected: ["1", "2", "Fizz", "4", "Buzz", "Fizz"]
   - input: 10

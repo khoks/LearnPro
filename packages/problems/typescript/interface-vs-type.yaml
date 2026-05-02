@@ -30,18 +30,18 @@ reference_solution: |
       return { ...person, ...greeting, hello: "Hello, " + person.name };
   }
 public_examples:
-  - input: [{"name": "alice", "age": 30}, {"hello": "ignored"}]
-    expected: {"name": "alice", "age": 30, "hello": "Hello, alice"}
-  - input: [{"name": "bob", "age": 25}, {"hello": "x"}]
-    expected: {"name": "bob", "age": 25, "hello": "Hello, bob"}
+  - input: [{ "name": "alice", "age": 30 }, { "hello": "ignored" }]
+    expected: { "name": "alice", "age": 30, "hello": "Hello, alice" }
+  - input: [{ "name": "bob", "age": 25 }, { "hello": "x" }]
+    expected: { "name": "bob", "age": 25, "hello": "Hello, bob" }
 hidden_tests:
-  - input: [{"name": "", "age": 0}, {"hello": "_"}]
-    expected: {"name": "", "age": 0, "hello": "Hello, "}
-  - input: [{"name": "carol", "age": 99}, {"hello": ""}]
-    expected: {"name": "carol", "age": 99, "hello": "Hello, carol"}
-  - input: [{"name": "dan", "age": 1}, {"hello": "old"}]
-    expected: {"name": "dan", "age": 1, "hello": "Hello, dan"}
-  - input: [{"name": "eve", "age": -1}, {"hello": "x"}]
-    expected: {"name": "eve", "age": -1, "hello": "Hello, eve"}
-  - input: [{"name": "X", "age": 18}, {"hello": "old"}]
-    expected: {"name": "X", "age": 18, "hello": "Hello, X"}
+  - input: [{ "name": "", "age": 0 }, { "hello": "_" }]
+    expected: { "name": "", "age": 0, "hello": "Hello, " }
+  - input: [{ "name": "carol", "age": 99 }, { "hello": "" }]
+    expected: { "name": "carol", "age": 99, "hello": "Hello, carol" }
+  - input: [{ "name": "dan", "age": 1 }, { "hello": "old" }]
+    expected: { "name": "dan", "age": 1, "hello": "Hello, dan" }
+  - input: [{ "name": "eve", "age": -1 }, { "hello": "x" }]
+    expected: { "name": "eve", "age": -1, "hello": "Hello, eve" }
+  - input: [{ "name": "X", "age": 18 }, { "hello": "old" }]
+    expected: { "name": "X", "age": 18, "hello": "Hello, X" }

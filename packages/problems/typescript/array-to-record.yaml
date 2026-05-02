@@ -30,18 +30,18 @@ reference_solution: |
       return out;
   }
 public_examples:
-  - input: [[{"id": 1, "name": "alice"}, {"id": 2, "name": "bob"}]]
-    expected: {"1": "alice", "2": "bob"}
+  - input: [[{ "id": 1, "name": "alice" }, { "id": 2, "name": "bob" }]]
+    expected: { "1": "alice", "2": "bob" }
   - input: [[]]
     expected: {}
 hidden_tests:
-  - input: [[{"id": 0, "name": "zero"}]]
-    expected: {"0": "zero"}
-  - input: [[{"id": 99, "name": ""}]]
-    expected: {"99": ""}
-  - input: [[{"id": -1, "name": "neg"}, {"id": 1, "name": "pos"}]]
-    expected: {"-1": "neg", "1": "pos"}
-  - input: [[{"id": 1000000, "name": "big"}]]
-    expected: {"1000000": "big"}
-  - input: [[{"id": 1, "name": "a"}, {"id": 2, "name": "b"}, {"id": 3, "name": "c"}]]
-    expected: {"1": "a", "2": "b", "3": "c"}
+  - input: [[{ "id": 0, "name": "zero" }]]
+    expected: { "0": "zero" }
+  - input: [[{ "id": 99, "name": "" }]]
+    expected: { "99": "" }
+  - input: [[{ "id": -1, "name": "neg" }, { "id": 1, "name": "pos" }]]
+    expected: { "-1": "neg", "1": "pos" }
+  - input: [[{ "id": 1000000, "name": "big" }]]
+    expected: { "1000000": "big" }
+  - input: [[{ "id": 1, "name": "a" }, { "id": 2, "name": "b" }, { "id": 3, "name": "c" }]]
+    expected: { "1": "a", "2": "b", "3": "c" }

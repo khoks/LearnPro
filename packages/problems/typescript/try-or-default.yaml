@@ -39,7 +39,7 @@ hidden_tests:
     expected: 0
   - input: ["-3.14", 0]
     expected: -3.14
-  - input: ["\"text\"", 5]
+  - input: ['"text"', 5]
     expected: 5
   - input: ["null", 8]
     expected: 8

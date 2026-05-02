@@ -54,10 +54,7 @@ describe.skipIf(!DATABASE_URL)("seedProblems (integration)", () => {
         .select({ id: tracks.id })
         .from(tracks)
         .where(
-          and(
-            eq(tracks.org_id, SELF_HOSTED_ORG_ID),
-            inArray(tracks.slug, Array.from(trackSlugs)),
-          ),
+          and(eq(tracks.org_id, SELF_HOSTED_ORG_ID), inArray(tracks.slug, Array.from(trackSlugs))),
         );
       const ids = trackIds.map((r) => r.id);
       if (ids.length > 0) {

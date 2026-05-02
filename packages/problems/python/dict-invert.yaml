@@ -19,14 +19,14 @@ reference_solution: |
   def solve(d):
       return {v: k for k, v in d.items()}
 public_examples:
-  - input: [{"a": "1", "b": "2"}]
-    expected: {"1": "a", "2": "b"}
+  - input: [{ "a": "1", "b": "2" }]
+    expected: { "1": "a", "2": "b" }
   - input: [{}]
     expected: {}
 hidden_tests:
-  - input: [{"x": "y"}]
-    expected: {"y": "x"}
-  - input: [{"first": "alpha", "second": "beta", "third": "gamma"}]
-    expected: {"alpha": "first", "beta": "second", "gamma": "third"}
-  - input: [{"only": "one"}]
-    expected: {"one": "only"}
+  - input: [{ "x": "y" }]
+    expected: { "y": "x" }
+  - input: [{ "first": "alpha", "second": "beta", "third": "gamma" }]
+    expected: { "alpha": "first", "beta": "second", "gamma": "third" }
+  - input: [{ "only": "one" }]
+    expected: { "one": "only" }

@@ -42,20 +42,20 @@ reference_solution: |
       return out;
   }
 public_examples:
-  - input: [{"a": 1, "b": 2, "c": 3}, "pick", ["a", "c"]]
-    expected: {"a": 1, "c": 3}
-  - input: [{"a": 1, "b": 2, "c": 3}, "omit", ["b"]]
-    expected: {"a": 1, "c": 3}
+  - input: [{ "a": 1, "b": 2, "c": 3 }, "pick", ["a", "c"]]
+    expected: { "a": 1, "c": 3 }
+  - input: [{ "a": 1, "b": 2, "c": 3 }, "omit", ["b"]]
+    expected: { "a": 1, "c": 3 }
 hidden_tests:
   - input: [{}, "pick", []]
     expected: {}
   - input: [{}, "omit", ["a"]]
     expected: {}
-  - input: [{"a": 1}, "pick", []]
+  - input: [{ "a": 1 }, "pick", []]
     expected: {}
-  - input: [{"a": 1}, "omit", []]
-    expected: {"a": 1}
-  - input: [{"a": 1, "b": 2}, "pick", ["a", "b", "c"]]
-    expected: {"a": 1, "b": 2}
-  - input: [{"a": 1, "b": 2}, "omit", ["a", "b"]]
+  - input: [{ "a": 1 }, "omit", []]
+    expected: { "a": 1 }
+  - input: [{ "a": 1, "b": 2 }, "pick", ["a", "b", "c"]]
+    expected: { "a": 1, "b": 2 }
+  - input: [{ "a": 1, "b": 2 }, "omit", ["a", "b"]]
     expected: {}

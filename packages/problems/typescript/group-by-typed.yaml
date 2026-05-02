@@ -38,18 +38,59 @@ reference_solution: |
       return out;
   }
 public_examples:
-  - input: [[{"category": "fruit", "value": 1}, {"category": "veg", "value": 2}, {"category": "fruit", "value": 3}], "category"]
-    expected: {"fruit": [{"category": "fruit", "value": 1}, {"category": "fruit", "value": 3}], "veg": [{"category": "veg", "value": 2}]}
+  - input:
+      [
+        [
+          { "category": "fruit", "value": 1 },
+          { "category": "veg", "value": 2 },
+          { "category": "fruit", "value": 3 },
+        ],
+        "category",
+      ]
+    expected:
+      {
+        "fruit": [{ "category": "fruit", "value": 1 }, { "category": "fruit", "value": 3 }],
+        "veg": [{ "category": "veg", "value": 2 }],
+      }
   - input: [[], "category"]
     expected: {}
 hidden_tests:
-  - input: [[{"category": "x", "value": 1}], "category"]
-    expected: {"x": [{"category": "x", "value": 1}]}
-  - input: [[{"category": "a", "value": 1}, {"category": "a", "value": 2}], "category"]
-    expected: {"a": [{"category": "a", "value": 1}, {"category": "a", "value": 2}]}
-  - input: [[{"category": "a", "value": 1}, {"category": "b", "value": 2}, {"category": "c", "value": 3}], "category"]
-    expected: {"a": [{"category": "a", "value": 1}], "b": [{"category": "b", "value": 2}], "c": [{"category": "c", "value": 3}]}
-  - input: [[{"category": "x", "value": 0}, {"category": "x", "value": 0}, {"category": "x", "value": 0}], "category"]
-    expected: {"x": [{"category": "x", "value": 0}, {"category": "x", "value": 0}, {"category": "x", "value": 0}]}
-  - input: [[{"category": "", "value": 5}], "category"]
-    expected: {"": [{"category": "", "value": 5}]}
+  - input: [[{ "category": "x", "value": 1 }], "category"]
+    expected: { "x": [{ "category": "x", "value": 1 }] }
+  - input: [[{ "category": "a", "value": 1 }, { "category": "a", "value": 2 }], "category"]
+    expected: { "a": [{ "category": "a", "value": 1 }, { "category": "a", "value": 2 }] }
+  - input:
+      [
+        [
+          { "category": "a", "value": 1 },
+          { "category": "b", "value": 2 },
+          { "category": "c", "value": 3 },
+        ],
+        "category",
+      ]
+    expected:
+      {
+        "a": [{ "category": "a", "value": 1 }],
+        "b": [{ "category": "b", "value": 2 }],
+        "c": [{ "category": "c", "value": 3 }],
+      }
+  - input:
+      [
+        [
+          { "category": "x", "value": 0 },
+          { "category": "x", "value": 0 },
+          { "category": "x", "value": 0 },
+        ],
+        "category",
+      ]
+    expected:
+      {
+        "x":
+          [
+            { "category": "x", "value": 0 },
+            { "category": "x", "value": 0 },
+            { "category": "x", "value": 0 },
+          ],
+      }
+  - input: [[{ "category": "", "value": 5 }], "category"]
+    expected: { "": [{ "category": "", "value": 5 }] }
