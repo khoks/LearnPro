@@ -30,6 +30,11 @@ export {
   type BootstrapProfileOptions,
 } from "./profile-bootstrap.js";
 export {
+  updateProfileFields,
+  type ProfileFieldUpdatesInput,
+  type UpdateProfileFieldsOptions,
+} from "./profile-update.js";
+export {
   findSessionUser,
   type FindSessionUserOptions,
   type SessionUser,
