@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 export * from "./interactions.js";
+export * from "./onboarding.js";
 
 export const HealthPayloadSchema = z.object({
   ok: z.literal(true),
