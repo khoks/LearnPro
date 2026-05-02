@@ -1,0 +1,43 @@
+# TypeScript concept-tag taxonomy used across this directory:
+#   arrays, objects, strings, numbers, booleans, control-flow, modulo,
+#   string-manipulation, slicing, hashing, recursion, classes, error-handling,
+#   union-types, narrowing, generics-basics, records, optional-chaining,
+#   discriminated-unions, async, promises, type-guards, utility-types,
+#   keyof-typeof, tuple-types, partial-types
+slug: is-even-ts
+name: Is even (TypeScript)
+language: typescript
+difficulty: 1
+track: typescript-fundamentals
+concept_tags:
+  - control-flow
+  - modulo
+expected_median_time_to_solve_ms: 45000
+statement: |
+  Write a function `solve(n: number): boolean` that returns `true` if the
+  integer `n` is even, `false` otherwise. Note that `0` is considered even.
+starter_code: |
+  function solve(n: number): boolean {
+      // TODO
+      return false;
+  }
+reference_solution: |
+  function solve(n: number): boolean {
+      return n % 2 === 0;
+  }
+public_examples:
+  - input: 4
+    expected: true
+  - input: 7
+    expected: false
+hidden_tests:
+  - input: 0
+    expected: true
+  - input: -2
+    expected: true
+  - input: -3
+    expected: false
+  - input: 1000000
+    expected: true
+  - input: 1
+    expected: false

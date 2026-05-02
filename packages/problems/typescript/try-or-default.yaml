@@ -1,0 +1,49 @@
+slug: try-or-default
+name: Parse with default on error
+language: typescript
+difficulty: 3
+track: typescript-fundamentals
+concept_tags:
+  - error-handling
+  - control-flow
+  - strings
+expected_median_time_to_solve_ms: 180000
+statement: |
+  Write `solve(jsonStr: string, fallback: number): number` that attempts to
+  parse `jsonStr` as JSON. If the parse succeeds and the result is a finite
+  number, return it. Otherwise return `fallback`.
+starter_code: |
+  function solve(jsonStr: string, fallback: number): number {
+      // TODO
+      return fallback;
+  }
+reference_solution: |
+  function solve(jsonStr: string, fallback: number): number {
+      try {
+          const parsed: unknown = JSON.parse(jsonStr);
+          if (typeof parsed === "number" && Number.isFinite(parsed)) {
+              return parsed;
+          }
+          return fallback;
+      } catch {
+          return fallback;
+      }
+  }
+public_examples:
+  - input: ["42", 0]
+    expected: 42
+  - input: ["nope", 99]
+    expected: 99
+hidden_tests:
+  - input: ["0", 7]
+    expected: 0
+  - input: ["-3.14", 0]
+    expected: -3.14
+  - input: ['"text"', 5]
+    expected: 5
+  - input: ["null", 8]
+    expected: 8
+  - input: ["[1,2,3]", 4]
+    expected: 4
+  - input: ["", 11]
+    expected: 11

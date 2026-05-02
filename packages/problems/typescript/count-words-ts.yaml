@@ -1,0 +1,44 @@
+slug: count-words-ts
+name: Count words (TypeScript)
+language: typescript
+difficulty: 2
+track: typescript-fundamentals
+concept_tags:
+  - strings
+  - string-manipulation
+  - arrays
+expected_median_time_to_solve_ms: 90000
+statement: |
+  Write `solve(s: string): number` that returns the number of whitespace-
+  separated words in `s`. Words are runs of non-whitespace characters.
+  Leading/trailing/multiple internal whitespace must not produce empty
+  words.
+starter_code: |
+  function solve(s: string): number {
+      // TODO
+      return 0;
+  }
+reference_solution: |
+  function solve(s: string): number {
+      const trimmed = s.trim();
+      if (trimmed === "") return 0;
+      return trimmed.split(/\s+/).length;
+  }
+public_examples:
+  - input: "hello world"
+    expected: 2
+  - input: "one two three"
+    expected: 3
+hidden_tests:
+  - input: ""
+    expected: 0
+  - input: "   "
+    expected: 0
+  - input: "single"
+    expected: 1
+  - input: "   leading"
+    expected: 1
+  - input: "trailing   "
+    expected: 1
+  - input: "many   spaces  here"
+    expected: 3

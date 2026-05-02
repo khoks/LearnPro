@@ -1,0 +1,68 @@
+slug: class-stack-typed
+name: Generic stack class
+language: typescript
+difficulty: 3
+track: typescript-fundamentals
+concept_tags:
+  - classes
+  - generics-basics
+  - arrays
+expected_median_time_to_solve_ms: 300000
+statement: |
+  Implement a generic `Stack<T>` class with `push(item: T)`, `pop(): T |
+  undefined`, and `size(): number`. Then write `solve(operations)` that
+  takes an array of `["push", value] | ["pop"]` operations applied in order
+  to a `Stack<number>`, and returns the array of results from each `pop`
+  call (in order). `push` operations contribute nothing to the result array.
+starter_code: |
+  class Stack<T> {
+      // TODO
+  }
+
+  function solve(operations: (["push", number] | ["pop"])[]): (number | null)[] {
+      // TODO
+      return [];
+  }
+reference_solution: |
+  class Stack<T> {
+      private items: T[] = [];
+      push(item: T): void {
+          this.items.push(item);
+      }
+      pop(): T | undefined {
+          return this.items.pop();
+      }
+      size(): number {
+          return this.items.length;
+      }
+  }
+
+  function solve(operations: (["push", number] | ["pop"])[]): (number | null)[] {
+      const s = new Stack<number>();
+      const out: (number | null)[] = [];
+      for (const op of operations) {
+          if (op[0] === "push") {
+              s.push(op[1]);
+          } else {
+              const v = s.pop();
+              out.push(v === undefined ? null : v);
+          }
+      }
+      return out;
+  }
+public_examples:
+  - input: [[["push", 1], ["push", 2], ["pop"]]]
+    expected: [2]
+  - input: [[["push", 5], ["pop"], ["pop"]]]
+    expected: [5, null]
+hidden_tests:
+  - input: [[]]
+    expected: []
+  - input: [[["pop"]]]
+    expected: [null]
+  - input: [[["push", 1], ["push", 2], ["push", 3], ["pop"], ["pop"], ["pop"]]]
+    expected: [3, 2, 1]
+  - input: [[["push", 0], ["pop"]]]
+    expected: [0]
+  - input: [[["push", -1], ["push", -2], ["pop"]]]
+    expected: [-2]

@@ -1,0 +1,35 @@
+slug: sum-positive
+name: Sum of positive numbers
+language: python
+difficulty: 2
+track: python-fundamentals
+concept_tags:
+  - lists
+  - list-comprehension
+  - control-flow
+expected_median_time_to_solve_ms: 90000
+statement: |
+  Write `solve(nums)` that returns the sum of all strictly positive numbers in
+  `nums`. Negative numbers and zeroes are ignored.
+starter_code: |
+  def solve(nums):
+      pass
+reference_solution: |
+  def solve(nums):
+      return sum(n for n in nums if n > 0)
+public_examples:
+  - input: [[1, -4, 7, 12]]
+    expected: 20
+  - input: [[-1, -2, -3]]
+    expected: 0
+hidden_tests:
+  - input: [[]]
+    expected: 0
+  - input: [[0, 0, 0]]
+    expected: 0
+  - input: [[5]]
+    expected: 5
+  - input: [[-5]]
+    expected: 0
+  - input: [[1, 2, 3, 4]]
+    expected: 10

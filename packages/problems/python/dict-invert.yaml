@@ -1,0 +1,32 @@
+slug: dict-invert
+name: Invert a dictionary
+language: python
+difficulty: 3
+track: python-fundamentals
+concept_tags:
+  - dicts
+  - dict-iteration
+  - dict-comprehension
+expected_median_time_to_solve_ms: 150000
+statement: |
+  Write `solve(d)` that returns a new dictionary where each key/value pair is
+  inverted (value becomes key, key becomes value). You may assume all values
+  in `d` are unique strings.
+starter_code: |
+  def solve(d):
+      pass
+reference_solution: |
+  def solve(d):
+      return {v: k for k, v in d.items()}
+public_examples:
+  - input: [{ "a": "1", "b": "2" }]
+    expected: { "1": "a", "2": "b" }
+  - input: [{}]
+    expected: {}
+hidden_tests:
+  - input: [{ "x": "y" }]
+    expected: { "y": "x" }
+  - input: [{ "first": "alpha", "second": "beta", "third": "gamma" }]
+    expected: { "alpha": "first", "beta": "second", "gamma": "third" }
+  - input: [{ "only": "one" }]
+    expected: { "one": "only" }

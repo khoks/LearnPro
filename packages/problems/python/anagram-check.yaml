@@ -1,0 +1,37 @@
+slug: anagram-check
+name: Anagram check
+language: python
+difficulty: 3
+track: python-fundamentals
+concept_tags:
+  - strings
+  - dicts
+  - sorting
+expected_median_time_to_solve_ms: 180000
+statement: |
+  Write `solve(a, b)` that returns `True` if `a` and `b` are anagrams of each
+  other (same letters, same counts), `False` otherwise. Comparison is case-sensitive.
+starter_code: |
+  def solve(a, b):
+      pass
+reference_solution: |
+  def solve(a, b):
+      return sorted(a) == sorted(b)
+public_examples:
+  - input: ["listen", "silent"]
+    expected: true
+  - input: ["hello", "world"]
+    expected: false
+hidden_tests:
+  - input: ["", ""]
+    expected: true
+  - input: ["a", "a"]
+    expected: true
+  - input: ["aabb", "abab"]
+    expected: true
+  - input: ["abc", "abcd"]
+    expected: false
+  - input: ["Listen", "silent"]
+    expected: false
+  - input: ["aabbcc", "abcabc"]
+    expected: true

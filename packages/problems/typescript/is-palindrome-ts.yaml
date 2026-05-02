@@ -1,0 +1,47 @@
+slug: is-palindrome-ts
+name: Is palindrome (TypeScript)
+language: typescript
+difficulty: 2
+track: typescript-fundamentals
+concept_tags:
+  - strings
+  - string-manipulation
+expected_median_time_to_solve_ms: 90000
+statement: |
+  Write a function `solve(s: string): boolean` that returns `true` if `s`
+  reads the same forwards and backwards (case-sensitive, no whitespace
+  normalization). The empty string is considered a palindrome.
+starter_code: |
+  function solve(s: string): boolean {
+      // TODO
+      return false;
+  }
+reference_solution: |
+  function solve(s: string): boolean {
+      let i = 0;
+      let j = s.length - 1;
+      while (i < j) {
+          if (s[i] !== s[j]) return false;
+          i++;
+          j--;
+      }
+      return true;
+  }
+public_examples:
+  - input: "racecar"
+    expected: true
+  - input: "hello"
+    expected: false
+hidden_tests:
+  - input: ""
+    expected: true
+  - input: "a"
+    expected: true
+  - input: "ab"
+    expected: false
+  - input: "abba"
+    expected: true
+  - input: "Aa"
+    expected: false
+  - input: "12321"
+    expected: true

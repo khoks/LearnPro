@@ -1,0 +1,47 @@
+slug: interface-vs-type
+name: Combine interface and type alias
+language: typescript
+difficulty: 3
+track: typescript-fundamentals
+concept_tags:
+  - objects
+  - records
+  - generics-basics
+expected_median_time_to_solve_ms: 210000
+statement: |
+  Given an `interface Person { name: string; age: number }` and a `type
+  Greeting = { hello: string }`, write `solve(person, greeting)` that
+  returns a new object satisfying `Person & Greeting` whose `hello` field
+  is `"Hello, "` concatenated with `person.name`. Use spread to copy
+  fields rather than building the result one key at a time.
+starter_code: |
+  interface Person { name: string; age: number }
+  type Greeting = { hello: string };
+
+  function solve(person: Person, greeting: Greeting): Person & Greeting {
+      // TODO
+      return { ...person, ...greeting };
+  }
+reference_solution: |
+  interface Person { name: string; age: number }
+  type Greeting = { hello: string };
+
+  function solve(person: Person, greeting: Greeting): Person & Greeting {
+      return { ...person, ...greeting, hello: "Hello, " + person.name };
+  }
+public_examples:
+  - input: [{ "name": "alice", "age": 30 }, { "hello": "ignored" }]
+    expected: { "name": "alice", "age": 30, "hello": "Hello, alice" }
+  - input: [{ "name": "bob", "age": 25 }, { "hello": "x" }]
+    expected: { "name": "bob", "age": 25, "hello": "Hello, bob" }
+hidden_tests:
+  - input: [{ "name": "", "age": 0 }, { "hello": "_" }]
+    expected: { "name": "", "age": 0, "hello": "Hello, " }
+  - input: [{ "name": "carol", "age": 99 }, { "hello": "" }]
+    expected: { "name": "carol", "age": 99, "hello": "Hello, carol" }
+  - input: [{ "name": "dan", "age": 1 }, { "hello": "old" }]
+    expected: { "name": "dan", "age": 1, "hello": "Hello, dan" }
+  - input: [{ "name": "eve", "age": -1 }, { "hello": "x" }]
+    expected: { "name": "eve", "age": -1, "hello": "Hello, eve" }
+  - input: [{ "name": "X", "age": 18 }, { "hello": "old" }]
+    expected: { "name": "X", "age": 18, "hello": "Hello, X" }

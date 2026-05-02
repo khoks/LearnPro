@@ -1,0 +1,34 @@
+slug: flatten-list
+name: Flatten a 2D list
+language: python
+difficulty: 3
+track: python-fundamentals
+concept_tags:
+  - lists
+  - list-comprehension
+expected_median_time_to_solve_ms: 180000
+statement: |
+  Write `solve(matrix)` that takes a list of lists and returns a flat list with
+  all elements in row-major order.
+starter_code: |
+  def solve(matrix):
+      pass
+reference_solution: |
+  def solve(matrix):
+      return [x for row in matrix for x in row]
+public_examples:
+  - input: [[[1, 2], [3, 4]]]
+    expected: [1, 2, 3, 4]
+  - input: [[[1], [2], [3]]]
+    expected: [1, 2, 3]
+hidden_tests:
+  - input: [[]]
+    expected: []
+  - input: [[[]]]
+    expected: []
+  - input: [[[], [1, 2]]]
+    expected: [1, 2]
+  - input: [[[1, 2, 3]]]
+    expected: [1, 2, 3]
+  - input: [[[1], [], [2, 3], [], [4]]]
+    expected: [1, 2, 3, 4]

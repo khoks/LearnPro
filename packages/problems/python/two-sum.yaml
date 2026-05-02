@@ -1,0 +1,42 @@
+slug: two-sum
+name: Two sum
+language: python
+difficulty: 3
+track: python-fundamentals
+concept_tags:
+  - lists
+  - dicts
+  - hashing
+expected_median_time_to_solve_ms: 240000
+statement: |
+  Given a list of integers `nums` and an integer `target`, return the indices
+  `[i, j]` (i < j) of two numbers in `nums` such that `nums[i] + nums[j] == target`.
+  You may assume there is exactly one such pair.
+starter_code: |
+  def solve(nums, target):
+      pass
+reference_solution: |
+  def solve(nums, target):
+      seen = {}
+      for i, n in enumerate(nums):
+          want = target - n
+          if want in seen:
+              return [seen[want], i]
+          seen[n] = i
+      return []
+public_examples:
+  - input: [[2, 7, 11, 15], 9]
+    expected: [0, 1]
+  - input: [[3, 2, 4], 6]
+    expected: [1, 2]
+hidden_tests:
+  - input: [[3, 3], 6]
+    expected: [0, 1]
+  - input: [[-1, 0, 1], 0]
+    expected: [0, 2]
+  - input: [[5, 75, 25], 100]
+    expected: [1, 2]
+  - input: [[1, 5, 1, 5], 10]
+    expected: [1, 3]
+  - input: [[0, 4, 3, 0], 0]
+    expected: [0, 3]

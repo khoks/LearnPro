@@ -1,0 +1,33 @@
+slug: reverse-string
+name: Reverse a string
+language: python
+difficulty: 1
+track: python-fundamentals
+concept_tags:
+  - strings
+  - slicing
+expected_median_time_to_solve_ms: 60000
+statement: |
+  Write `solve(s)` that returns the reverse of the string `s`.
+starter_code: |
+  def solve(s):
+      pass
+reference_solution: |
+  def solve(s):
+      return s[::-1]
+public_examples:
+  - input: "hello"
+    expected: "olleh"
+  - input: "abc"
+    expected: "cba"
+hidden_tests:
+  - input: ""
+    expected: ""
+  - input: "a"
+    expected: "a"
+  - input: "racecar"
+    expected: "racecar"
+  - input: "Hello, World!"
+    expected: "!dlroW ,olleH"
+  - input: "  spaces  "
+    expected: "  secaps  "

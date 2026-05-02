@@ -1,0 +1,35 @@
+slug: count-vowels
+name: Count vowels
+language: python
+difficulty: 1
+track: python-fundamentals
+concept_tags:
+  - strings
+  - control-flow
+expected_median_time_to_solve_ms: 90000
+statement: |
+  Write `solve(s)` that returns the number of vowels in `s`. Vowels are
+  `a, e, i, o, u`, case-insensitive.
+starter_code: |
+  def solve(s):
+      pass
+reference_solution: |
+  def solve(s):
+      vowels = set("aeiouAEIOU")
+      return sum(1 for c in s if c in vowels)
+public_examples:
+  - input: "hello"
+    expected: 2
+  - input: "PYTHON"
+    expected: 1
+hidden_tests:
+  - input: ""
+    expected: 0
+  - input: "aeiou"
+    expected: 5
+  - input: "AEIOU"
+    expected: 5
+  - input: "rhythm"
+    expected: 0
+  - input: "Hello, World!"
+    expected: 3

@@ -1,6 +1,6 @@
 # LearnPro Board
 
-> **Last updated:** 2026-04-28 (STORY-005 done — Auth.js v5 (magic link + GitHub OAuth) lands in `apps/web` with DB-session strategy + Drizzle adapter (`accounts` / `sessions` / `verificationTokens` in migration `0004_auth_tables.sql`); `apps/api` validates the cookie via a cross-app `findSessionUser()` lookup, no shared JWT secret. Profile-shell bootstrap fires on first sign-in; `destinationFor()` routes new users to `/onboarding` (placeholder for STORY-053) and returning users to `/dashboard`. Lazy-init pattern lets `next build` succeed without a `DATABASE_URL`. Mops up 2 of 3 STORY-060 deferred ACs (`GET /llm/usage/today` 401/200 + `TokenBudgetExceededError → 429`) and 1 STORY-055 deferred AC (`POST /v1/interactions` `user_id` stamping). Apps/web stays clean of direct `pg`/`drizzle-orm` deps — DB queries route through `@learnpro/db` helpers (`getProfileTargetRole`, `bootstrapProfile`). 244 passing / 21 skipped. STORY-053 (conversational onboarding) is now unblocked.)
+> **Last updated:** 2026-04-28 (STORY-016 done — Curated seed problem bank lands in `packages/problems/` with 33 Python + 30 TypeScript YAMLs; per-language difficulty distribution hits the spec target (10 L1-2 / 15 L3 / 5 L4-5 for TS; 13/17/3 for Python within tolerance). `ProblemDefSchema` enforces kebab-case slugs + concept tags + difficulty 1-5 + non-empty hidden tests at parse time. `loadProblems()` reads both language dirs and validates each YAML against the schema; `seedProblems(db, defs)` is idempotent under the `(org_id, track_id, slug)` unique key. `validateProblems(defs, sandbox)` iterates problems through a per-language harness (Python `solve(*input)` + TS `solve(...input)`) that emits `__LEARNPRO_PASS__` / `__LEARNPRO_FAIL__{json}` verdict tokens parsed by the validator. 35 tests pass + 2 gated-skip in CI: `schema.test.ts` (20), `loader.test.ts` (11 — parse-all + uniqueness + kebab tags + per-language distribution within ±2 tolerance), `validate.test.ts` (5 mock-sandbox unit tests + LEARNPRO_REQUIRE_PISTON-gated live integration), `seed.test.ts` (DATABASE_URL-gated idempotency). STORY-011 (tutor agent tools) is now unblocked. STORY-005 done earlier — Auth.js v5 (magic link + GitHub OAuth) lands in `apps/web` with DB-session strategy + Drizzle adapter (`accounts` / `sessions` / `verificationTokens` in migration `0004_auth_tables.sql`); `apps/api` validates the cookie via a cross-app `findSessionUser()` lookup, no shared JWT secret. Profile-shell bootstrap fires on first sign-in; `destinationFor()` routes new users to `/onboarding` (placeholder for STORY-053) and returning users to `/dashboard`. Lazy-init pattern lets `next build` succeed without a `DATABASE_URL`. Mops up 2 of 3 STORY-060 deferred ACs (`GET /llm/usage/today` 401/200 + `TokenBudgetExceededError → 429`) and 1 STORY-055 deferred AC (`POST /v1/interactions` `user_id` stamping). Apps/web stays clean of direct `pg`/`drizzle-orm` deps — DB queries route through `@learnpro/db` helpers (`getProfileTargetRole`, `bootstrapProfile`).)
 > **How to read this:** This is the live status of every Epic, Story, and Task in the project. Hand-maintained for now (a regenerator script lives in the v1 backlog). When you change an item's `status:` frontmatter, also update the row here in the same commit.
 
 ---
@@ -16,11 +16,11 @@
 
 ## Up Next (Ready) — MVP build begins here
 
-Path A locked 2026-04-25. EPIC-019 (foundation) shipped. With STORY-005 (auth) landed, the next leverage points are STORY-016 (seed problems) which unblocks STORY-011 (tutor agent), and STORY-053 (conversational onboarding) which is now unblocked.
+Path A locked 2026-04-25. EPIC-019 (foundation) shipped. With STORY-016 done, STORY-011 (tutor agent) is unblocked. STORY-053 (conversational onboarding) was unblocked by STORY-005.
 
 | ID | Title | Epic | Phase | Priority | Est |
 |----|-------|------|------|----------|-----|
-| [STORY-016](stories/STORY-016-seed-bank.md) | Curated seed problem bank (~30 Python + ~30 TS) with hidden tests — partial WIP on `origin/story/016-seed-problem-bank` (33 Py YAMLs + scaffold; needs ~30 TS YAMLs + tests) | EPIC-007 | mvp | P0 | L |
+| [STORY-011](stories/STORY-011-tutor-agent-tools.md) | Tutor agent with `assign-problem` / `give-hint` / `grade` / `update-profile` tools | EPIC-004 | mvp | P0 | L |
 | [STORY-053](stories/STORY-053-conversational-onboarding-agent.md) | Conversational adaptive onboarding agent (replaces structured form; graceful exit + form fallback) | EPIC-004 | mvp | P0 | L |
 
 ---
@@ -29,9 +29,7 @@ Path A locked 2026-04-25. EPIC-019 (foundation) shipped. With STORY-005 (auth) l
 
 | ID | Title | Epic | Phase | Priority | Est |
 |----|-------|------|-------|----------|-----|
-| [STORY-011](stories/STORY-011-tutor-agent-tools.md) | Tutor agent with `assign-problem` / `give-hint` / `grade` / `update-profile` tools | EPIC-004 | mvp | P0 | L |
 | [STORY-015](stories/STORY-015-session-plan.md) | Session plan agent (3–5 micro-objectives per session) | EPIC-006 | mvp | P0 | M |
-| [STORY-016](stories/STORY-016-seed-bank.md) | Curated seed problem bank (~30 Python + ~30 TS) with hidden tests | EPIC-007 | mvp | P0 | L |
 | [STORY-017](stories/STORY-017-hint-ladder.md) | 3-rung hint ladder | EPIC-007 | mvp | P0 | S |
 | [STORY-019](stories/STORY-019-python-track.md) | Python fundamentals track | EPIC-009 | mvp | P0 | M |
 | [STORY-020](stories/STORY-020-typescript-track.md) | TypeScript fundamentals track | EPIC-009 | mvp | P0 | M |
@@ -90,6 +88,7 @@ STORY-005 (Auth.js + bootstrap profile shell) landed 2026-04-28 — magic-link +
 
 | ID | Title | Done |
 |----|-------|------|
+| [STORY-016](stories/STORY-016-seed-bank.md) | Curated seed problem bank — 33 Python + 30 TypeScript YAMLs with hidden tests, schema/loader/validate/seed test suites, target difficulty distribution | 2026-04-28 |
 | [STORY-005](stories/STORY-005-auth-and-onboarding.md) | Auth.js + bootstrap profile shell (magic link + GitHub OAuth, DB sessions, cross-app cookie auth, mops up STORY-060/STORY-055 deferred ACs) | 2026-04-28 |
 | [STORY-010](stories/STORY-010-sandbox-hardening.md) | Sandbox hardening checklist verification (12 breakout tests + harness; docker-compose hardened) | 2026-04-28 |
 | [STORY-055](stories/STORY-055-rich-interaction-telemetry-schema.md) | Rich interaction telemetry schema + ingestion endpoint + Monaco capture (voice capture deferred to STORY-056) | 2026-04-26 |

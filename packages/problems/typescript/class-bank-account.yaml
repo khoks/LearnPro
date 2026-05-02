@@ -1,0 +1,81 @@
+slug: class-bank-account
+name: Bank account class (TypeScript)
+language: typescript
+difficulty: 4
+track: typescript-fundamentals
+concept_tags:
+  - classes
+  - error-handling
+  - control-flow
+expected_median_time_to_solve_ms: 480000
+statement: |
+  Implement a `BankAccount` class with these operations and then expose
+  `solve(operations)` that processes a list of `[op, amount]` pairs
+  sequentially and returns the final balance.
+
+  The class must support:
+  - `deposit(amount: number)` — `amount` must be > 0; throw `Error` otherwise.
+  - `withdraw(amount: number)` — `amount` must be > 0 and `<= balance`;
+    throw `Error` otherwise.
+  - `balance` getter — current balance, starting at 0.
+
+  In `solve`, ignore any operation whose call throws and continue.
+
+  Operations format: `["deposit", n]`, `["withdraw", n]`.
+starter_code: |
+  class BankAccount {
+      // TODO
+  }
+
+  function solve(operations: [string, number][]): number {
+      // TODO
+      return 0;
+  }
+reference_solution: |
+  class BankAccount {
+      private _balance = 0;
+      get balance(): number {
+          return this._balance;
+      }
+      deposit(amount: number): void {
+          if (amount <= 0) throw new Error("amount must be positive");
+          this._balance += amount;
+      }
+      withdraw(amount: number): void {
+          if (amount <= 0 || amount > this._balance) {
+              throw new Error("invalid withdrawal");
+          }
+          this._balance -= amount;
+      }
+  }
+
+  function solve(operations: [string, number][]): number {
+      const acct = new BankAccount();
+      for (const [name, amount] of operations) {
+          try {
+              if (name === "deposit") acct.deposit(amount);
+              else if (name === "withdraw") acct.withdraw(amount);
+          } catch {
+              // ignore invalid op
+          }
+      }
+      return acct.balance;
+  }
+public_examples:
+  - input: [[["deposit", 100], ["withdraw", 30]]]
+    expected: 70
+  - input: [[["deposit", 50], ["withdraw", 100]]]
+    expected: 50
+hidden_tests:
+  - input: [[]]
+    expected: 0
+  - input: [[["deposit", 100], ["deposit", 50], ["withdraw", 30]]]
+    expected: 120
+  - input: [[["deposit", -5], ["deposit", 10]]]
+    expected: 10
+  - input: [[["withdraw", 10]]]
+    expected: 0
+  - input: [[["deposit", 100], ["withdraw", 0]]]
+    expected: 100
+  - input: [[["deposit", 100], ["withdraw", 100], ["withdraw", 1]]]
+    expected: 0

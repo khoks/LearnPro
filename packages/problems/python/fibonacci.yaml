@@ -1,0 +1,41 @@
+slug: fibonacci
+name: Fibonacci sequence
+language: python
+difficulty: 3
+track: python-fundamentals
+concept_tags:
+  - control-flow
+  - recursion
+  - lists
+expected_median_time_to_solve_ms: 180000
+statement: |
+  Write `solve(n)` that returns the first `n` Fibonacci numbers as a list,
+  starting with `0, 1, 1, 2, 3, 5, ...`. For `n == 0`, return `[]`.
+starter_code: |
+  def solve(n):
+      pass
+reference_solution: |
+  def solve(n):
+      if n <= 0:
+          return []
+      out = [0]
+      if n == 1:
+          return out
+      out.append(1)
+      while len(out) < n:
+          out.append(out[-1] + out[-2])
+      return out
+public_examples:
+  - input: 5
+    expected: [0, 1, 1, 2, 3]
+  - input: 1
+    expected: [0]
+hidden_tests:
+  - input: 0
+    expected: []
+  - input: 2
+    expected: [0, 1]
+  - input: 7
+    expected: [0, 1, 1, 2, 3, 5, 8]
+  - input: 10
+    expected: [0, 1, 1, 2, 3, 5, 8, 13, 21, 34]

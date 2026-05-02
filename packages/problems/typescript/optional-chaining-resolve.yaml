@@ -1,0 +1,44 @@
+slug: optional-chaining-resolve
+name: Resolve nested path with optional chaining
+language: typescript
+difficulty: 3
+track: typescript-fundamentals
+concept_tags:
+  - optional-chaining
+  - objects
+  - narrowing
+expected_median_time_to_solve_ms: 240000
+statement: |
+  Given a nested object like `{ user?: { profile?: { name?: string } } }`,
+  write `solve(input)` that returns `input.user.profile.name` if it exists,
+  otherwise `"unknown"`. Use optional chaining and the nullish-coalescing
+  operator.
+starter_code: |
+  type Input = { user?: { profile?: { name?: string } } };
+
+  function solve(input: Input): string {
+      // TODO
+      return "";
+  }
+reference_solution: |
+  type Input = { user?: { profile?: { name?: string } } };
+
+  function solve(input: Input): string {
+      return input.user?.profile?.name ?? "unknown";
+  }
+public_examples:
+  - input: { "user": { "profile": { "name": "alice" } } }
+    expected: "alice"
+  - input: {}
+    expected: "unknown"
+hidden_tests:
+  - input: { "user": {} }
+    expected: "unknown"
+  - input: { "user": { "profile": {} } }
+    expected: "unknown"
+  - input: { "user": { "profile": { "name": "" } } }
+    expected: ""
+  - input: { "user": { "profile": { "name": "bob" } } }
+    expected: "bob"
+  - input: { "user": { "profile": { "name": "carol" } } }
+    expected: "carol"

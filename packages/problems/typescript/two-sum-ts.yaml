@@ -1,0 +1,47 @@
+slug: two-sum-ts
+name: Two sum (TypeScript)
+language: typescript
+difficulty: 3
+track: typescript-fundamentals
+concept_tags:
+  - arrays
+  - hashing
+  - records
+expected_median_time_to_solve_ms: 240000
+statement: |
+  Given an array of integers `nums` and a target integer `target`, return
+  the indices `[i, j]` (i < j) of two numbers in `nums` such that
+  `nums[i] + nums[j] === target`. You may assume there is exactly one such
+  pair.
+starter_code: |
+  function solve(nums: number[], target: number): [number, number] {
+      // TODO
+      return [0, 0];
+  }
+reference_solution: |
+  function solve(nums: number[], target: number): [number, number] {
+      const seen = new Map<number, number>();
+      for (let i = 0; i < nums.length; i++) {
+          const n = nums[i]!;
+          const want = target - n;
+          if (seen.has(want)) return [seen.get(want)!, i];
+          seen.set(n, i);
+      }
+      return [0, 0];
+  }
+public_examples:
+  - input: [[2, 7, 11, 15], 9]
+    expected: [0, 1]
+  - input: [[3, 2, 4], 6]
+    expected: [1, 2]
+hidden_tests:
+  - input: [[3, 3], 6]
+    expected: [0, 1]
+  - input: [[-1, 0, 1], 0]
+    expected: [0, 2]
+  - input: [[5, 75, 25], 100]
+    expected: [1, 2]
+  - input: [[1, 5, 1, 5], 10]
+    expected: [1, 3]
+  - input: [[0, 4, 3, 0], 0]
+    expected: [0, 3]

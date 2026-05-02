@@ -1,0 +1,40 @@
+slug: generic-identity
+name: Generic identity wrapper
+language: typescript
+difficulty: 3
+track: typescript-fundamentals
+concept_tags:
+  - generics-basics
+  - objects
+expected_median_time_to_solve_ms: 180000
+statement: |
+  Write a generic function `solve<T>(value: T): { value: T; type: string }`
+  that wraps the input value in an object containing the value plus the
+  `typeof` of the value (e.g. `"string"`, `"number"`, `"object"`).
+
+  The grader will pass the input directly as the function's argument.
+starter_code: |
+  function solve<T>(value: T): { value: T; type: string } {
+      // TODO
+      return { value, type: "" };
+  }
+reference_solution: |
+  function solve<T>(value: T): { value: T; type: string } {
+      return { value, type: typeof value };
+  }
+public_examples:
+  - input: "hello"
+    expected: { "value": "hello", "type": "string" }
+  - input: 42
+    expected: { "value": 42, "type": "number" }
+hidden_tests:
+  - input: 0
+    expected: { "value": 0, "type": "number" }
+  - input: ""
+    expected: { "value": "", "type": "string" }
+  - input: true
+    expected: { "value": true, "type": "boolean" }
+  - input: false
+    expected: { "value": false, "type": "boolean" }
+  - input: -1
+    expected: { "value": -1, "type": "number" }

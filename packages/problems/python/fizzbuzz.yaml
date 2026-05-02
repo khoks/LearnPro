@@ -1,0 +1,61 @@
+slug: fizzbuzz
+name: FizzBuzz
+language: python
+difficulty: 2
+track: python-fundamentals
+concept_tags:
+  - control-flow
+  - modulo
+  - string-manipulation
+expected_median_time_to_solve_ms: 180000
+statement: |
+  Write `solve(n)` that returns a list of length `n` containing the FizzBuzz sequence:
+  - For multiples of 3, the entry is `"Fizz"`.
+  - For multiples of 5, the entry is `"Buzz"`.
+  - For multiples of both 3 and 5, the entry is `"FizzBuzz"`.
+  - Otherwise, the entry is the number as a string.
+
+  The list starts at `1` and ends at `n` inclusive.
+starter_code: |
+  def solve(n):
+      pass
+reference_solution: |
+  def solve(n):
+      out = []
+      for i in range(1, n + 1):
+          if i % 15 == 0:
+              out.append("FizzBuzz")
+          elif i % 3 == 0:
+              out.append("Fizz")
+          elif i % 5 == 0:
+              out.append("Buzz")
+          else:
+              out.append(str(i))
+      return out
+public_examples:
+  - input: 5
+    expected: ["1", "2", "Fizz", "4", "Buzz"]
+hidden_tests:
+  - input: 1
+    expected: ["1"]
+  - input: 3
+    expected: ["1", "2", "Fizz"]
+  - input: 15
+    expected:
+      - "1"
+      - "2"
+      - "Fizz"
+      - "4"
+      - "Buzz"
+      - "Fizz"
+      - "7"
+      - "8"
+      - "Fizz"
+      - "Buzz"
+      - "11"
+      - "Fizz"
+      - "13"
+      - "14"
+      - "FizzBuzz"
+  - input: 0
+    expected: []

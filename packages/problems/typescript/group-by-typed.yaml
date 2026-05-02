@@ -1,0 +1,96 @@
+slug: group-by-typed
+name: Group items by key
+language: typescript
+difficulty: 4
+track: typescript-fundamentals
+concept_tags:
+  - generics-basics
+  - records
+  - arrays
+expected_median_time_to_solve_ms: 360000
+statement: |
+  Write a generic `solve<T, K extends string>(items: T[], keyOf: (item: T) =>
+  K): Record<K, T[]>` that groups `items` by the result of `keyOf(item)`.
+  Each group preserves the original input order.
+
+  Since the grader cannot pass a function as JSON, the grader will pass an
+  array of objects each with a `category` string field. Your `solve` should
+  use `(it) => it.category` as `keyOf`. So the call signature for the
+  hidden tests is `solve(items, "category")` — implement `solve` to accept
+  the key field name as a string and group accordingly.
+starter_code: |
+  type Item = { category: string; value: number };
+
+  function solve(items: Item[], keyField: "category"): Record<string, Item[]> {
+      // TODO
+      return {};
+  }
+reference_solution: |
+  type Item = { category: string; value: number };
+
+  function solve(items: Item[], keyField: "category"): Record<string, Item[]> {
+      const out: Record<string, Item[]> = {};
+      for (const it of items) {
+          const k = it[keyField];
+          if (!out[k]) out[k] = [];
+          out[k].push(it);
+      }
+      return out;
+  }
+public_examples:
+  - input:
+      [
+        [
+          { "category": "fruit", "value": 1 },
+          { "category": "veg", "value": 2 },
+          { "category": "fruit", "value": 3 },
+        ],
+        "category",
+      ]
+    expected:
+      {
+        "fruit": [{ "category": "fruit", "value": 1 }, { "category": "fruit", "value": 3 }],
+        "veg": [{ "category": "veg", "value": 2 }],
+      }
+  - input: [[], "category"]
+    expected: {}
+hidden_tests:
+  - input: [[{ "category": "x", "value": 1 }], "category"]
+    expected: { "x": [{ "category": "x", "value": 1 }] }
+  - input: [[{ "category": "a", "value": 1 }, { "category": "a", "value": 2 }], "category"]
+    expected: { "a": [{ "category": "a", "value": 1 }, { "category": "a", "value": 2 }] }
+  - input:
+      [
+        [
+          { "category": "a", "value": 1 },
+          { "category": "b", "value": 2 },
+          { "category": "c", "value": 3 },
+        ],
+        "category",
+      ]
+    expected:
+      {
+        "a": [{ "category": "a", "value": 1 }],
+        "b": [{ "category": "b", "value": 2 }],
+        "c": [{ "category": "c", "value": 3 }],
+      }
+  - input:
+      [
+        [
+          { "category": "x", "value": 0 },
+          { "category": "x", "value": 0 },
+          { "category": "x", "value": 0 },
+        ],
+        "category",
+      ]
+    expected:
+      {
+        "x":
+          [
+            { "category": "x", "value": 0 },
+            { "category": "x", "value": 0 },
+            { "category": "x", "value": 0 },
+          ],
+      }
+  - input: [[{ "category": "", "value": 5 }], "category"]
+    expected: { "": [{ "category": "", "value": 5 }] }

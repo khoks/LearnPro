@@ -1,0 +1,42 @@
+slug: count-vowels-ts
+name: Count vowels (TypeScript)
+language: typescript
+difficulty: 1
+track: typescript-fundamentals
+concept_tags:
+  - strings
+  - control-flow
+expected_median_time_to_solve_ms: 60000
+statement: |
+  Write `solve(s: string): number` that returns the number of vowels (a, e,
+  i, o, u — case-insensitive) in `s`.
+starter_code: |
+  function solve(s: string): number {
+      // TODO
+      return 0;
+  }
+reference_solution: |
+  function solve(s: string): number {
+      const vowels = new Set(["a", "e", "i", "o", "u"]);
+      let count = 0;
+      for (const ch of s.toLowerCase()) {
+          if (vowels.has(ch)) count++;
+      }
+      return count;
+  }
+public_examples:
+  - input: "hello"
+    expected: 2
+  - input: "rhythm"
+    expected: 0
+hidden_tests:
+  - input: ""
+    expected: 0
+  - input: "AEIOU"
+    expected: 5
+  - input: "aeiouAEIOU"
+    expected: 10
+  - input: "BCDFG"
+    expected: 0
+  - input: "queue"
+    expected: 4

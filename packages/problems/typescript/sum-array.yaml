@@ -1,0 +1,39 @@
+slug: sum-array
+name: Sum array (TypeScript)
+language: typescript
+difficulty: 1
+track: typescript-fundamentals
+concept_tags:
+  - arrays
+  - control-flow
+expected_median_time_to_solve_ms: 45000
+statement: |
+  Write `solve(nums: number[]): number` that returns the sum of all numbers
+  in `nums`. The empty array sums to 0.
+starter_code: |
+  function solve(nums: number[]): number {
+      // TODO
+      return 0;
+  }
+reference_solution: |
+  function solve(nums: number[]): number {
+      let total = 0;
+      for (const n of nums) total += n;
+      return total;
+  }
+public_examples:
+  - input: [[1, 2, 3]]
+    expected: 6
+  - input: [[]]
+    expected: 0
+hidden_tests:
+  - input: [[0]]
+    expected: 0
+  - input: [[5]]
+    expected: 5
+  - input: [[-1, -2, -3]]
+    expected: -6
+  - input: [[10, 20, 30, 40, 50]]
+    expected: 150
+  - input: [[100, -100]]
+    expected: 0

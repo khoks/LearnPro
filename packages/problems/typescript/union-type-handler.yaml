@@ -1,0 +1,46 @@
+slug: union-type-handler
+name: Handle a string-or-array union
+language: typescript
+difficulty: 3
+track: typescript-fundamentals
+concept_tags:
+  - union-types
+  - narrowing
+  - arrays
+expected_median_time_to_solve_ms: 210000
+statement: |
+  Write `solve(value: string | number[]): number` that returns the length of
+  `value` if it is a string, or the sum of its elements if it is a number
+  array. Use a runtime type check to discriminate the two cases.
+starter_code: |
+  function solve(value: string | number[]): number {
+      // TODO
+      return 0;
+  }
+reference_solution: |
+  function solve(value: string | number[]): number {
+      if (typeof value === "string") {
+          return value.length;
+      }
+      let total = 0;
+      for (const n of value) total += n;
+      return total;
+  }
+public_examples:
+  - input: "hello"
+    expected: 5
+  - input: [[1, 2, 3]]
+    expected: 6
+hidden_tests:
+  - input: ""
+    expected: 0
+  - input: [[]]
+    expected: 0
+  - input: "a"
+    expected: 1
+  - input: [[10]]
+    expected: 10
+  - input: [[-1, -2, -3]]
+    expected: -6
+  - input: "abcdef"
+    expected: 6

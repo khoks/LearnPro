@@ -1,0 +1,41 @@
+slug: max-of-list-ts
+name: Maximum of an array (TypeScript)
+language: typescript
+difficulty: 2
+track: typescript-fundamentals
+concept_tags:
+  - arrays
+  - control-flow
+expected_median_time_to_solve_ms: 90000
+statement: |
+  Write a function `solve(nums: number[]): number` that returns the maximum
+  value in `nums`. You may assume `nums` is non-empty.
+starter_code: |
+  function solve(nums: number[]): number {
+      // TODO
+      return 0;
+  }
+reference_solution: |
+  function solve(nums: number[]): number {
+      let best = nums[0]!;
+      for (let i = 1; i < nums.length; i++) {
+          if (nums[i]! > best) best = nums[i]!;
+      }
+      return best;
+  }
+public_examples:
+  - input: [[1, 2, 3]]
+    expected: 3
+  - input: [[-5, -1, -10]]
+    expected: -1
+hidden_tests:
+  - input: [[42]]
+    expected: 42
+  - input: [[5, 5, 5]]
+    expected: 5
+  - input: [[100, 50, 200, 75]]
+    expected: 200
+  - input: [[-1, -2, -3, -4]]
+    expected: -1
+  - input: [[0, 0, 1]]
+    expected: 1

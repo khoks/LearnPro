@@ -1,0 +1,37 @@
+slug: is-palindrome
+name: Is palindrome
+language: python
+difficulty: 2
+track: python-fundamentals
+concept_tags:
+  - strings
+  - slicing
+expected_median_time_to_solve_ms: 90000
+statement: |
+  Write `solve(s)` that returns `True` if `s` is a palindrome (reads the same
+  forwards and backwards), `False` otherwise. Comparison is case-sensitive
+  and includes all characters.
+starter_code: |
+  def solve(s):
+      pass
+reference_solution: |
+  def solve(s):
+      return s == s[::-1]
+public_examples:
+  - input: "racecar"
+    expected: true
+  - input: "hello"
+    expected: false
+hidden_tests:
+  - input: ""
+    expected: true
+  - input: "a"
+    expected: true
+  - input: "ab"
+    expected: false
+  - input: "aba"
+    expected: true
+  - input: "abba"
+    expected: true
+  - input: "Racecar"
+    expected: false

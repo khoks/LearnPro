@@ -1,0 +1,61 @@
+slug: utility-pick-omit
+name: Pick and Omit by key list
+language: typescript
+difficulty: 3
+track: typescript-fundamentals
+concept_tags:
+  - utility-types
+  - records
+  - objects
+expected_median_time_to_solve_ms: 240000
+statement: |
+  Write `solve(obj: Record<string, number>, mode: "pick" | "omit", keys:
+  string[]): Record<string, number>` that returns:
+
+  - When `mode` is `"pick"`: a new object containing only entries whose key
+    is in `keys`.
+  - When `mode` is `"omit"`: a new object containing all entries whose key
+    is NOT in `keys`.
+
+  Do not mutate `obj`.
+starter_code: |
+  function solve(
+      obj: Record<string, number>,
+      mode: "pick" | "omit",
+      keys: string[],
+  ): Record<string, number> {
+      // TODO
+      return {};
+  }
+reference_solution: |
+  function solve(
+      obj: Record<string, number>,
+      mode: "pick" | "omit",
+      keys: string[],
+  ): Record<string, number> {
+      const set = new Set(keys);
+      const out: Record<string, number> = {};
+      for (const k of Object.keys(obj)) {
+          const include = mode === "pick" ? set.has(k) : !set.has(k);
+          if (include) out[k] = obj[k]!;
+      }
+      return out;
+  }
+public_examples:
+  - input: [{ "a": 1, "b": 2, "c": 3 }, "pick", ["a", "c"]]
+    expected: { "a": 1, "c": 3 }
+  - input: [{ "a": 1, "b": 2, "c": 3 }, "omit", ["b"]]
+    expected: { "a": 1, "c": 3 }
+hidden_tests:
+  - input: [{}, "pick", []]
+    expected: {}
+  - input: [{}, "omit", ["a"]]
+    expected: {}
+  - input: [{ "a": 1 }, "pick", []]
+    expected: {}
+  - input: [{ "a": 1 }, "omit", []]
+    expected: { "a": 1 }
+  - input: [{ "a": 1, "b": 2 }, "pick", ["a", "b", "c"]]
+    expected: { "a": 1, "b": 2 }
+  - input: [{ "a": 1, "b": 2 }, "omit", ["a", "b"]]
+    expected: {}

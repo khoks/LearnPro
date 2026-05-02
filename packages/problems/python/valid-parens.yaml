@@ -1,0 +1,51 @@
+slug: valid-parens
+name: Valid parentheses
+language: python
+difficulty: 3
+track: python-fundamentals
+concept_tags:
+  - strings
+  - lists
+  - control-flow
+expected_median_time_to_solve_ms: 300000
+statement: |
+  Write `solve(s)` that returns `True` if the string `s` of brackets is balanced.
+  The brackets `()`, `[]`, and `{}` must be opened and closed in the correct order.
+  An empty string is considered balanced.
+starter_code: |
+  def solve(s):
+      pass
+reference_solution: |
+  def solve(s):
+      pairs = {")": "(", "]": "[", "}": "{"}
+      stack = []
+      for c in s:
+          if c in "([{":
+              stack.append(c)
+          elif c in ")]}":
+              if not stack or stack[-1] != pairs[c]:
+                  return False
+              stack.pop()
+      return not stack
+public_examples:
+  - input: "()"
+    expected: true
+  - input: "([)]"
+    expected: false
+hidden_tests:
+  - input: ""
+    expected: true
+  - input: "()[]{}"
+    expected: true
+  - input: "{[()]}"
+    expected: true
+  - input: "("
+    expected: false
+  - input: ")("
+    expected: false
+  - input: "(("
+    expected: false
+  - input: "[]{[()]}"
+    expected: true
+  - input: "[(])"
+    expected: false

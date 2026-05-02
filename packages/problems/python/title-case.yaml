@@ -1,0 +1,36 @@
+slug: title-case
+name: Title case
+language: python
+difficulty: 3
+track: python-fundamentals
+concept_tags:
+  - strings
+  - string-manipulation
+  - list-comprehension
+expected_median_time_to_solve_ms: 180000
+statement: |
+  Write `solve(s)` that returns `s` with the first character of each
+  whitespace-separated word capitalized and the remaining characters lowered.
+  Multiple separating spaces are collapsed to a single space.
+starter_code: |
+  def solve(s):
+      pass
+reference_solution: |
+  def solve(s):
+      return " ".join(w[0].upper() + w[1:].lower() for w in s.split())
+public_examples:
+  - input: "hello world"
+    expected: "Hello World"
+  - input: "the QUICK brown FOX"
+    expected: "The Quick Brown Fox"
+hidden_tests:
+  - input: ""
+    expected: ""
+  - input: "a"
+    expected: "A"
+  - input: "  spaced   out  "
+    expected: "Spaced Out"
+  - input: "ALREADY UPPERCASE"
+    expected: "Already Uppercase"
+  - input: "mixedCase WORDS here"
+    expected: "Mixedcase Words Here"

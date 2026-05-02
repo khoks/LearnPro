@@ -1,0 +1,50 @@
+slug: merge-objects-typed
+name: Merge two objects (typed)
+language: typescript
+difficulty: 3
+track: typescript-fundamentals
+concept_tags:
+  - objects
+  - records
+  - generics-basics
+expected_median_time_to_solve_ms: 180000
+statement: |
+  Write `solve(a: Record<string, number>, b: Record<string, number>):
+  Record<string, number>` that returns a new object containing all entries
+  from `a` and `b`. When the same key appears in both, the value from `b`
+  wins. Do not mutate the inputs.
+starter_code: |
+  function solve(
+      a: Record<string, number>,
+      b: Record<string, number>,
+  ): Record<string, number> {
+      // TODO
+      return {};
+  }
+reference_solution: |
+  function solve(
+      a: Record<string, number>,
+      b: Record<string, number>,
+  ): Record<string, number> {
+      const out: Record<string, number> = { ...a };
+      for (const k of Object.keys(b)) {
+          out[k] = b[k]!;
+      }
+      return out;
+  }
+public_examples:
+  - input: [{ "a": 1 }, { "b": 2 }]
+    expected: { "a": 1, "b": 2 }
+  - input: [{ "a": 1 }, { "a": 2 }]
+    expected: { "a": 2 }
+hidden_tests:
+  - input: [{}, {}]
+    expected: {}
+  - input: [{ "x": 5 }, {}]
+    expected: { "x": 5 }
+  - input: [{}, { "y": 7 }]
+    expected: { "y": 7 }
+  - input: [{ "a": 1, "b": 2 }, { "b": 99, "c": 3 }]
+    expected: { "a": 1, "b": 99, "c": 3 }
+  - input: [{ "k": 0 }, { "k": -1 }]
+    expected: { "k": -1 }

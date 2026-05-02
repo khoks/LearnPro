@@ -1,0 +1,41 @@
+slug: rotate-list
+name: Rotate a list
+language: python
+difficulty: 3
+track: python-fundamentals
+concept_tags:
+  - lists
+  - slicing
+  - modulo
+expected_median_time_to_solve_ms: 240000
+statement: |
+  Write `solve(nums, k)` that returns the list `nums` rotated to the right by
+  `k` positions. `k` may be larger than `len(nums)`. Negative `k` rotates left.
+  The original list must not be mutated.
+starter_code: |
+  def solve(nums, k):
+      pass
+reference_solution: |
+  def solve(nums, k):
+      if not nums:
+          return []
+      k = k % len(nums)
+      return nums[-k:] + nums[:-k] if k else list(nums)
+public_examples:
+  - input: [[1, 2, 3, 4, 5], 2]
+    expected: [4, 5, 1, 2, 3]
+  - input: [[1, 2, 3], 0]
+    expected: [1, 2, 3]
+hidden_tests:
+  - input: [[], 3]
+    expected: []
+  - input: [[1], 7]
+    expected: [1]
+  - input: [[1, 2, 3, 4], 4]
+    expected: [1, 2, 3, 4]
+  - input: [[1, 2, 3, 4], 5]
+    expected: [4, 1, 2, 3]
+  - input: [[1, 2, 3, 4, 5], -1]
+    expected: [2, 3, 4, 5, 1]
+  - input: [[1, 2, 3, 4, 5], 12]
+    expected: [4, 5, 1, 2, 3]

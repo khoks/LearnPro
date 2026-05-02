@@ -1,0 +1,38 @@
+slug: factorial
+name: Factorial
+language: python
+difficulty: 2
+track: python-fundamentals
+concept_tags:
+  - control-flow
+  - recursion
+  - arithmetic
+expected_median_time_to_solve_ms: 120000
+statement: |
+  Write `solve(n)` that returns `n!` (factorial of `n`). By convention, `0! == 1`.
+  You may assume `n >= 0`.
+starter_code: |
+  def solve(n):
+      pass
+reference_solution: |
+  def solve(n):
+      result = 1
+      for i in range(2, n + 1):
+          result *= i
+      return result
+public_examples:
+  - input: 5
+    expected: 120
+  - input: 0
+    expected: 1
+hidden_tests:
+  - input: 1
+    expected: 1
+  - input: 3
+    expected: 6
+  - input: 10
+    expected: 3628800
+  - input: 12
+    expected: 479001600
+  - input: 2
+    expected: 2

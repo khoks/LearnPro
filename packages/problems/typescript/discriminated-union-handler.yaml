@@ -1,0 +1,71 @@
+slug: discriminated-union-handler
+name: Discriminated union dispatcher
+language: typescript
+difficulty: 4
+track: typescript-fundamentals
+concept_tags:
+  - discriminated-unions
+  - narrowing
+  - control-flow
+expected_median_time_to_solve_ms: 360000
+statement: |
+  Given a discriminated union `Shape` with `kind: "circle" | "square" |
+  "rectangle"`, write `solve(shape: Shape): number` that returns the area:
+
+  - `circle` has a `radius: number` — area is `Math.PI * radius ** 2`.
+  - `square` has a `side: number` — area is `side ** 2`.
+  - `rectangle` has `width: number` and `height: number` — area is `width *
+    height`.
+
+  Use a switch on `shape.kind` and let the compiler narrow the variant. The
+  grader compares the result rounded to 4 decimal places — so multiply by
+  `10000`, `Math.round`, divide by `10000` before returning.
+starter_code: |
+  type Shape =
+      | { kind: "circle"; radius: number }
+      | { kind: "square"; side: number }
+      | { kind: "rectangle"; width: number; height: number };
+
+  function solve(shape: Shape): number {
+      // TODO
+      return 0;
+  }
+reference_solution: |
+  type Shape =
+      | { kind: "circle"; radius: number }
+      | { kind: "square"; side: number }
+      | { kind: "rectangle"; width: number; height: number };
+
+  function solve(shape: Shape): number {
+      let area = 0;
+      switch (shape.kind) {
+          case "circle":
+              area = Math.PI * shape.radius * shape.radius;
+              break;
+          case "square":
+              area = shape.side * shape.side;
+              break;
+          case "rectangle":
+              area = shape.width * shape.height;
+              break;
+      }
+      return Math.round(area * 10000) / 10000;
+  }
+public_examples:
+  - input: { "kind": "square", "side": 4 }
+    expected: 16
+  - input: { "kind": "rectangle", "width": 3, "height": 5 }
+    expected: 15
+hidden_tests:
+  - input: { "kind": "square", "side": 0 }
+    expected: 0
+  - input: { "kind": "rectangle", "width": 0, "height": 100 }
+    expected: 0
+  - input: { "kind": "square", "side": 10 }
+    expected: 100
+  - input: { "kind": "rectangle", "width": 7, "height": 8 }
+    expected: 56
+  - input: { "kind": "circle", "radius": 1 }
+    expected: 3.1416
+  - input: { "kind": "circle", "radius": 0 }
+    expected: 0

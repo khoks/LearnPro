@@ -1,0 +1,78 @@
+slug: bank-account
+name: Simulate a bank account
+language: python
+difficulty: 4
+track: python-fundamentals
+concept_tags:
+  - class-basics
+  - control-flow
+  - error-handling
+expected_median_time_to_solve_ms: 480000
+statement: |
+  Implement a `BankAccount` class with these operations and then expose `solve(operations)`
+  that processes a list of `[op, amount?]` operations sequentially and returns the final balance.
+
+  The class must support:
+  - `deposit(amount)` — `amount` must be > 0; raise `ValueError` otherwise.
+  - `withdraw(amount)` — `amount` must be > 0 and `<= balance`; raise `ValueError` otherwise.
+  - `balance` property — current balance, starting at 0.
+
+  In `solve`, ignore any operation that raises `ValueError` and continue.
+
+  Operations format: `["deposit", n]`, `["withdraw", n]`.
+starter_code: |
+  class BankAccount:
+      def __init__(self):
+          pass
+
+  def solve(operations):
+      pass
+reference_solution: |
+  class BankAccount:
+      def __init__(self):
+          self._balance = 0
+
+      @property
+      def balance(self):
+          return self._balance
+
+      def deposit(self, amount):
+          if amount <= 0:
+              raise ValueError("amount must be positive")
+          self._balance += amount
+
+      def withdraw(self, amount):
+          if amount <= 0 or amount > self._balance:
+              raise ValueError("invalid withdrawal")
+          self._balance -= amount
+
+  def solve(operations):
+      acct = BankAccount()
+      for op in operations:
+          name, amount = op[0], op[1]
+          try:
+              if name == "deposit":
+                  acct.deposit(amount)
+              elif name == "withdraw":
+                  acct.withdraw(amount)
+          except ValueError:
+              pass
+      return acct.balance
+public_examples:
+  - input: [[["deposit", 100], ["withdraw", 30]]]
+    expected: 70
+  - input: [[["deposit", 50], ["withdraw", 100]]]
+    expected: 50
+hidden_tests:
+  - input: [[]]
+    expected: 0
+  - input: [[["deposit", 100], ["deposit", 50], ["withdraw", 30]]]
+    expected: 120
+  - input: [[["deposit", -5], ["deposit", 10]]]
+    expected: 10
+  - input: [[["withdraw", 10]]]
+    expected: 0
+  - input: [[["deposit", 100], ["withdraw", 0]]]
+    expected: 100
+  - input: [[["deposit", 100], ["withdraw", 100], ["withdraw", 1]]]
+    expected: 0

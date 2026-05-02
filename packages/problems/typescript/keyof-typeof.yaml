@@ -1,0 +1,46 @@
+slug: keyof-typeof
+name: Get value by key with keyof
+language: typescript
+difficulty: 3
+track: typescript-fundamentals
+concept_tags:
+  - generics-basics
+  - keyof-typeof
+  - objects
+expected_median_time_to_solve_ms: 240000
+statement: |
+  Write `solve<T extends Record<string, unknown>, K extends keyof T>(obj: T,
+  key: K): T[K]` that returns `obj[key]` with the precise type. The grader
+  passes `[obj, key]` as a 2-element array which the harness unpacks into
+  the two arguments.
+starter_code: |
+  function solve<T extends Record<string, unknown>, K extends keyof T>(
+      obj: T,
+      key: K,
+  ): T[K] {
+      // TODO
+      return undefined as T[K];
+  }
+reference_solution: |
+  function solve<T extends Record<string, unknown>, K extends keyof T>(
+      obj: T,
+      key: K,
+  ): T[K] {
+      return obj[key];
+  }
+public_examples:
+  - input: [{ "a": 1, "b": 2 }, "a"]
+    expected: 1
+  - input: [{ "name": "alice" }, "name"]
+    expected: "alice"
+hidden_tests:
+  - input: [{ "x": 0 }, "x"]
+    expected: 0
+  - input: [{ "flag": true }, "flag"]
+    expected: true
+  - input: [{ "a": null }, "a"]
+    expected: null
+  - input: [{ "k": "v", "n": 9 }, "n"]
+    expected: 9
+  - input: [{ "deep": [1, 2] }, "deep"]
+    expected: [1, 2]

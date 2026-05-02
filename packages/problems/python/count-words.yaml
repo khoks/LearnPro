@@ -1,0 +1,35 @@
+slug: count-words
+name: Count words
+language: python
+difficulty: 2
+track: python-fundamentals
+concept_tags:
+  - strings
+  - string-manipulation
+expected_median_time_to_solve_ms: 90000
+statement: |
+  Write `solve(s)` that returns the number of whitespace-separated words in `s`.
+  Multiple spaces should be treated as one separator. Leading and trailing
+  whitespace should be ignored.
+starter_code: |
+  def solve(s):
+      pass
+reference_solution: |
+  def solve(s):
+      return len(s.split())
+public_examples:
+  - input: "hello world"
+    expected: 2
+  - input: "the quick brown fox"
+    expected: 4
+hidden_tests:
+  - input: ""
+    expected: 0
+  - input: "   "
+    expected: 0
+  - input: "single"
+    expected: 1
+  - input: "  multiple   spaces   between  "
+    expected: 3
+  - input: "tabs\tand\tnewlines\nare\nseparators"
+    expected: 5

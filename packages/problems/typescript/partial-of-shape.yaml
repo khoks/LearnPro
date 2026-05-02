@@ -1,0 +1,42 @@
+slug: partial-of-shape
+name: Apply a partial update
+language: typescript
+difficulty: 3
+track: typescript-fundamentals
+concept_tags:
+  - utility-types
+  - partial-types
+  - objects
+expected_median_time_to_solve_ms: 240000
+statement: |
+  Given a `User` shape `{ id: number; name: string; active: boolean }`,
+  write `solve(user: User, patch: Partial<User>): User` that returns a new
+  `User` with all fields from `user` overridden by any provided fields in
+  `patch`. Do not mutate the inputs.
+starter_code: |
+  type User = { id: number; name: string; active: boolean };
+  function solve(user: User, patch: Partial<User>): User {
+      // TODO
+      return user;
+  }
+reference_solution: |
+  type User = { id: number; name: string; active: boolean };
+  function solve(user: User, patch: Partial<User>): User {
+      return { ...user, ...patch };
+  }
+public_examples:
+  - input: [{ "id": 1, "name": "alice", "active": true }, { "name": "alicia" }]
+    expected: { "id": 1, "name": "alicia", "active": true }
+  - input: [{ "id": 1, "name": "alice", "active": true }, {}]
+    expected: { "id": 1, "name": "alice", "active": true }
+hidden_tests:
+  - input: [{ "id": 0, "name": "", "active": false }, { "id": 5 }]
+    expected: { "id": 5, "name": "", "active": false }
+  - input: [{ "id": 1, "name": "a", "active": true }, { "active": false }]
+    expected: { "id": 1, "name": "a", "active": false }
+  - input: [{ "id": 1, "name": "a", "active": true }, { "id": 2, "name": "b", "active": false }]
+    expected: { "id": 2, "name": "b", "active": false }
+  - input: [{ "id": 1, "name": "x", "active": true }, { "name": "" }]
+    expected: { "id": 1, "name": "", "active": true }
+  - input: [{ "id": -1, "name": "neg", "active": false }, { "id": 0 }]
+    expected: { "id": 0, "name": "neg", "active": false }

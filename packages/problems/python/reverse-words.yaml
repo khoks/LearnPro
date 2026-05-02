@@ -1,0 +1,34 @@
+slug: reverse-words
+name: Reverse word order
+language: python
+difficulty: 2
+track: python-fundamentals
+concept_tags:
+  - strings
+  - string-manipulation
+  - lists
+expected_median_time_to_solve_ms: 120000
+statement: |
+  Write `solve(s)` that returns the words of `s` in reversed order, separated by
+  single spaces. Multiple separating spaces collapse to one. Leading and
+  trailing whitespace is dropped.
+starter_code: |
+  def solve(s):
+      pass
+reference_solution: |
+  def solve(s):
+      return " ".join(reversed(s.split()))
+public_examples:
+  - input: "hello world"
+    expected: "world hello"
+  - input: "the quick brown fox"
+    expected: "fox brown quick the"
+hidden_tests:
+  - input: ""
+    expected: ""
+  - input: "single"
+    expected: "single"
+  - input: "  spaced   out  "
+    expected: "out spaced"
+  - input: "a b c d e"
+    expected: "e d c b a"
