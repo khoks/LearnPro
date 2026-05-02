@@ -27,8 +27,9 @@ import {
   SandboxRunRequestSchema,
   type SandboxProvider,
 } from "@learnpro/sandbox";
+import { createDb, updateProfileFields } from "@learnpro/db";
 import { registerOnboardingRoute, type OnboardingProfileWriter } from "./onboarding.js";
-import type { SessionResolver } from "./session.js";
+import { buildSessionResolver, type SessionResolver } from "./session.js";
 
 const PORT = Number(process.env["PORT"] ?? 4000);
 const HOST = process.env["HOST"] ?? "0.0.0.0";
@@ -220,8 +221,25 @@ export function buildServer(opts: BuildServerOptions = {}) {
   return app;
 }
 
+// Wires the production-default session resolver + profile writer when DATABASE_URL is set.
+// Both stay undefined in dev-without-DB mode (and in tests, which inject their own).
+function defaultsFromEnv(): {
+  sessionResolver?: SessionResolver;
+  onboardingProfileWriter?: OnboardingProfileWriter;
+} {
+  const url = process.env["DATABASE_URL"];
+  if (!url) return {};
+  const { db } = createDb({ connectionString: url });
+  return {
+    sessionResolver: buildSessionResolver({ db }),
+    onboardingProfileWriter: async (user_id, updates) => {
+      await updateProfileFields({ db, user_id, updates });
+    },
+  };
+}
+
 async function start() {
-  const app = buildServer();
+  const app = buildServer(defaultsFromEnv());
   try {
     await app.listen({ port: PORT, host: HOST });
   } catch (err) {
