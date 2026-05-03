@@ -1,0 +1,133 @@
+slug: python-fundamentals
+name: Python fundamentals
+language: python
+description: |
+  A pedagogical sequence that takes a beginner from naming their first variable
+  to writing a small class with error handling. Each concept is anchored to two
+  or three problems from the curated Python seed bank (STORY-016) so the tutor
+  can hand the learner a real exercise the moment a concept lands.
+ordered_concepts:
+  - slug: variables-and-types
+    name: Variables and types
+    summary: |
+      A variable is a name bound to a value. Python's core scalar types are
+      `int`, `float`, `str`, and `bool`. You don't declare types up front —
+      the interpreter infers them from the value you assign — but the type
+      still controls what operations are legal on the value.
+    prerequisite_concept_slugs: []
+    seed_problem_slugs:
+      - sum-two-numbers
+      - is-even
+      - sum-digits
+
+  - slug: control-flow
+    name: Control flow
+    summary: |
+      Programs branch with `if` / `elif` / `else` and loop with `for` / `while`.
+      The condition expression must evaluate to a truthy value; loops can be
+      cut short with `break` or jumped past with `continue`. Indentation is
+      how Python marks the block that belongs to a branch.
+    prerequisite_concept_slugs:
+      - variables-and-types
+    seed_problem_slugs:
+      - fizzbuzz
+      - max-of-list
+      - factorial
+
+  - slug: strings
+    name: Strings
+    summary: |
+      Strings are immutable sequences of characters. Build them with quotes,
+      concatenate with `+`, repeat with `*`, slice with `s[a:b]`, and search
+      with `in`. The `str` type ships with batteries — `lower`, `upper`,
+      `split`, `join`, `strip`, `replace` — that cover most day-one needs.
+    prerequisite_concept_slugs:
+      - variables-and-types
+      - control-flow
+    seed_problem_slugs:
+      - reverse-string
+      - count-vowels
+      - is-palindrome
+
+  - slug: lists-and-tuples
+    name: Lists and tuples
+    summary: |
+      A `list` is a mutable, ordered sequence; a `tuple` is its immutable
+      cousin. Index from the front with `[0]` or the back with `[-1]`, slice
+      ranges with `[a:b]`, and grow lists with `append` / `extend`. Tuples
+      are the right choice when the shape is fixed (think a 2D point).
+    prerequisite_concept_slugs:
+      - variables-and-types
+      - control-flow
+    seed_problem_slugs:
+      - sum-list
+      - common-elements
+      - rotate-list
+
+  - slug: dicts-and-sets
+    name: Dicts and sets
+    summary: |
+      A `dict` maps unique keys to values; a `set` stores unique values.
+      Both are powered by hashing, so lookup is O(1) on average. Reach for
+      a dict when you need to associate data with a key, and a set when you
+      just need to ask "have I seen this before?".
+    prerequisite_concept_slugs:
+      - lists-and-tuples
+    seed_problem_slugs:
+      - dict-invert
+      - merge-dicts
+      - unique-list
+
+  - slug: comprehensions
+    name: Comprehensions
+    summary: |
+      Comprehensions are Python's compact syntax for building a collection
+      from another iterable: `[expr for x in xs if cond]` for lists,
+      `{k: v for ...}` for dicts, `{expr for ...}` for sets. They're a
+      direct, readable replacement for the build-up-with-`append` loop.
+    prerequisite_concept_slugs:
+      - lists-and-tuples
+      - dicts-and-sets
+    seed_problem_slugs:
+      - squares-evens
+      - flatten-list
+      - sum-positive
+
+  - slug: functions-and-closures
+    name: Functions and closures
+    summary: |
+      Functions are first-class values: define them with `def`, call them
+      with `()`, pass them as arguments, return them from other functions.
+      A closure is a function that captures variables from the enclosing
+      scope — useful when you want to remember state without a class.
+    prerequisite_concept_slugs:
+      - control-flow
+    seed_problem_slugs:
+      - factorial
+      - fibonacci
+      - binary-search
+
+  - slug: classes-basics
+    name: Classes basics
+    summary: |
+      A class bundles state with the operations on it. Define attributes in
+      `__init__`, expose behavior through methods, mark a method `@property`
+      to read it like an attribute. Instances are created by calling the
+      class — Python passes the new object as the implicit `self`.
+    prerequisite_concept_slugs:
+      - functions-and-closures
+    seed_problem_slugs:
+      - bank-account
+
+  - slug: errors-and-exceptions
+    name: Errors and exceptions
+    summary: |
+      Python signals trouble by raising an exception and unwinding the stack
+      until something catches it. Use `try` / `except` to handle expected
+      failures, `raise` to signal your own, and pick from the built-in
+      hierarchy (`ValueError`, `KeyError`, `TypeError`) before inventing one.
+    prerequisite_concept_slugs:
+      - functions-and-closures
+      - classes-basics
+    seed_problem_slugs:
+      - bank-account
