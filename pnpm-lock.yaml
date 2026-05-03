@@ -38,12 +38,18 @@ importers:
       '@fastify/cookie':
         specifier: ^11.0.1
         version: 11.0.2
+      '@learnpro/agent':
+        specifier: workspace:*
+        version: link:../../packages/agent
       '@learnpro/db':
         specifier: workspace:^
         version: link:../../packages/db
       '@learnpro/llm':
         specifier: workspace:*
         version: link:../../packages/llm
+      '@learnpro/problems':
+        specifier: workspace:*
+        version: link:../../packages/problems
       '@learnpro/prompts':
         specifier: workspace:*
         version: link:../../packages/prompts
@@ -56,9 +62,15 @@ importers:
       '@learnpro/shared':
         specifier: workspace:*
         version: link:../../packages/shared
+      drizzle-orm:
+        specifier: ^0.36.4
+        version: 0.36.4(@types/pg@8.20.0)(@types/react@19.2.14)(pg@8.20.0)(react@19.2.5)
       fastify:
         specifier: ^5.2.0
         version: 5.8.5
+      zod:
+        specifier: ^3.24.1
+        version: 3.25.76
     devDependencies:
       '@types/node':
         specifier: ^22.10.2
@@ -133,6 +145,43 @@ importers:
       eslint-config-next:
         specifier: ^15.1.3
         version: 15.5.15(eslint@9.39.4)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
+      vitest:
+        specifier: ^2.1.8
+        version: 2.1.9(@types/node@22.19.17)
+
+  packages/agent:
+    dependencies:
+      '@learnpro/db':
+        specifier: workspace:*
+        version: link:../db
+      '@learnpro/llm':
+        specifier: workspace:*
+        version: link:../llm
+      '@learnpro/problems':
+        specifier: workspace:*
+        version: link:../problems
+      '@learnpro/prompts':
+        specifier: workspace:*
+        version: link:../prompts
+      '@learnpro/sandbox':
+        specifier: workspace:*
+        version: link:../sandbox
+      '@learnpro/scoring':
+        specifier: workspace:*
+        version: link:../scoring
+      drizzle-orm:
+        specifier: ^0.36.4
+        version: 0.36.4(@types/pg@8.20.0)(@types/react@19.2.14)(pg@8.20.0)(react@19.2.5)
+      zod:
+        specifier: ^3.24.1
+        version: 3.25.76
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.2
+        version: 22.19.17
       typescript:
         specifier: ^5.7.2
         version: 5.9.3
