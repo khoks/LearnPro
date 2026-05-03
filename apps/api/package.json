@@ -14,13 +14,17 @@
   },
   "dependencies": {
     "@fastify/cookie": "^11.0.1",
+    "@learnpro/agent": "workspace:*",
     "@learnpro/db": "workspace:^",
     "@learnpro/llm": "workspace:*",
+    "@learnpro/problems": "workspace:*",
     "@learnpro/prompts": "workspace:*",
     "@learnpro/sandbox": "workspace:*",
     "@learnpro/scoring": "workspace:*",
     "@learnpro/shared": "workspace:*",
-    "fastify": "^5.2.0"
+    "drizzle-orm": "^0.36.4",
+    "fastify": "^5.2.0",
+    "zod": "^3.24.1"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",

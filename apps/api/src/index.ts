@@ -37,6 +37,8 @@ import {
 import { registerOnboardingRoute, type OnboardingProfileWriter } from "./onboarding.js";
 import { MemoryRateLimiter, type RateLimiter } from "./rate-limiter.js";
 import { buildSessionResolver, type SessionResolver } from "./session.js";
+import { registerTutorRoutes, type TutorAgentFactory } from "./tutor.js";
+import { buildDrizzleTutorFactory } from "./tutor-factory.js";
 
 const PORT = Number(process.env["PORT"] ?? 4000);
 const HOST = process.env["HOST"] ?? "0.0.0.0";
@@ -62,6 +64,9 @@ export interface BuildServerOptions {
   // MemoryRateLimiter with a 1-hour window (configurable via LEARNPRO_EXPORT_RATE_LIMIT_HOURS).
   dataExporter?: DataExporter;
   exportRateLimiter?: RateLimiter;
+  // STORY-011 — tutor agent factory. Default in production wires the Drizzle/LLM-backed factory
+  // when DATABASE_URL is set; tests inject a fake factory so they don't need DB or LLM.
+  tutorAgentFactory?: TutorAgentFactory;
 }
 
 // Default impl when no store is provided — drops events on the floor. Useful for tests and
@@ -221,6 +226,14 @@ export function buildServer(opts: BuildServerOptions = {}) {
     rateLimiter: exportRateLimiter,
   });
 
+  // STORY-011 — tutor agent routes. The factory tuple (TutorSession + 4 tools) is constructed
+  // per-request inside `registerTutorRoutes` so each HTTP call sees a fresh state hydrated from
+  // the episode row. Production wires `buildDrizzleTutorFactory` via `defaultsFromEnv()`; tests
+  // inject `tutorAgentFactory` directly.
+  if (opts.tutorAgentFactory) {
+    registerTutorRoutes(app, { factory: opts.tutorAgentFactory, sessionResolver });
+  }
+
   // STORY-060 deferred AC — friendly 429 mapping for the per-user daily token budget. Any handler
   // that calls into the LLM provider can throw `TokenBudgetExceededError`; this hook catches it
   // before Fastify's default 500 path so the playground can render the friendly message AC from
@@ -251,6 +264,7 @@ function defaultsFromEnv(): {
   sessionResolver?: SessionResolver;
   onboardingProfileWriter?: OnboardingProfileWriter;
   dataExporter?: DataExporter;
+  tutorAgentFactory?: TutorAgentFactory;
 } {
   const url = process.env["DATABASE_URL"];
   if (!url) return {};
@@ -264,6 +278,11 @@ function defaultsFromEnv(): {
     dataExporter: async (user_id, write) => {
       await exportUserData({ user_id, write, fetcher });
     },
+    tutorAgentFactory: buildDrizzleTutorFactory({
+      db,
+      llm: defaultLLM(),
+      sandbox: defaultSandbox(),
+    }),
   };
 }
 

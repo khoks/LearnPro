@@ -38,12 +38,18 @@ importers:
       '@fastify/cookie':
         specifier: ^11.0.1
         version: 11.0.2
+      '@learnpro/agent':
+        specifier: workspace:*
+        version: link:../../packages/agent
       '@learnpro/db':
         specifier: workspace:^
         version: link:../../packages/db
       '@learnpro/llm':
         specifier: workspace:*
         version: link:../../packages/llm
+      '@learnpro/problems':
+        specifier: workspace:*
+        version: link:../../packages/problems
       '@learnpro/prompts':
         specifier: workspace:*
         version: link:../../packages/prompts
@@ -56,9 +62,15 @@ importers:
       '@learnpro/shared':
         specifier: workspace:*
         version: link:../../packages/shared
+      drizzle-orm:
+        specifier: ^0.36.4
+        version: 0.36.4(@types/pg@8.20.0)(@types/react@19.2.14)(pg@8.20.0)(react@19.2.5)
       fastify:
         specifier: ^5.2.0
         version: 5.8.5
+      zod:
+        specifier: ^3.24.1
+        version: 3.25.76
     devDependencies:
       '@types/node':
         specifier: ^22.10.2
