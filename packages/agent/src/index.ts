@@ -88,3 +88,12 @@ export {
   type TutorSessionOptions,
   type TutorSessionTools,
 } from "./tutor-session.js";
+
+export {
+  buildAssignProblemDrizzleDeps,
+  buildGiveHintDrizzleDeps,
+  buildGradeDrizzleDeps,
+  buildUpdateProfileDrizzleDeps,
+  loadEpisodeProblemRow,
+  type BuildDrizzleAgentDepsOptions,
+} from "./drizzle-deps.js";
