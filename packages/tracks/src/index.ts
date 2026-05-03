@@ -15,6 +15,9 @@ export {
 export {
   loadTrack,
   PYTHON_FUNDAMENTALS_PATH,
+  seedTrack,
   TRACKS_ROOT,
   type LoadTrackOptions,
+  type SeedTrackOptions,
+  type SeedTrackResult,
 } from "./loader.js";
