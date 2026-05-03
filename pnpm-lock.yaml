@@ -140,6 +140,43 @@ importers:
         specifier: ^2.1.8
         version: 2.1.9(@types/node@22.19.17)
 
+  packages/agent:
+    dependencies:
+      '@learnpro/db':
+        specifier: workspace:*
+        version: link:../db
+      '@learnpro/llm':
+        specifier: workspace:*
+        version: link:../llm
+      '@learnpro/problems':
+        specifier: workspace:*
+        version: link:../problems
+      '@learnpro/prompts':
+        specifier: workspace:*
+        version: link:../prompts
+      '@learnpro/sandbox':
+        specifier: workspace:*
+        version: link:../sandbox
+      '@learnpro/scoring':
+        specifier: workspace:*
+        version: link:../scoring
+      drizzle-orm:
+        specifier: ^0.36.4
+        version: 0.36.4(@types/pg@8.20.0)(@types/react@19.2.14)(pg@8.20.0)(react@19.2.5)
+      zod:
+        specifier: ^3.24.1
+        version: 3.25.76
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.2
+        version: 22.19.17
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
+      vitest:
+        specifier: ^2.1.8
+        version: 2.1.9(@types/node@22.19.17)
+
   packages/db:
     dependencies:
       '@learnpro/llm':
