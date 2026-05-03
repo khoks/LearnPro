@@ -69,3 +69,22 @@ export {
   type GradeOutput,
   type GradeTool,
 } from "./tools/grade.js";
+
+export {
+  UpdateProfileEpisodeMissingError,
+  UpdateProfileInputSchema,
+  UpdateProfileOutputSchema,
+  coldStartSkill,
+  createUpdateProfileTool,
+  deriveFinalOutcome,
+  type CreateUpdateProfileToolOptions,
+  type UpdateProfileInput,
+  type UpdateProfileOutput,
+  type UpdateProfileTool,
+} from "./tools/update-profile.js";
+
+export {
+  TutorSession,
+  type TutorSessionOptions,
+  type TutorSessionTools,
+} from "./tutor-session.js";
