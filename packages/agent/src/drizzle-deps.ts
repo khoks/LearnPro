@@ -18,10 +18,7 @@ import {
 import type { LLMProvider } from "@learnpro/llm";
 import type { SandboxProvider } from "@learnpro/sandbox";
 import type { ConceptSkill } from "@learnpro/scoring";
-import {
-  ANTHROPIC_HAIKU,
-  ANTHROPIC_OPUS,
-} from "@learnpro/llm";
+import { ANTHROPIC_HAIKU, ANTHROPIC_OPUS } from "@learnpro/llm";
 import {
   GRADE_PROMPT_VERSION_TAG,
   TUTOR_PROMPT_VERSION,
@@ -468,15 +465,13 @@ function problemDefFromRow(
 ): ProblemDef {
   const def = catalog.find((c) => c.slug === row.problem_slug);
   if (def) return def;
-  const ht = row.problem_hidden_tests as
-    | {
-        cases?: Array<{ input: unknown; expected: unknown; weight?: number }>;
-        public_examples?: Array<{ input: unknown; expected: unknown }>;
-        reference_solution?: string;
-        concept_tags?: string[];
-        expected_median_time_to_solve_ms?: number;
-      }
-    | null;
+  const ht = row.problem_hidden_tests as {
+    cases?: Array<{ input: unknown; expected: unknown; weight?: number }>;
+    public_examples?: Array<{ input: unknown; expected: unknown }>;
+    reference_solution?: string;
+    concept_tags?: string[];
+    expected_median_time_to_solve_ms?: number;
+  } | null;
   const cases = ht?.cases ?? [];
   const synth = {
     slug: row.problem_slug,
@@ -488,12 +483,11 @@ function problemDefFromRow(
     statement: row.problem_statement,
     starter_code: row.problem_starter_code ?? "",
     reference_solution: ht?.reference_solution ?? row.problem_starter_code ?? "",
-    public_examples:
-      ht?.public_examples?.length
-        ? ht.public_examples
-        : cases.length > 0 && cases[0]
-          ? [cases[0]]
-          : [{ input: null, expected: null }],
+    public_examples: ht?.public_examples?.length
+      ? ht.public_examples
+      : cases.length > 0 && cases[0]
+        ? [cases[0]]
+        : [{ input: null, expected: null }],
     hidden_tests: cases.length > 0 ? cases : [{ input: null, expected: null }],
     expected_median_time_to_solve_ms: ht?.expected_median_time_to_solve_ms ?? 300_000,
   };

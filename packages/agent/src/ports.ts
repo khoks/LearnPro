@@ -82,10 +82,7 @@ export interface GradeDeps {
 
   // Runs the user's submission against the problem's hidden tests via the sandbox + per-language
   // verdict harness from @learnpro/problems. Returns one entry per hidden test.
-  runHiddenTests(input: {
-    problem: ProblemDef;
-    user_code: string;
-  }): Promise<HiddenTestResult[]>;
+  runHiddenTests(input: { problem: ProblemDef; user_code: string }): Promise<HiddenTestResult[]>;
 
   // LLM rubric call. Returns a structured grade + a 1-2 sentence prose explanation.
   generateRubric(input: {
@@ -157,10 +154,7 @@ export interface UpdateProfileDeps {
 
   // Reads the current skill_score row for a (user, concept) — null when none exists yet (which is
   // the cold-start case for a new concept).
-  loadSkillScore(input: {
-    user_id: string;
-    concept_id: string;
-  }): Promise<ConceptSkill | null>;
+  loadSkillScore(input: { user_id: string; concept_id: string }): Promise<ConceptSkill | null>;
 }
 
 export interface UpdateProfileEpisodeContext {

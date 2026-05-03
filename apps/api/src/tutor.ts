@@ -24,11 +24,7 @@ import type { SessionResolver } from "./session.js";
 export interface TutorAgentFactory {
   // Called by `POST /v1/tutor/episodes` — there is no episode_id yet, so the tools resolve the
   // user's track + recent episodes, then assign a new problem.
-  createForAssign(input: {
-    user_id: string;
-    org_id: string;
-    track_id: string;
-  }): Promise<{
+  createForAssign(input: { user_id: string; org_id: string; track_id: string }): Promise<{
     session: TutorSession;
     tools: TutorSessionTools;
   }>;
@@ -60,9 +56,7 @@ const SubmitBodySchema = z.object({
 });
 
 const FinishBodySchema = z.object({
-  outcome: z
-    .enum(["passed", "passed_with_hints", "failed", "abandoned", "revealed"])
-    .optional(),
+  outcome: z.enum(["passed", "passed_with_hints", "failed", "abandoned", "revealed"]).optional(),
   reveal_clicked: z.boolean().optional(),
 });
 
@@ -231,10 +225,4 @@ function mapToolError(reply: FastifyReply, err: unknown): unknown {
 
 // ---- Re-exports for the apps/api wiring layer (drizzle / LLM-backed tool factories). ----
 
-export type {
-  AssignProblemTool,
-  GiveHintTool,
-  GradeTool,
-  UpdateProfileTool,
-  TutorSessionTools,
-};
+export type { AssignProblemTool, GiveHintTool, GradeTool, UpdateProfileTool, TutorSessionTools };

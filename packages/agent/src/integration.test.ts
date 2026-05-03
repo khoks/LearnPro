@@ -20,18 +20,10 @@ import {
   type AnthropicMessageResponse,
   type LLMProvider,
 } from "@learnpro/llm";
-import type {
-  SandboxLanguage,
-  SandboxProvider,
-  SandboxRunResponse,
-} from "@learnpro/sandbox";
+import type { SandboxLanguage, SandboxProvider, SandboxRunResponse } from "@learnpro/sandbox";
 import { ProblemDefSchema, type ProblemDef } from "@learnpro/problems";
 import { eq, sql } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
-
-interface PoolLike {
-  end(): Promise<void>;
-}
 import { TutorSession } from "./tutor-session.js";
 import {
   buildAssignProblemDrizzleDeps,
@@ -44,6 +36,10 @@ import { createGiveHintTool } from "./tools/give-hint.js";
 import { createGradeTool } from "./tools/grade.js";
 import { createUpdateProfileTool } from "./tools/update-profile.js";
 import { DrizzleLLMTelemetrySink } from "@learnpro/db";
+
+interface PoolLike {
+  end(): Promise<void>;
+}
 
 const DATABASE_URL = process.env["DATABASE_URL"];
 
@@ -62,7 +58,10 @@ describe.skipIf(!DATABASE_URL)("agent integration: full state machine + DB write
     db = created.db;
     pool = created.pool;
     await runMigrations();
-    await db.insert(organizations).values({ id: "self", name: "Self-hosted" }).onConflictDoNothing();
+    await db
+      .insert(organizations)
+      .values({ id: "self", name: "Self-hosted" })
+      .onConflictDoNothing();
 
     const u = await db
       .insert(users)
@@ -141,7 +140,14 @@ describe.skipIf(!DATABASE_URL)("agent integration: full state machine + DB write
     const sandbox = new FakeSandbox({ pass: true });
     const catalog = [pythonCatalogDef("two-sum-int")];
 
-    const session = makeSession({ db, llm, sandbox, catalog, userId: testUserId, trackId: testTrackId });
+    const session = makeSession({
+      db,
+      llm,
+      sandbox,
+      catalog,
+      userId: testUserId,
+      trackId: testTrackId,
+    });
 
     await session.assign();
     expect(session.state.phase).toBe("coding");
@@ -155,10 +161,7 @@ describe.skipIf(!DATABASE_URL)("agent integration: full state machine + DB write
     expect(finish.skill_updates.length).toBeGreaterThan(0);
 
     // DB assertions:
-    const epRows = await db
-      .select()
-      .from(episodes)
-      .where(eq(episodes.user_id, testUserId));
+    const epRows = await db.select().from(episodes).where(eq(episodes.user_id, testUserId));
     expect(epRows).toHaveLength(1);
     const ep = epRows[0]!;
     expect(ep.final_outcome).toBe("passed");
@@ -170,10 +173,7 @@ describe.skipIf(!DATABASE_URL)("agent integration: full state machine + DB write
     expect(subRows).toHaveLength(1);
     expect(subRows[0]?.passed).toBe(true);
 
-    const ssRows = await db
-      .select()
-      .from(skill_scores)
-      .where(eq(skill_scores.user_id, testUserId));
+    const ssRows = await db.select().from(skill_scores).where(eq(skill_scores.user_id, testUserId));
     expect(ssRows.length).toBeGreaterThanOrEqual(1);
     expect(ssRows.every((r) => r.score > 50)).toBe(true);
 
@@ -203,7 +203,14 @@ describe.skipIf(!DATABASE_URL)("agent integration: full state machine + DB write
     const sandbox = new FakeSandbox({ failFirst: 1 });
     const catalog = [pythonCatalogDef("two-sum-int")];
 
-    const session = makeSession({ db, llm, sandbox, catalog, userId: testUserId, trackId: testTrackId });
+    const session = makeSession({
+      db,
+      llm,
+      sandbox,
+      catalog,
+      userId: testUserId,
+      trackId: testTrackId,
+    });
 
     await session.assign();
     const fail = await session.submit("def solve(nums, target):\n    return []\n");
@@ -215,9 +222,7 @@ describe.skipIf(!DATABASE_URL)("agent integration: full state machine + DB write
     const finish = await session.finish({});
     expect(finish.final_outcome).toBe("passed_with_hints");
 
-    const ep = (
-      await db.select().from(episodes).where(eq(episodes.user_id, testUserId))
-    )[0]!;
+    const ep = (await db.select().from(episodes).where(eq(episodes.user_id, testUserId)))[0]!;
     expect(ep.hints_used).toBeGreaterThanOrEqual(1);
     expect(ep.attempts).toBeGreaterThanOrEqual(2);
     expect(ep.final_outcome).toBe("passed_with_hints");
@@ -364,7 +369,9 @@ class FakeSandbox implements SandboxProvider {
     const passed = this.alwaysPass || this.remainingFailures <= 0;
     if (!passed && this.remainingFailures > 0) this.remainingFailures -= 1;
     return {
-      stdout: passed ? "__LEARNPRO_PASS__\n" : '__LEARNPRO_FAIL__{"detail":"mismatch","got":null}\n',
+      stdout: passed
+        ? "__LEARNPRO_PASS__\n"
+        : '__LEARNPRO_FAIL__{"detail":"mismatch","got":null}\n',
       stderr: "",
       exit_code: 0,
       duration_ms: 1,

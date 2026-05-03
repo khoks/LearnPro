@@ -58,9 +58,7 @@ export function buildHintUserPrompt(opts: HintPromptOptions): string {
   const priorBlock =
     opts.prior_hints.length === 0
       ? "(no prior hints given for this episode)"
-      : opts.prior_hints
-          .map((h) => `Rung ${h.rung}: ${h.hint}`)
-          .join("\n\n");
+      : opts.prior_hints.map((h) => `Rung ${h.rung}: ${h.hint}`).join("\n\n");
   return [
     `Problem: ${opts.problem_name}`,
     `Language: ${opts.problem_language}`,

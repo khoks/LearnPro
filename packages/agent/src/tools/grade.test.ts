@@ -1,12 +1,7 @@
 import type { ProblemDef } from "@learnpro/problems";
 import { describe, expect, it, vi } from "vitest";
 import type { GradeDeps, GradeEpisodeContext, HiddenTestResult } from "../ports.js";
-import {
-  aggregatePassed,
-  clampRubric,
-  createGradeTool,
-  summarizeFailingTests,
-} from "./grade.js";
+import { aggregatePassed, clampRubric, createGradeTool, summarizeFailingTests } from "./grade.js";
 import { EpisodeNotFoundError } from "./give-hint.js";
 
 const EPISODE_ID = "11111111-1111-4111-8111-111111111111";
@@ -32,14 +27,18 @@ function pdef(): ProblemDef {
 function fakeDeps(opts: {
   ctx?: GradeEpisodeContext | null;
   test_results?: HiddenTestResult[];
-  rubric?: { rubric: { correctness: number; idiomatic: number; edge_case_coverage: number }; prose_explanation: string };
+  rubric?: {
+    rubric: { correctness: number; idiomatic: number; edge_case_coverage: number };
+    prose_explanation: string;
+  };
 }): GradeDeps & { recordedSubmissions: number; rubricMock: ReturnType<typeof vi.fn> } {
   let recordedSubmissions = 0;
-  const rubricMock = vi.fn(async () =>
-    opts.rubric ?? {
-      rubric: { correctness: 1, idiomatic: 0.9, edge_case_coverage: 0.85 },
-      prose_explanation: "solid solve",
-    },
+  const rubricMock = vi.fn(
+    async () =>
+      opts.rubric ?? {
+        rubric: { correctness: 1, idiomatic: 0.9, edge_case_coverage: 0.85 },
+        prose_explanation: "solid solve",
+      },
   );
   return {
     rubricMock,

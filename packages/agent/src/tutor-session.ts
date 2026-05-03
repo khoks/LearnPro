@@ -8,10 +8,7 @@ import {
 import type { AssignProblemTool, AssignProblemOutput } from "./tools/assign-problem.js";
 import type { GiveHintOutput, GiveHintTool } from "./tools/give-hint.js";
 import type { GradeOutput, GradeTool } from "./tools/grade.js";
-import type {
-  UpdateProfileOutput,
-  UpdateProfileTool,
-} from "./tools/update-profile.js";
+import type { UpdateProfileOutput, UpdateProfileTool } from "./tools/update-profile.js";
 import { deriveFinalOutcome } from "./tools/update-profile.js";
 
 export interface TutorSessionTools {
@@ -141,7 +138,10 @@ export class TutorSession {
   // The user (or the UI on their behalf) declares this episode finished. `outcome === "abandoned"`
   // is legal from any non-terminal phase. Otherwise the caller must have already submitted at
   // least once (so we know `last_passed`).
-  async finish(opts: { outcome?: FinalOutcome; reveal_clicked?: boolean }): Promise<UpdateProfileOutput> {
+  async finish(opts: {
+    outcome?: FinalOutcome;
+    reveal_clicked?: boolean;
+  }): Promise<UpdateProfileOutput> {
     const reveal_clicked = opts.reveal_clicked ?? false;
     const requestedAbandon = opts.outcome === "abandoned";
 
@@ -168,8 +168,7 @@ export class TutorSession {
       throw new IllegalTransitionError(this._state.phase, "finish");
     }
 
-    const last_passed =
-      this._state.phase === "grading" ? this._state.last_passed : false;
+    const last_passed = this._state.phase === "grading" ? this._state.last_passed : false;
     const final_outcome =
       opts.outcome ??
       deriveFinalOutcome({

@@ -29,9 +29,7 @@ export interface BuildDrizzleTutorFactoryOptions {
   catalog_loader?: () => ProblemDef[];
 }
 
-export function buildDrizzleTutorFactory(
-  opts: BuildDrizzleTutorFactoryOptions,
-): TutorAgentFactory {
+export function buildDrizzleTutorFactory(opts: BuildDrizzleTutorFactoryOptions): TutorAgentFactory {
   const catalog = (opts.catalog_loader ?? loadProblems)();
 
   function makeTools(org_id: string): TutorSessionTools {

@@ -87,6 +87,7 @@ STORY-053 (conversational onboarding agent) landed 2026-04-28 — `POST /v1/onbo
 
 | ID | Title | Done |
 |----|-------|------|
+| [STORY-011](stories/STORY-011-tutor-agent-tools.md) | Tutor agent with `assign-problem` / `give-hint` / `grade` / `update-profile` tools (hand-rolled state machine + 4 tools + 4 API routes + replay fixture; `/session` UI → STORY-062) | 2026-05-03 |
 | [STORY-026](stories/STORY-026-data-export.md) | GDPR-style JSON data export endpoint (`GET /v1/export` streaming + `MemoryRateLimiter` + round-trip-importable shape; `importDump()` → STORY-061, Redis limiter → STORY-062) | 2026-05-03 |
 | [STORY-019](stories/STORY-019-python-track.md) | Python fundamentals track — 9-concept ordered YAML + Zod-validated loader + idempotent `seedTrack` (3 spec concepts deferred until seed bank covers them; track-picker UI + progress-bar UI deferred to dashboard / STORY-022) | 2026-05-01 |
 | [STORY-053](stories/STORY-053-conversational-onboarding-agent.md) | Conversational onboarding agent (warm-coach Haiku chat + structured-form fallback + 6-turn / 3000-token caps + incremental profile persistence) | 2026-04-28 |

@@ -75,9 +75,7 @@ export function deriveFinalOutcome(opts: {
   return "passed";
 }
 
-export function createUpdateProfileTool(
-  opts: CreateUpdateProfileToolOptions,
-): UpdateProfileTool {
+export function createUpdateProfileTool(opts: CreateUpdateProfileToolOptions): UpdateProfileTool {
   const config = opts.difficulty_config ?? DEFAULT_DIFFICULTY_HEURISTIC;
 
   return {
@@ -119,10 +117,11 @@ export function createUpdateProfileTool(
       for (const slug of conceptSlugs) {
         const concept_id = idMap.get(slug);
         if (!concept_id) continue;
-        const prev = (await opts.deps.loadSkillScore({
-          user_id: ctx.user_id,
-          concept_id,
-        })) ?? coldStartSkill(concept_id);
+        const prev =
+          (await opts.deps.loadSkillScore({
+            user_id: ctx.user_id,
+            concept_id,
+          })) ?? coldStartSkill(concept_id);
         const next = updateSkillScore(prev, signal, config);
         await opts.deps.upsertSkillScore({
           user_id: ctx.user_id,

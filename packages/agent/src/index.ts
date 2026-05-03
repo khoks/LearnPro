@@ -83,11 +83,7 @@ export {
   type UpdateProfileTool,
 } from "./tools/update-profile.js";
 
-export {
-  TutorSession,
-  type TutorSessionOptions,
-  type TutorSessionTools,
-} from "./tutor-session.js";
+export { TutorSession, type TutorSessionOptions, type TutorSessionTools } from "./tutor-session.js";
 
 export {
   buildAssignProblemDrizzleDeps,

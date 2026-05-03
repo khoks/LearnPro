@@ -105,9 +105,24 @@ function makeFactory(opts: FakeFactoryOptions = {}): TutorAgentFactory {
         return fakeAssignOutput();
       },
     },
-    giveHint: { name: "giveHint", async run({ rung }) { return fakeHintOutput(rung as 1 | 2 | 3); } },
-    grade: { name: "grade", async run() { return fakeGradeOutput(true); } },
-    updateProfile: { name: "updateProfile", async run() { return fakeUpdateProfileOutput(); } },
+    giveHint: {
+      name: "giveHint",
+      async run({ rung }) {
+        return fakeHintOutput(rung as 1 | 2 | 3);
+      },
+    },
+    grade: {
+      name: "grade",
+      async run() {
+        return fakeGradeOutput(true);
+      },
+    },
+    updateProfile: {
+      name: "updateProfile",
+      async run() {
+        return fakeUpdateProfileOutput();
+      },
+    },
   };
 
   return {

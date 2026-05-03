@@ -66,10 +66,13 @@ function fakeDeps(opts: {
     },
     closeEpisode: closeMock,
     async resolveConceptIds() {
-      return opts.resolved ?? new Map([
-        ["arrays", "concept-arrays"],
-        ["hash-map", "concept-hash-map"],
-      ]);
+      return (
+        opts.resolved ??
+        new Map([
+          ["arrays", "concept-arrays"],
+          ["hash-map", "concept-hash-map"],
+        ])
+      );
     },
     async loadSkillScore({ concept_id }) {
       if (opts.prior_skill === null) return null;
