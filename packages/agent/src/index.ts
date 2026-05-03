@@ -42,3 +42,30 @@ export {
   type AssignProblemTool,
   type CreateAssignProblemToolOptions,
 } from "./tools/assign-problem.js";
+
+export {
+  EpisodeNotFoundError,
+  GiveHintInputSchema,
+  GiveHintOutputSchema,
+  appendHint,
+  createGiveHintTool,
+  xpCostForRung,
+  type CreateGiveHintToolOptions,
+  type GiveHintInput,
+  type GiveHintOutput,
+  type GiveHintTool,
+} from "./tools/give-hint.js";
+
+export {
+  GradeInputSchema,
+  GradeOutputSchema,
+  GradeRubricSchema,
+  aggregatePassed,
+  clampRubric,
+  createGradeTool,
+  summarizeFailingTests,
+  type CreateGradeToolOptions,
+  type GradeInput,
+  type GradeOutput,
+  type GradeTool,
+} from "./tools/grade.js";

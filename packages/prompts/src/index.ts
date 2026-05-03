@@ -7,3 +7,18 @@ export {
   ONBOARDING_SYSTEM_PROMPT,
   PROMPT_VERSION as ONBOARDING_PROMPT_VERSION,
 } from "./onboarding.js";
+
+export {
+  HINT_RUNG_XP_COST,
+  TUTOR_PROMPT_VERSION,
+  buildHintSystemPrompt,
+  buildHintUserPrompt,
+  type HintPromptOptions,
+} from "./hint.js";
+
+export {
+  GRADE_PROMPT_VERSION_TAG,
+  buildGradeSystemPrompt,
+  buildGradeUserPrompt,
+  type GradePromptOptions,
+} from "./grade.js";

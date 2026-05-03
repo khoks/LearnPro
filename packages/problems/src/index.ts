@@ -32,3 +32,13 @@ export {
   type ProblemValidationResult,
   type ValidateProblemsOptions,
 } from "./validate.js";
+
+export {
+  VERDICT_PASS_TOKEN,
+  VERDICT_FAIL_TOKEN,
+  buildHarness,
+  buildHarnessForProblem,
+  parseVerdict,
+  type BuildHarnessOptions,
+  type Verdict,
+} from "./harness.js";
