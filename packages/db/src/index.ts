@@ -39,3 +39,9 @@ export {
   type FindSessionUserOptions,
   type SessionUser,
 } from "./session-lookup.js";
+export {
+  drizzleExportFetcher,
+  exportUserData,
+  type ExportFetcher,
+  type ExportUserDataOptions,
+} from "./data-export.js";

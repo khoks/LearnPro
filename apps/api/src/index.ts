@@ -27,8 +27,15 @@ import {
   SandboxRunRequestSchema,
   type SandboxProvider,
 } from "@learnpro/sandbox";
-import { createDb, updateProfileFields } from "@learnpro/db";
+import { createDb, drizzleExportFetcher, exportUserData, updateProfileFields } from "@learnpro/db";
+import {
+  loadExportWindowMs,
+  noDbExporter,
+  registerExportRoute,
+  type DataExporter,
+} from "./export.js";
 import { registerOnboardingRoute, type OnboardingProfileWriter } from "./onboarding.js";
+import { MemoryRateLimiter, type RateLimiter } from "./rate-limiter.js";
 import { buildSessionResolver, type SessionResolver } from "./session.js";
 
 const PORT = Number(process.env["PORT"] ?? 4000);
@@ -49,6 +56,12 @@ export interface BuildServerOptions {
   // are written through this hook (in apps/web → @learnpro/db.updateProfileFields). Tests inject
   // a fake to assert the call shape.
   onboardingProfileWriter?: OnboardingProfileWriter;
+  // STORY-026 — GDPR-style data export. `dataExporter` defaults to a DB-backed exporter when
+  // DATABASE_URL is set, else a minimal "no DB" exporter that emits an empty envelope (so the
+  // route is testable in dev without Postgres). `exportRateLimiter` defaults to a process-local
+  // MemoryRateLimiter with a 1-hour window (configurable via LEARNPRO_EXPORT_RATE_LIMIT_HOURS).
+  dataExporter?: DataExporter;
+  exportRateLimiter?: RateLimiter;
 }
 
 // Default impl when no store is provided — drops events on the floor. Useful for tests and
@@ -106,6 +119,9 @@ export function buildServer(opts: BuildServerOptions = {}) {
   const usageStore = opts.usageStore ?? new InMemoryUsageStore();
   const dailyTokenLimit =
     opts.dailyTokenLimit ?? Number(process.env["LEARNPRO_DAILY_TOKEN_LIMIT"] ?? 0);
+  const dataExporter = opts.dataExporter ?? noDbExporter;
+  const exportRateLimiter =
+    opts.exportRateLimiter ?? new MemoryRateLimiter({ windowMs: loadExportWindowMs(process.env) });
 
   app.get("/health", async () => healthPayload({ service: "api" }));
 
@@ -198,6 +214,13 @@ export function buildServer(opts: BuildServerOptions = {}) {
     }),
   });
 
+  // STORY-026 — GET /v1/export. Auth-gated, per-user-rate-limited, streaming JSON envelope.
+  registerExportRoute(app, {
+    exporter: dataExporter,
+    sessionResolver,
+    rateLimiter: exportRateLimiter,
+  });
+
   // STORY-060 deferred AC — friendly 429 mapping for the per-user daily token budget. Any handler
   // that calls into the LLM provider can throw `TokenBudgetExceededError`; this hook catches it
   // before Fastify's default 500 path so the playground can render the friendly message AC from
@@ -221,19 +244,25 @@ export function buildServer(opts: BuildServerOptions = {}) {
   return app;
 }
 
-// Wires the production-default session resolver + profile writer when DATABASE_URL is set.
-// Both stay undefined in dev-without-DB mode (and in tests, which inject their own).
+// Wires the production-default session resolver + profile writer + data exporter when
+// DATABASE_URL is set. All stay undefined in dev-without-DB mode (and in tests, which inject
+// their own).
 function defaultsFromEnv(): {
   sessionResolver?: SessionResolver;
   onboardingProfileWriter?: OnboardingProfileWriter;
+  dataExporter?: DataExporter;
 } {
   const url = process.env["DATABASE_URL"];
   if (!url) return {};
   const { db } = createDb({ connectionString: url });
+  const fetcher = drizzleExportFetcher(db);
   return {
     sessionResolver: buildSessionResolver({ db }),
     onboardingProfileWriter: async (user_id, updates) => {
       await updateProfileFields({ db, user_id, updates });
+    },
+    dataExporter: async (user_id, write) => {
+      await exportUserData({ user_id, write, fetcher });
     },
   };
 }
