@@ -10,7 +10,8 @@
     "start": "node dist/index.js",
     "lint": "eslint src",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run --passWithNoTests"
+    "test": "vitest run --passWithNoTests",
+    "daily-reminder": "tsx src/daily-reminder.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^11.0.1",
