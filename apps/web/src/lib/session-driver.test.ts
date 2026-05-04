@@ -63,6 +63,7 @@ const profile: UpdateProfileOutput = {
       attempts: 1,
     },
   ],
+  xp_award: { amount: 30, reason: "episode-passed", awarded: true },
 };
 
 const hint1Body = { rung: 1 as const, hint: "Think about pairs.", xp_cost: 5 };
