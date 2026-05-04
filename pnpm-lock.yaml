@@ -56,6 +56,9 @@ importers:
       '@learnpro/prompts':
         specifier: workspace:*
         version: link:../../packages/prompts
+      '@learnpro/redaction':
+        specifier: workspace:*
+        version: link:../../packages/redaction
       '@learnpro/sandbox':
         specifier: workspace:*
         version: link:../../packages/sandbox

@@ -21,6 +21,7 @@
     "@learnpro/notifications": "workspace:*",
     "@learnpro/problems": "workspace:*",
     "@learnpro/prompts": "workspace:*",
+    "@learnpro/redaction": "workspace:*",
     "@learnpro/sandbox": "workspace:*",
     "@learnpro/scoring": "workspace:*",
     "@learnpro/shared": "workspace:*",

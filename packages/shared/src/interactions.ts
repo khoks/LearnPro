@@ -30,9 +30,13 @@ export const CursorFocusPayloadSchema = z.object({
   duration_ms: z.number().int().nonnegative(),
 });
 
+// STORY-056 — `redaction_summary` is stamped on by the ingestion endpoint after the redactor
+// runs. Clients shouldn't supply it; the schema accepts it as optional so the server-stamped
+// shape re-validates cleanly. `types_scrubbed` mirrors `RedactionType` from ./redaction.
 export const VoicePayloadSchema = z.object({
   transcript: z.string().min(1),
   language: z.string().min(2).max(16).optional(),
+  redaction_summary: z.object({ types_scrubbed: z.array(z.string()) }).optional(),
 });
 
 export const EditPayloadSchema = z.object({

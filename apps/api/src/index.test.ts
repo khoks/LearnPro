@@ -3,6 +3,7 @@ import type { InteractionStore, StoredInteraction } from "@learnpro/shared";
 import { InMemoryUsageStore, TokenBudgetExceededError, type LLMProvider } from "@learnpro/llm";
 import type { SandboxProvider, SandboxRunRequest, SandboxRunResponse } from "@learnpro/sandbox";
 import { buildServer } from "./index.js";
+import { regexOnlyRedactor } from "./redactor.js";
 import type { SessionResolver } from "./session.js";
 
 const userSession =
@@ -294,6 +295,98 @@ describe("apps/api", () => {
       const res = await app.inject({ method: "GET", url: "/llm/usage/today" });
       expect(res.statusCode).toBe(200);
       expect(res.json()).toEqual({ used_tokens: 9999, limit_tokens: 0, ratio: 0 });
+      await app.close();
+    });
+  });
+
+  describe("POST /v1/interactions — voice transcript redaction (STORY-056)", () => {
+    it("scrubs PII from voice transcripts before persisting + stamps redaction_summary", async () => {
+      const store = new FakeInteractionStore();
+      const app = buildServer({
+        sandbox: new FakeSandbox(),
+        interactionStore: store,
+        redactor: regexOnlyRedactor(),
+      });
+      const res = await app.inject({
+        method: "POST",
+        url: "/v1/interactions",
+        payload: {
+          events: [
+            {
+              type: "voice",
+              payload: {
+                transcript: "Hi there, ping me at jane@example.com or call 555-123-4567",
+                language: "en",
+              },
+            },
+          ],
+        },
+      });
+      expect(res.statusCode).toBe(202);
+      const batch = store.batches[0]!;
+      const stored = batch[0]!;
+      expect(stored.type).toBe("voice");
+      const payload = stored.payload as {
+        transcript: string;
+        redaction_summary: { types_scrubbed: string[] };
+      };
+      expect(payload.transcript).not.toContain("jane@example.com");
+      expect(payload.transcript).not.toContain("555-123-4567");
+      expect(payload.transcript).toContain("[REDACTED:email]");
+      expect(payload.transcript).toContain("[REDACTED:phone]");
+      expect(payload.redaction_summary.types_scrubbed.sort()).toEqual(["email", "phone"]);
+      await app.close();
+    });
+
+    it("integration safety: known-PII voice payload posted directly to the endpoint never lands raw", async () => {
+      const store = new FakeInteractionStore();
+      const app = buildServer({
+        sandbox: new FakeSandbox(),
+        interactionStore: store,
+        redactor: regexOnlyRedactor(),
+      });
+      // Bypass the client batcher entirely — straight HTTP post with raw PII.
+      await app.inject({
+        method: "POST",
+        url: "/v1/interactions",
+        payload: {
+          events: [
+            {
+              type: "voice",
+              payload: {
+                transcript: "Card on file 4242 4242 4242 4242 and SSN 111-22-3333",
+                language: "en",
+              },
+            },
+          ],
+        },
+      });
+      const stored = store.batches[0]?.[0];
+      const payload = stored?.payload as { transcript: string };
+      expect(payload.transcript).not.toContain("4242 4242 4242 4242");
+      expect(payload.transcript).not.toContain("111-22-3333");
+      expect(payload.transcript).toContain("[REDACTED:credit_card]");
+      expect(payload.transcript).toContain("[REDACTED:gov_id]");
+      await app.close();
+    });
+
+    it("non-voice events pass through redactor untouched", async () => {
+      const store = new FakeInteractionStore();
+      const app = buildServer({
+        sandbox: new FakeSandbox(),
+        interactionStore: store,
+        redactor: regexOnlyRedactor(),
+      });
+      await app.inject({
+        method: "POST",
+        url: "/v1/interactions",
+        payload: {
+          events: [{ type: "submit", payload: { passed: true } }],
+        },
+      });
+      const stored = store.batches[0]?.[0];
+      expect(stored?.type).toBe("submit");
+      expect(stored?.payload).toEqual({ passed: true });
       await app.close();
     });
   });

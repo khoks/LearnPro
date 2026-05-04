@@ -17,6 +17,7 @@ import {
   UpdateProfileEpisodeMissingError,
 } from "@learnpro/agent";
 import type { SessionResolver } from "./session.js";
+import type { PiiRedactor } from "./redactor.js";
 
 // Factory pattern: the production wiring constructs a TutorSession by reading the existing
 // `episodes` row, building the four tools from real LLM/DB/sandbox deps, and handing back a
@@ -63,6 +64,10 @@ const FinishBodySchema = z.object({
 export interface RegisterTutorRoutesOptions {
   factory: TutorAgentFactory;
   sessionResolver: SessionResolver;
+  // STORY-056 — code submissions are run through `redactor.redact(code, { allowUrls: true })`
+  // before being handed to the grade tool. URLs are preserved (tutorials often link docs); emails
+  // / phones / IDs / cards are still scrubbed.
+  redactor: PiiRedactor;
 }
 
 export function registerTutorRoutes(app: FastifyInstance, opts: RegisterTutorRoutesOptions): void {
@@ -134,8 +139,10 @@ export function registerTutorRoutes(app: FastifyInstance, opts: RegisterTutorRou
       const factoryResult = await loadExisting(opts, session, req.params.id);
       if (!factoryResult) return reply.code(404).send({ error: "episode_not_found" });
 
+      const redaction = await opts.redactor.redact(parsed.data.code, { allowUrls: true });
+
       try {
-        const out = await factoryResult.session.submit(parsed.data.code);
+        const out = await factoryResult.session.submit(redaction.redacted);
         return reply.code(200).send(out);
       } catch (err) {
         return mapToolError(reply, err);
