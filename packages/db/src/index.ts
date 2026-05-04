@@ -89,6 +89,14 @@ export {
   type InsertDeferredNotificationOptions,
 } from "./deferred-notifications.js";
 export {
+  sweepAll,
+  sweepInteractionTelemetry,
+  sweepRawLlmCalls,
+  sweepVoiceTranscripts,
+  type SweepAllResult,
+  type SweepOptions,
+} from "./retention.js";
+export {
   DEFAULT_PLAN_TTL_HOURS,
   SessionPlanItemSchema,
   SessionPlanItemStatusSchema,

@@ -16,7 +16,8 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/migrate.ts",
     "db:seed": "tsx src/seed.ts",
-    "db:gc": "tsx src/notifications-gc.ts"
+    "db:gc": "tsx src/notifications-gc.ts",
+    "db:retention": "tsx src/retention-sweep.ts"
   },
   "dependencies": {
     "@learnpro/llm": "workspace:*",
