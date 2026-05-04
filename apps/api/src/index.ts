@@ -30,9 +30,12 @@ import {
 } from "@learnpro/sandbox";
 import {
   createDb,
+  deleteUserAccount,
+  deleteUserVoiceTranscripts,
   drizzleExportFetcher,
   exportUserData,
   getQuietHoursConfig,
+  getUserDataSummary,
   insertDeferredNotification,
   updateProfileFields,
 } from "@learnpro/db";
@@ -51,6 +54,7 @@ import {
   type DataExporter,
 } from "./export.js";
 import { buildDefaultRedactor, inertRedactor, type PiiRedactor } from "./redactor.js";
+import { registerDataControlsRoutes, type DataControlsAdapters } from "./data-controls.js";
 import { buildWebPushSender, configureVapid, type WebPushConfig } from "./notifications-vapid.js";
 import { registerNotificationsRoutes } from "./notifications.js";
 import { registerQuietHoursRoutes } from "./quiet-hours.js";
@@ -121,6 +125,10 @@ export interface BuildServerOptions {
   // POST /v1/tutor/episodes/:id/submit. Tests inject `inertRedactor`; production wires
   // `buildDefaultRedactor({ llm })` (regex + Haiku second pass).
   redactor?: PiiRedactor;
+  // STORY-056 — user-facing data control routes. When provided, registers `GET /v1/data/summary`,
+  // `DELETE /v1/data/voice`, `DELETE /v1/data/account`. Tests inject fake adapters; production
+  // wires `buildDrizzleDataControlsAdapters(db)` via defaultsFromEnv.
+  dataControls?: DataControlsAdapters;
 }
 
 // Default impl when no store is provided — drops events on the floor. Useful for tests and
@@ -300,6 +308,11 @@ export function buildServer(opts: BuildServerOptions = {}) {
     rateLimiter: exportRateLimiter,
   });
 
+  // STORY-056 — user-facing data controls. GET summary + DELETE voice + DELETE account.
+  if (opts.dataControls) {
+    registerDataControlsRoutes(app, { adapters: opts.dataControls, sessionResolver });
+  }
+
   // STORY-011 — tutor agent routes. The factory tuple (TutorSession + 4 tools) is constructed
   // per-request inside `registerTutorRoutes` so each HTTP call sees a fresh state hydrated from
   // the episode row. Production wires `buildDrizzleTutorFactory` via `defaultsFromEnv()`; tests
@@ -369,6 +382,7 @@ function defaultsFromEnv(): {
   sessionPlanFactory?: SessionPlanFactory;
   quietHoursDb?: import("@learnpro/db").LearnProDb;
   redactor?: PiiRedactor;
+  dataControls?: DataControlsAdapters;
 } {
   const url = process.env["DATABASE_URL"];
   if (!url) return {};
@@ -430,6 +444,11 @@ function defaultsFromEnv(): {
     sessionPlanFactory: buildDefaultSessionPlanFactory({ db, llm }),
     quietHoursDb: db,
     redactor: buildDefaultRedactor({ llm }),
+    dataControls: {
+      summary: (user_id) => getUserDataSummary(db, user_id),
+      deleteVoice: (user_id) => deleteUserVoiceTranscripts(db, user_id),
+      deleteAccount: (user_id) => deleteUserAccount(db, user_id),
+    },
   };
 }
 
