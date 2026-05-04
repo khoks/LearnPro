@@ -76,6 +76,19 @@ export {
   type MarkReadOptions,
 } from "./notifications.js";
 export {
+  getQuietHoursConfig,
+  updateQuietHoursConfig,
+  type UpdateQuietHoursConfigOptions,
+} from "./quiet-hours.js";
+export {
+  DeferredPayloadSchema,
+  deleteDeferredNotification,
+  insertDeferredNotification,
+  listDueDeferredNotifications,
+  type DeferredPayload,
+  type InsertDeferredNotificationOptions,
+} from "./deferred-notifications.js";
+export {
   DEFAULT_PLAN_TTL_HOURS,
   SessionPlanItemSchema,
   SessionPlanItemStatusSchema,

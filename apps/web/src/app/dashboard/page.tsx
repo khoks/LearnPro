@@ -9,6 +9,7 @@ import { redirect } from "next/navigation";
 import { auth, signOut } from "../../auth/auth.js";
 import { getAuthDb } from "../../auth/db.js";
 import { destinationForUser } from "../../auth/post-signin.js";
+import { QuietHoursCard } from "../../components/settings/QuietHoursCard.js";
 import { TrackProgressBar } from "./dashboard-components.js";
 import { DashboardCardsRow } from "./DashboardCardsRow.js";
 import { DashboardHeader } from "./DashboardHeader.js";
@@ -88,6 +89,11 @@ export default async function DashboardPage() {
             ))}
           </div>
         )}
+      </section>
+
+      <section aria-label="Settings" style={{ marginTop: "2rem" }}>
+        <h2 style={{ fontSize: "1.1rem", marginBottom: "0.75rem" }}>Settings</h2>
+        <QuietHoursCard />
       </section>
 
       <SignOutButton />

@@ -158,6 +158,15 @@ export const profiles = pgTable("profiles", {
   primary_goal: text("primary_goal"),
   self_assessed_level: text("self_assessed_level"),
   language_comfort: jsonb("language_comfort"),
+  // STORY-024 — user-configurable quiet hours. Default window 22:00 → 08:00 in the user's local
+  // timezone. The dispatcher checks `isInQuietHours()` before sending; in-window dispatches are
+  // deferred (written to deferred_notifications) — never dropped (anti-dark-pattern).
+  quiet_hours_enabled: boolean("quiet_hours_enabled").notNull().default(true),
+  quiet_hours_start_min: integer("quiet_hours_start_min").notNull().default(1320),
+  quiet_hours_end_min: integer("quiet_hours_end_min").notNull().default(480),
+  // IANA zone string ("America/Los_Angeles", etc.). Stored as text — never as a UTC offset, since
+  // offsets break across DST transitions.
+  timezone: text("timezone").notNull().default("UTC"),
   updated_at: updatedAt(),
 });
 
@@ -377,6 +386,34 @@ export const web_push_subscriptions = pgTable(
   }),
 );
 
+// STORY-024 — quiet-hours-deferred notifications. When the dispatcher's `shouldDeliverNow()`
+// hook returns false (user is inside their quiet window), the dispatcher writes the would-be
+// payload here with a `deliver_after` timestamp set to the next moment delivery is allowed.
+// `processDeferredNotifications()` drains the table when the window opens and dispatches the
+// payload through the normal channel chain. Anti-dark-pattern: notifications never get *dropped*,
+// only *deferred*.
+export const deferred_notifications = pgTable(
+  "deferred_notifications",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    org_id: orgId(),
+    user_id: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    // The `NotificationInput` minus the user_id (carried separately for the index). jsonb lets the
+    // shape evolve without requiring a migration each time the channel contract changes.
+    payload: jsonb("payload").notNull(),
+    // The first wall-clock instant the dispatcher is allowed to deliver this. The flusher's
+    // SELECT is `WHERE deliver_after <= now()`.
+    deliver_after: timestamp("deliver_after", { withTimezone: true }).notNull(),
+    created_at: createdAt(),
+  },
+  (t) => ({
+    deliver_after_idx: index("deferred_notifications_deliver_after_idx").on(t.deliver_after),
+    user_idx: index("deferred_notifications_user_idx").on(t.user_id),
+  }),
+);
+
 // STORY-015 — session-plan agent. One row per generated 3-5 micro-objective plan. `items` is the
 // jsonb array (slug + objective + estimated_duration_min + status + completed_at? + episode_id?).
 // `expires_at` lets the API return null past the 24h window so the agent regenerates a fresh plan
@@ -465,6 +502,8 @@ export type XpAward = typeof xp_awards.$inferSelect;
 export type NewXpAward = typeof xp_awards.$inferInsert;
 export type SessionPlanRow = typeof session_plans.$inferSelect;
 export type NewSessionPlanRow = typeof session_plans.$inferInsert;
+export type DeferredNotification = typeof deferred_notifications.$inferSelect;
+export type NewDeferredNotification = typeof deferred_notifications.$inferInsert;
 
 export const ALL_TABLES = [
   organizations,
@@ -485,6 +524,7 @@ export const ALL_TABLES = [
   web_push_subscriptions,
   xp_awards,
   session_plans,
+  deferred_notifications,
 ] as const;
 
 // Auth.js tables (`accounts`, `sessions`, `verificationTokens`) are intentionally NOT in this
@@ -505,6 +545,7 @@ export const ORG_SCOPED_TABLES = [
   web_push_subscriptions,
   xp_awards,
   session_plans,
+  deferred_notifications,
 ] as const;
 
 export const PGVECTOR_PROLOGUE_SQL = sql`CREATE EXTENSION IF NOT EXISTS vector`;

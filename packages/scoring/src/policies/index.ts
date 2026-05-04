@@ -8,3 +8,4 @@ export * from "./registry.js";
 export * from "./xp-streak-types.js";
 export * from "./xp-policy.js";
 export * from "./streak-policy.js";
+export * from "./quiet-hours.js";

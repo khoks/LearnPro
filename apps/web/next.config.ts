@@ -10,7 +10,13 @@ import type { NextConfig } from "next";
 // `./foo.tsx`. Standard fix for NodeNext-style ESM under webpack.
 const nextConfig: NextConfig = {
   reactStrictMode: true,
-  transpilePackages: ["@learnpro/shared", "@learnpro/sandbox", "@learnpro/db", "@learnpro/agent"],
+  transpilePackages: [
+    "@learnpro/shared",
+    "@learnpro/sandbox",
+    "@learnpro/db",
+    "@learnpro/agent",
+    "@learnpro/scoring",
+  ],
   webpack: (config) => {
     config.resolve = config.resolve ?? {};
     config.resolve.extensionAlias = {

@@ -28,6 +28,21 @@ export {
 } from "./dispatcher.js";
 
 export {
+  dispatcherWithQuietHours,
+  QuietHoursDispatcher,
+  type DeferDeliveryFn,
+  type DispatcherWithQuietHoursOptions,
+} from "./dispatcher-factory.js";
+
+export {
+  processDeferredNotifications,
+  type DueDeferredRow,
+  type ProcessDeferredNotificationsOptions,
+  type ProcessDeferredNotificationsOutcome,
+  type ProcessDispatcherLike,
+} from "./deferred-flusher.js";
+
+export {
   containsForbiddenPhrase,
   dailyDedupeKey,
   DAILY_REMINDER_BODY,

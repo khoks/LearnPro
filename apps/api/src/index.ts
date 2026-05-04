@@ -28,10 +28,19 @@ import {
   SandboxRunRequestSchema,
   type SandboxProvider,
 } from "@learnpro/sandbox";
-import { createDb, drizzleExportFetcher, exportUserData, updateProfileFields } from "@learnpro/db";
 import {
+  createDb,
+  drizzleExportFetcher,
+  exportUserData,
+  getQuietHoursConfig,
+  insertDeferredNotification,
+  updateProfileFields,
+} from "@learnpro/db";
+import {
+  dispatcherWithQuietHours,
   InAppChannel,
   NotificationDispatcher,
+  QuietHoursDispatcher,
   WebPushChannel,
   type NotificationChannel,
 } from "@learnpro/notifications";
@@ -43,6 +52,7 @@ import {
 } from "./export.js";
 import { buildWebPushSender, configureVapid, type WebPushConfig } from "./notifications-vapid.js";
 import { registerNotificationsRoutes } from "./notifications.js";
+import { registerQuietHoursRoutes } from "./quiet-hours.js";
 import { registerOnboardingRoute, type OnboardingProfileWriter } from "./onboarding.js";
 import { MemoryRateLimiter, type RateLimiter } from "./rate-limiter.js";
 import { buildSessionResolver, type SessionResolver } from "./session.js";
@@ -90,16 +100,21 @@ export interface BuildServerOptions {
   // when DATABASE_URL is set; tests inject a fake factory so they don't need DB or LLM.
   tutorAgentFactory?: TutorAgentFactory;
   // STORY-023 — bell-icon panel + Web Push routes. Tests inject a fake dispatcher / fake DB so
-  // they don't need Postgres or VAPID keys. Production wiring lives in defaultsFromEnv().
+  // they don't need Postgres or VAPID keys. Production wiring lives in defaultsFromEnv() and
+  // wraps the bare dispatcher with `dispatcherWithQuietHours()` (STORY-024).
   notifications?: {
     db: import("@learnpro/db").LearnProDb;
-    dispatcher: NotificationDispatcher;
+    dispatcher: NotificationDispatcher | QuietHoursDispatcher;
     vapidPublicKey: string;
   };
   // STORY-015 — session-plan factory. When provided, registers GET /v1/session-plan,
   // POST /v1/session-plan, POST /v1/session-plan/items/:slug/complete. Default in production
   // wires the Drizzle/LLM-backed factory when DATABASE_URL is set; tests inject a fake.
   sessionPlanFactory?: SessionPlanFactory;
+  // STORY-024 — settings DB handle for the quiet-hours GET / PUT routes. When supplied, registers
+  // /v1/settings/quiet-hours; tests inject a fake DB. Production wiring shares the same `db`
+  // instance the dispatcher uses (via `defaultsFromEnv()`).
+  quietHoursDb?: import("@learnpro/db").LearnProDb;
 }
 
 // Default impl when no store is provided — drops events on the floor. Useful for tests and
@@ -287,6 +302,12 @@ export function buildServer(opts: BuildServerOptions = {}) {
     });
   }
 
+  // STORY-024 — quiet-hours settings routes. Wired only when a db is supplied; defaultsFromEnv()
+  // forwards the same `db` instance the notifications dispatcher uses.
+  if (opts.quietHoursDb) {
+    registerQuietHoursRoutes(app, { db: opts.quietHoursDb, sessionResolver });
+  }
+
   // STORY-060 deferred AC — friendly 429 mapping for the per-user daily token budget. Any handler
   // that calls into the LLM provider can throw `TokenBudgetExceededError`; this hook catches it
   // before Fastify's default 500 path so the playground can render the friendly message AC from
@@ -320,6 +341,7 @@ function defaultsFromEnv(): {
   tutorAgentFactory?: TutorAgentFactory;
   notifications?: BuildServerOptions["notifications"];
   sessionPlanFactory?: SessionPlanFactory;
+  quietHoursDb?: import("@learnpro/db").LearnProDb;
 } {
   const url = process.env["DATABASE_URL"];
   if (!url) return {};
@@ -345,7 +367,21 @@ function defaultsFromEnv(): {
   if (webPushSender) {
     channels.push(new WebPushChannel({ db, sender: webPushSender }));
   }
-  const dispatcher = new NotificationDispatcher({ channels });
+  // STORY-024 — wrap the dispatcher with quiet-hours filtering. In-window dispatches are written
+  // to `deferred_notifications` instead of being sent; the cron flusher drains the table when the
+  // window opens. Notifications are deferred, never dropped (AC #4).
+  const { dispatcher } = dispatcherWithQuietHours({
+    channels,
+    getQuietHoursConfig: (user_id) => getQuietHoursConfig(db, user_id),
+    deferDelivery: async (input) => {
+      await insertDeferredNotification({
+        db,
+        user_id: input.user_id,
+        payload: input.payload,
+        deliver_after: input.deliver_after,
+      });
+    },
+  });
   return {
     sessionResolver: buildSessionResolver({ db }),
     onboardingProfileWriter: async (user_id, updates) => {
@@ -365,6 +401,7 @@ function defaultsFromEnv(): {
       vapidPublicKey: vapid?.publicKey ?? "",
     },
     sessionPlanFactory: buildDefaultSessionPlanFactory({ db, llm }),
+    quietHoursDb: db,
   };
 }
 

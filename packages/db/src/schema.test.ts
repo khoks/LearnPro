@@ -8,6 +8,7 @@ import {
   agentTaskEnum,
   ALL_TABLES,
   concepts,
+  deferred_notifications,
   episodes,
   finalOutcomeEnum,
   interactions,
@@ -372,6 +373,60 @@ describe("schema: xp + streak (STORY-022)", () => {
   it("xp_awards is included in both ALL_TABLES and ORG_SCOPED_TABLES", () => {
     expect(ALL_TABLES).toContain(xp_awards);
     expect(ORG_SCOPED_TABLES as readonly unknown[]).toContain(xp_awards);
+  });
+});
+
+describe("schema: quiet hours + deferred_notifications (STORY-024)", () => {
+  it("profiles carries quiet_hours_enabled (notNull, default true)", () => {
+    const cols = getTableColumns(profiles);
+    expect(cols.quiet_hours_enabled).toBeDefined();
+    expect(cols.quiet_hours_enabled?.notNull).toBe(true);
+    expect(cols.quiet_hours_enabled?.default).toBe(true);
+  });
+
+  it("profiles carries quiet_hours_start_min (notNull, default 1320 = 22:00)", () => {
+    const cols = getTableColumns(profiles);
+    expect(cols.quiet_hours_start_min).toBeDefined();
+    expect(cols.quiet_hours_start_min?.notNull).toBe(true);
+    expect(cols.quiet_hours_start_min?.default).toBe(1320);
+  });
+
+  it("profiles carries quiet_hours_end_min (notNull, default 480 = 08:00)", () => {
+    const cols = getTableColumns(profiles);
+    expect(cols.quiet_hours_end_min).toBeDefined();
+    expect(cols.quiet_hours_end_min?.notNull).toBe(true);
+    expect(cols.quiet_hours_end_min?.default).toBe(480);
+  });
+
+  it("profiles carries timezone (notNull, default 'UTC') as text — not an integer offset", () => {
+    const cols = getTableColumns(profiles);
+    expect(cols.timezone).toBeDefined();
+    expect(cols.timezone?.notNull).toBe(true);
+    expect(cols.timezone?.default).toBe("UTC");
+    expect(cols.timezone?.getSQLType()).toBe("text");
+  });
+
+  it("deferred_notifications has id / org_id / user_id / payload / deliver_after / created_at", () => {
+    const cols = getTableColumns(deferred_notifications);
+    expect(cols.id?.primary).toBe(true);
+    expect(cols.org_id?.notNull).toBe(true);
+    expect(cols.user_id?.notNull).toBe(true);
+    expect(cols.payload?.notNull).toBe(true);
+    expect(cols.payload?.getSQLType()).toBe("jsonb");
+    expect(cols.deliver_after?.notNull).toBe(true);
+    expect(cols.created_at?.notNull).toBe(true);
+  });
+
+  it("deferred_notifications declares (deliver_after) + (user_id) indexes for the flusher + per-user lookups", () => {
+    const config = getTableConfig(deferred_notifications);
+    const names = config.indexes.map((i) => i.config.name);
+    expect(names).toContain("deferred_notifications_deliver_after_idx");
+    expect(names).toContain("deferred_notifications_user_idx");
+  });
+
+  it("deferred_notifications is included in both ALL_TABLES and ORG_SCOPED_TABLES", () => {
+    expect(ALL_TABLES).toContain(deferred_notifications);
+    expect(ORG_SCOPED_TABLES as readonly unknown[]).toContain(deferred_notifications);
   });
 });
 

@@ -64,6 +64,13 @@
       "when": 1777881913625,
       "tag": "0008_repair_snapshot_post_023",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1777890109678,
+      "tag": "0009_quiet_hours",
+      "breakpoints": true
     }
   ]
 }

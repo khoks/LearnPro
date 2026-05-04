@@ -108,6 +108,9 @@ importers:
       '@learnpro/sandbox':
         specifier: workspace:*
         version: link:../../packages/sandbox
+      '@learnpro/scoring':
+        specifier: workspace:*
+        version: link:../../packages/scoring
       '@learnpro/shared':
         specifier: workspace:*
         version: link:../../packages/shared
@@ -274,6 +277,9 @@ importers:
       '@learnpro/db':
         specifier: workspace:*
         version: link:../db
+      '@learnpro/scoring':
+        specifier: workspace:*
+        version: link:../scoring
       drizzle-orm:
         specifier: ^0.36.4
         version: 0.36.4(@types/pg@8.20.0)(@types/react@19.2.14)(pg@8.20.0)(react@19.2.5)
