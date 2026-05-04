@@ -12,6 +12,7 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 export const TRACKS_ROOT = path.resolve(HERE, "..");
 
 export const PYTHON_FUNDAMENTALS_PATH = path.join(TRACKS_ROOT, "python-fundamentals.yaml");
+export const TYPESCRIPT_FUNDAMENTALS_PATH = path.join(TRACKS_ROOT, "typescript-fundamentals.yaml");
 
 export interface LoadTrackOptions {
   /**

@@ -17,6 +17,7 @@ export {
   PYTHON_FUNDAMENTALS_PATH,
   seedTrack,
   TRACKS_ROOT,
+  TYPESCRIPT_FUNDAMENTALS_PATH,
   type LoadTrackOptions,
   type SeedTrackOptions,
   type SeedTrackResult,

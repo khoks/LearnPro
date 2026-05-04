@@ -1,0 +1,199 @@
+slug: typescript-fundamentals
+name: TypeScript fundamentals
+language: typescript
+description: |
+  A pedagogical sequence that walks a TypeScript beginner from naming a typed
+  variable through the structural type system to async/Promise basics and
+  error handling. The emphasis is on what makes TS *not just JS* — the type
+  system, type narrowing, generics, and the utility-type vocabulary — because
+  that is where most learners struggle. Each concept is anchored to one to
+  three problems from the curated TypeScript seed bank (STORY-016).
+ordered_concepts:
+  - slug: variables-and-types
+    name: Variables and types
+    summary: |
+      A variable is a name bound to a value. TypeScript adds an optional
+      type annotation (`let x: number = 1`) but most of the time the
+      compiler infers the type from the initializer. The annotation pays
+      off the moment the value crosses a function boundary or comes back
+      from JSON, where inference can no longer see the shape.
+    prerequisite_concept_slugs: []
+    seed_problem_slugs:
+      - sum-two-numbers-ts
+      - is-even-ts
+
+  - slug: primitives
+    name: Primitives
+    summary: |
+      The core primitive types are `number`, `string`, `boolean`, `bigint`,
+      `symbol`, `null`, and `undefined`. `number` covers both integers and
+      floats; `null` and `undefined` are distinct and `strictNullChecks`
+      forces you to handle each. Operations are constrained by type — `+`
+      on two numbers adds, on two strings concatenates, and the compiler
+      will reject the cross-type case before the program ever runs.
+    prerequisite_concept_slugs:
+      - variables-and-types
+    seed_problem_slugs:
+      - sum-two-numbers-ts
+      - factorial-ts
+
+  - slug: arrays
+    name: Arrays
+    summary: |
+      An array is an ordered, mutable sequence written `T[]` or `Array<T>`.
+      Index from the front with `[0]` or the back with `arr.at(-1)`, grow
+      with `push`, walk with `for ... of`, and transform with `map` /
+      `filter` / `reduce`. The element type carries through every chain,
+      so `numbers.map(n => n.toString())` becomes a `string[]` automatically.
+    prerequisite_concept_slugs:
+      - variables-and-types
+      - primitives
+    seed_problem_slugs:
+      - sum-array
+      - max-of-list-ts
+      - fizzbuzz-ts
+
+  - slug: objects
+    name: Objects
+    summary: |
+      An object groups named, typed fields: `{ name: string; age: number }`.
+      Read fields with `obj.field`, write with `obj.field = value`, copy
+      with `{ ...obj }`. A `Record<K, V>` is a typed dictionary — useful
+      when keys are dynamic but every value shares a shape. Object types
+      are *structural*: any value with the right fields is assignable.
+    prerequisite_concept_slugs:
+      - variables-and-types
+      - primitives
+    seed_problem_slugs:
+      - array-to-record
+      - merge-objects-typed
+
+  - slug: unions-and-intersections
+    name: Unions and intersections
+    summary: |
+      A union `A | B` says the value is *either* `A` or `B`; an intersection
+      `A & B` says the value is *both* — every field of `A` plus every field
+      of `B`. Unions appear at every API boundary ("string or number id");
+      intersections compose two object shapes into a richer one. The two
+      operators are the type system's `or` and `and`, and most real types
+      are built by combining them.
+    prerequisite_concept_slugs:
+      - primitives
+      - objects
+    seed_problem_slugs:
+      - union-type-handler
+      - interface-vs-type
+
+  - slug: narrowing
+    name: Type narrowing
+    summary: |
+      Once a value has a union type, the compiler will not let you call a
+      method that only one branch supports until you *narrow* the type.
+      Use `typeof` / `instanceof` checks, equality against a literal, the
+      `in` operator, or a discriminant field to convince TS which branch
+      you're in. Optional chaining (`a?.b?.c`) narrows in the other
+      direction — short-circuiting on `null` / `undefined`.
+    prerequisite_concept_slugs:
+      - unions-and-intersections
+    seed_problem_slugs:
+      - narrow-string-or-number
+      - discriminated-union-handler
+      - optional-chaining-resolve
+
+  - slug: functions
+    name: Functions
+    summary: |
+      A function declares parameter types and a return type:
+      `function f(x: number): string`. Arrow functions, default values,
+      rest parameters, and overloads all pay the same type tax. Functions
+      are first-class values — assign them to variables, pass them around,
+      return them — and the compiler tracks the signature through every
+      hand-off, so a callback that expects `(s: string) => number` will
+      reject any other shape at the call site.
+    prerequisite_concept_slugs:
+      - primitives
+    seed_problem_slugs:
+      - count-words-ts
+      - flatten-recursive-typed
+      - binary-search-ts
+
+  - slug: generics-basics
+    name: Generics basics
+    summary: |
+      A generic parameter `<T>` lets a function or class promise the *same*
+      type goes in and comes out, without committing to a specific one.
+      `function identity<T>(x: T): T` returns a string when called with a
+      string and a number when called with a number — the compiler keeps
+      the link. Generics are how you write reusable code that does not
+      throw away type information at the door.
+    prerequisite_concept_slugs:
+      - functions
+      - objects
+    seed_problem_slugs:
+      - generic-identity
+      - class-stack-typed
+      - group-by-typed
+
+  - slug: interfaces-vs-types
+    name: Interfaces vs type aliases
+    summary: |
+      `interface Point { x: number; y: number }` and
+      `type Point = { x: number; y: number }` describe the same value, but
+      `interface` can be *re-opened* for declaration merging while `type`
+      cannot — and `type` can express unions, intersections, and mapped
+      types that `interface` cannot. Pick `interface` for object shapes
+      that may grow; pick `type` for everything else.
+    prerequisite_concept_slugs:
+      - objects
+      - unions-and-intersections
+    seed_problem_slugs:
+      - interface-vs-type
+      - keyof-typeof
+
+  - slug: utility-types
+    name: Utility types
+    summary: |
+      The standard library ships a vocabulary for transforming existing
+      types: `Partial<T>` makes every field optional, `Required<T>` makes
+      them required, `Pick<T, K>` keeps a subset of fields, `Omit<T, K>`
+      drops a subset, `Readonly<T>` freezes them. Reach for these before
+      hand-writing a parallel type — the original stays the source of
+      truth and the derived shape stays in sync.
+    prerequisite_concept_slugs:
+      - objects
+      - generics-basics
+      - interfaces-vs-types
+    seed_problem_slugs:
+      - partial-of-shape
+      - pick-type-keys
+      - utility-pick-omit
+
+  - slug: async-promise-basics
+    name: Async and Promise basics
+    summary: |
+      A `Promise<T>` is a value that will *eventually* be a `T` (or fail).
+      Mark a function `async` to return one implicitly, and use `await`
+      inside it to pause until the promise settles. `Promise.all` waits
+      for many in parallel; `Promise.race` resolves with whichever
+      finishes first. Because errors become rejections, `try` / `catch`
+      around `await` is the right shape for handling them.
+    prerequisite_concept_slugs:
+      - functions
+      - generics-basics
+    seed_problem_slugs:
+      - async-batch-await
+
+  - slug: error-handling
+    name: Error handling
+    summary: |
+      TypeScript inherits JavaScript's `throw` / `try` / `catch` model:
+      raise an `Error` (or any value) to signal trouble, and a surrounding
+      `try` / `catch` decides whether to recover, re-throw, or convert it
+      to a default. The caught value is typed `unknown` under the strict
+      flag — narrow with `instanceof Error` before reaching for `.message`.
+      Custom `Error` subclasses give callers a stable type to switch on.
+    prerequisite_concept_slugs:
+      - functions
+    seed_problem_slugs:
+      - try-or-default
+      - class-bank-account
