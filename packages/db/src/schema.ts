@@ -85,6 +85,17 @@ export const users = pgTable(
     emailVerified: timestamp("emailVerified", { mode: "date", withTimezone: true }),
     image: text("image"),
     github_id: text("github_id"),
+    // Lifetime XP — incremented atomically alongside an `xp_awards` row insert. STORY-022 awards
+    // XP only on episode close; future grants (e.g. badges) wire through the same helper.
+    xp: integer("xp").notNull().default(0),
+    // Streak shield budget. Refilled to `monthly_grace_days` (default 2) on the first read in a
+    // new UTC month — the lazy-replenishment lives in `replenishGraceDays()` in xp-streak.ts.
+    streak_grace_days_remaining: integer("streak_grace_days_remaining").notNull().default(2),
+    // UTC month-start of the most recent grace-day replenishment. Null until the first replenish
+    // call lands; xp-streak's lazy refill is the only writer.
+    streak_grace_last_replenished_at: timestamp("streak_grace_last_replenished_at", {
+      withTimezone: true,
+    }),
     created_at: createdAt(),
   },
   (t) => ({
@@ -338,6 +349,38 @@ export const notifications = pgTable(
   }),
 );
 
+// Per-event XP attribution row. Stored separately from `users.xp` so we can answer "where did
+// this XP come from?" — and so a (user_id, episode_id, reason) unique constraint can make XP
+// awards idempotent: re-running grade for the same episode never double-awards.
+//
+// `episode_id` is nullable to leave room for future non-episode grants (badges, daily login
+// bonuses, etc.) — the unique constraint still applies via the `reason` discriminator.
+export const xp_awards = pgTable(
+  "xp_awards",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    org_id: orgId(),
+    user_id: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    episode_id: uuid("episode_id").references(() => episodes.id, { onDelete: "set null" }),
+    amount: integer("amount").notNull(),
+    reason: text("reason").notNull(),
+    awarded_at: timestamp("awarded_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    user_awarded_idx: index("xp_awards_user_awarded_idx").on(t.user_id, t.awarded_at),
+    // Idempotency bedrock: ON CONFLICT DO NOTHING on insert + a conditional users.xp increment
+    // means double-graded episodes never double-award. Composite includes `reason` so distinct
+    // grant types for the same episode (e.g. base award + concept-mastery bonus) coexist.
+    award_uniq: uniqueIndex("xp_awards_user_episode_reason_uniq").on(
+      t.user_id,
+      t.episode_id,
+      t.reason,
+    ),
+  }),
+);
+
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type Account = typeof accounts.$inferSelect;
@@ -366,6 +409,8 @@ export type Interaction = typeof interactions.$inferSelect;
 export type NewInteraction = typeof interactions.$inferInsert;
 export type Notification = typeof notifications.$inferSelect;
 export type NewNotification = typeof notifications.$inferInsert;
+export type XpAward = typeof xp_awards.$inferSelect;
+export type NewXpAward = typeof xp_awards.$inferInsert;
 
 export const ALL_TABLES = [
   organizations,
@@ -383,6 +428,7 @@ export const ALL_TABLES = [
   agent_calls,
   interactions,
   notifications,
+  xp_awards,
 ] as const;
 
 // Auth.js tables (`accounts`, `sessions`, `verificationTokens`) are intentionally NOT in this
@@ -400,6 +446,7 @@ export const ORG_SCOPED_TABLES = [
   agent_calls,
   interactions,
   notifications,
+  xp_awards,
 ] as const;
 
 export const PGVECTOR_PROLOGUE_SQL = sql`CREATE EXTENSION IF NOT EXISTS vector`;

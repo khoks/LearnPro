@@ -393,6 +393,9 @@ function makeUser(overrides: Partial<User> = {}): User {
     emailVerified: null,
     image: null,
     github_id: null,
+    xp: 0,
+    streak_grace_days_remaining: 2,
+    streak_grace_last_replenished_at: null,
     created_at: new Date(0),
     ...overrides,
   };
