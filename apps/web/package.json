@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.7.4",
+    "@learnpro/agent": "workspace:*",
     "@learnpro/db": "workspace:^",
     "@learnpro/sandbox": "workspace:*",
     "@learnpro/shared": "workspace:*",
