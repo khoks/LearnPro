@@ -78,6 +78,7 @@ const profile: UpdateProfileOutput = {
     },
   ],
   xp_award: { amount: 30, reason: "episode-passed", awarded: true },
+  plan_item_marked: false,
 };
 
 function codingState(opts?: {

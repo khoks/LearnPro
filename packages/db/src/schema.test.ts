@@ -19,6 +19,7 @@ import {
   problems,
   profiles,
   SELF_HOSTED_ORG_ID,
+  session_plans,
   sessions,
   skill_scores,
   submissionLanguageEnum,
@@ -371,5 +372,35 @@ describe("schema: xp + streak (STORY-022)", () => {
   it("xp_awards is included in both ALL_TABLES and ORG_SCOPED_TABLES", () => {
     expect(ALL_TABLES).toContain(xp_awards);
     expect(ORG_SCOPED_TABLES as readonly unknown[]).toContain(xp_awards);
+  });
+});
+
+describe("schema: session_plans (STORY-015)", () => {
+  it("declares id / org_id / user_id / created_at / time_budget_min / items / expires_at", () => {
+    const cols = getTableColumns(session_plans);
+    expect(cols.id?.primary).toBe(true);
+    expect(cols.org_id?.notNull).toBe(true);
+    expect(cols.user_id?.notNull).toBe(true);
+    expect(cols.created_at?.notNull).toBe(true);
+    expect(cols.time_budget_min?.notNull).toBe(true);
+    expect(cols.items).toBeDefined();
+    expect(cols.items?.notNull).toBe(true);
+    expect(cols.expires_at?.notNull).toBe(true);
+  });
+
+  it("items uses jsonb (per-item shape lives in the Zod schema)", () => {
+    const cols = getTableColumns(session_plans);
+    expect(cols.items?.getSQLType()).toBe("jsonb");
+  });
+
+  it("declares (user_id, created_at) index for the latest-plan-for-user lookup", () => {
+    const config = getTableConfig(session_plans);
+    const names = config.indexes.map((i) => i.config.name);
+    expect(names).toContain("session_plans_user_created_idx");
+  });
+
+  it("session_plans is included in both ALL_TABLES and ORG_SCOPED_TABLES", () => {
+    expect(ALL_TABLES).toContain(session_plans);
+    expect(ORG_SCOPED_TABLES as readonly unknown[]).toContain(session_plans);
   });
 });

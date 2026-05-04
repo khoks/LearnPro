@@ -75,3 +75,17 @@ export {
   type MarkAllReadOptions,
   type MarkReadOptions,
 } from "./notifications.js";
+export {
+  DEFAULT_PLAN_TTL_HOURS,
+  SessionPlanItemSchema,
+  SessionPlanItemStatusSchema,
+  SessionPlanItemsSchema,
+  createPlan,
+  getLatestActivePlan,
+  markItemCompleted,
+  rollOverPending,
+  type CreatePlanInput,
+  type SessionPlan,
+  type SessionPlanItem,
+  type SessionPlanItemStatus,
+} from "./session-plan.js";

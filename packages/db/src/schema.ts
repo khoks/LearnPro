@@ -377,6 +377,28 @@ export const web_push_subscriptions = pgTable(
   }),
 );
 
+// STORY-015 — session-plan agent. One row per generated 3-5 micro-objective plan. `items` is the
+// jsonb array (slug + objective + estimated_duration_min + status + completed_at? + episode_id?).
+// `expires_at` lets the API return null past the 24h window so the agent regenerates a fresh plan
+// for the new session. `(user_id, created_at desc)` is the lookup index — "latest plan for user".
+export const session_plans = pgTable(
+  "session_plans",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    org_id: orgId(),
+    user_id: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    created_at: createdAt(),
+    time_budget_min: integer("time_budget_min").notNull(),
+    items: jsonb("items").notNull(),
+    expires_at: timestamp("expires_at", { withTimezone: true }).notNull(),
+  },
+  (t) => ({
+    user_created_idx: index("session_plans_user_created_idx").on(t.user_id, t.created_at),
+  }),
+);
+
 // Per-event XP attribution row. Stored separately from `users.xp` so we can answer "where did
 // this XP come from?" — and so a (user_id, episode_id, reason) unique constraint can make XP
 // awards idempotent: re-running grade for the same episode never double-awards.
@@ -441,6 +463,8 @@ export type WebPushSubscription = typeof web_push_subscriptions.$inferSelect;
 export type NewWebPushSubscription = typeof web_push_subscriptions.$inferInsert;
 export type XpAward = typeof xp_awards.$inferSelect;
 export type NewXpAward = typeof xp_awards.$inferInsert;
+export type SessionPlanRow = typeof session_plans.$inferSelect;
+export type NewSessionPlanRow = typeof session_plans.$inferInsert;
 
 export const ALL_TABLES = [
   organizations,
@@ -460,6 +484,7 @@ export const ALL_TABLES = [
   notifications,
   web_push_subscriptions,
   xp_awards,
+  session_plans,
 ] as const;
 
 // Auth.js tables (`accounts`, `sessions`, `verificationTokens`) are intentionally NOT in this
@@ -479,6 +504,7 @@ export const ORG_SCOPED_TABLES = [
   notifications,
   web_push_subscriptions,
   xp_awards,
+  session_plans,
 ] as const;
 
 export const PGVECTOR_PROLOGUE_SQL = sql`CREATE EXTENSION IF NOT EXISTS vector`;

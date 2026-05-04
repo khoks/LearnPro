@@ -78,6 +78,7 @@ function fakeUpdateProfileOutput(): UpdateProfileOutput {
       },
     ],
     xp_award: { amount: 5, reason: "episode-passed-with-hints", awarded: true },
+    plan_item_marked: false,
   };
 }
 

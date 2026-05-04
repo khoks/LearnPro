@@ -8,6 +8,7 @@ import {
 import type { AssignProblemTool, AssignProblemOutput } from "./tools/assign-problem.js";
 import type { GiveHintOutput, GiveHintTool } from "./tools/give-hint.js";
 import type { GradeOutput, GradeTool } from "./tools/grade.js";
+import type { PlanSessionInput, PlanSessionOutput, PlanSessionTool } from "./tools/plan-session.js";
 import type { UpdateProfileOutput, UpdateProfileTool } from "./tools/update-profile.js";
 import { deriveFinalOutcome } from "./tools/update-profile.js";
 
@@ -16,6 +17,9 @@ export interface TutorSessionTools {
   giveHint: GiveHintTool;
   grade: GradeTool;
   updateProfile: UpdateProfileTool;
+  // Optional — present only when the planner is wired into the harness. The /session UI calls
+  // `planForToday()` as a side action; the state machine's main loop never depends on it.
+  planSession?: PlanSessionTool;
 }
 
 export interface TutorSessionOptions {
@@ -189,6 +193,17 @@ export class TutorSession {
     });
     this._state = this.toDoneState(final_outcome);
     return out;
+  }
+
+  // STORY-015 — side-action planner. Lives outside the state machine: callable from any phase
+  // (the /session UI fires it on mount, in parallel with the first assign()). Throws if the
+  // harness wasn't constructed with a planSession tool — the caller chose to opt out.
+  async planForToday(input: Omit<PlanSessionInput, "user_id">): Promise<PlanSessionOutput> {
+    const tool = this.tools.planSession;
+    if (!tool) {
+      throw new Error("planForToday: planSession tool not configured on this TutorSession");
+    }
+    return tool.run({ ...input, user_id: this.user_id });
   }
 
   private requireEpisodeId(): string {

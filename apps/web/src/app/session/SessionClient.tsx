@@ -14,6 +14,14 @@ import {
 } from "../../lib/session-state";
 import { driveAssign, driveFinish, driveHint, driveSubmit } from "../../lib/session-driver";
 import {
+  initialPlanState,
+  planReducer,
+  type SessionPlan,
+  type SessionPlanAction,
+  type SessionPlanState,
+} from "../../lib/session-plan-state";
+import { SessionPlanSidebar } from "./SessionPlanSidebar";
+import {
   DifficultyBadge,
   ErrorBanner,
   GradeResultPanel,
@@ -49,6 +57,10 @@ function reducer(state: SessionState, event: SessionEvent): SessionState {
   return transition(state, event);
 }
 
+function planStateReducer(s: SessionPlanState, a: SessionPlanAction): SessionPlanState {
+  return planReducer(s, a);
+}
+
 export interface SessionClientProps {
   trackId: string;
 }
@@ -58,8 +70,67 @@ export function SessionClient({ trackId }: SessionClientProps) {
   const [code, setCode] = useState<string>("");
   const [runResult, setRunResult] = useState<RunSandboxResult | null>(null);
   const [running, setRunning] = useState(false);
+  const [planState, planDispatch] = useReducer(planStateReducer, initialPlanState);
   const capture = useInteractionCapture();
   const assigningRef = useRef(false);
+  const planFetchingRef = useRef(false);
+
+  const loadOrCreatePlan = useCallback(async () => {
+    if (planFetchingRef.current) return;
+    planFetchingRef.current = true;
+    try {
+      const getRes = await fetch("/api/session-plan", { method: "GET" });
+      if (!getRes.ok) {
+        planDispatch({ type: "load_failed", message: "Couldn't load today's plan." });
+        return;
+      }
+      const getJson = (await getRes.json()) as { plan: SessionPlan | null };
+      if (getJson.plan) {
+        planDispatch({ type: "load_succeeded", plan: getJson.plan, fallback: false });
+        return;
+      }
+      const postRes = await fetch("/api/session-plan", { method: "POST" });
+      if (!postRes.ok) {
+        planDispatch({ type: "load_failed", message: "Couldn't generate today's plan." });
+        return;
+      }
+      const postJson = (await postRes.json()) as {
+        plan: SessionPlan | null;
+        fallback?: boolean;
+      };
+      planDispatch({
+        type: "load_succeeded",
+        plan: postJson.plan,
+        fallback: postJson.fallback ?? false,
+      });
+    } catch (err) {
+      planDispatch({
+        type: "load_failed",
+        message: err instanceof Error ? err.message : "Couldn't reach the plan service.",
+      });
+    } finally {
+      planFetchingRef.current = false;
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadOrCreatePlan();
+  }, [loadOrCreatePlan]);
+
+  const markPlanItem = useCallback(async (slug: string, episode_id: string) => {
+    try {
+      const res = await fetch(`/api/session-plan/items/${encodeURIComponent(slug)}/complete`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ episode_id }),
+      });
+      if (!res.ok) return;
+      const json = (await res.json()) as { plan: SessionPlan | null };
+      if (json.plan) planDispatch({ type: "item_marked", plan: json.plan });
+    } catch {
+      // Best-effort: if the auto-mark fails the plan stays as-is.
+    }
+  }, []);
 
   const startEpisode = useCallback(async () => {
     if (assigningRef.current) return;
@@ -138,11 +209,19 @@ export function SessionClient({ trackId }: SessionClientProps) {
 
   const onFinish = useCallback(async () => {
     if (state.phase !== "coding" && state.phase !== "grading") return;
+    const finishingFromSlug = state.assigned.problem_slug;
+    const finishingEpisodeId = state.assigned.episode_id;
     const { events } = await driveFinish(state);
     for (const ev of events) dispatch(ev);
     const succeeded = events.some((e) => e.type === "finish_succeeded");
-    if (succeeded) void capture.flush();
-  }, [state, capture]);
+    if (succeeded) {
+      void capture.flush();
+      // STORY-015 — auto-mark the matching plan item from the client too. The server-side
+      // updateProfile already does this when DATABASE_URL is set; this keeps the UI snappy
+      // (the sidebar updates immediately) and also covers the dev-without-DB code path.
+      void markPlanItem(finishingFromSlug, finishingEpisodeId);
+    }
+  }, [state, capture, markPlanItem]);
 
   const onNext = useCallback(() => {
     setRunResult(null);
@@ -151,20 +230,34 @@ export function SessionClient({ trackId }: SessionClientProps) {
   }, []);
 
   return (
-    <SessionView
-      state={state}
-      code={code}
-      onCodeChange={setCode}
-      onEditorMount={onEditorMount}
-      runResult={runResult}
-      running={running}
-      onRun={onRun}
-      onSubmit={onSubmit}
-      onRequestHint={onRequestHint}
-      onFinish={onFinish}
-      onNext={onNext}
-      onDismissError={() => dispatch({ type: "dismiss_error" })}
-    />
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: "minmax(0, 1fr) 280px",
+        gap: "1rem",
+        alignItems: "start",
+      }}
+    >
+      <SessionView
+        state={state}
+        code={code}
+        onCodeChange={setCode}
+        onEditorMount={onEditorMount}
+        runResult={runResult}
+        running={running}
+        onRun={onRun}
+        onSubmit={onSubmit}
+        onRequestHint={onRequestHint}
+        onFinish={onFinish}
+        onNext={onNext}
+        onDismissError={() => dispatch({ type: "dismiss_error" })}
+      />
+      <SessionPlanSidebar
+        state={planState}
+        onSkip={() => planDispatch({ type: "skip" })}
+        onRetry={loadOrCreatePlan}
+      />
+    </div>
   );
 }
 

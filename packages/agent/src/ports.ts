@@ -162,6 +162,16 @@ export interface UpdateProfileDeps {
   // even for failed/abandoned episodes — so the user's "you tried 12 problems" history is
   // complete (failed grants are amount=0).
   awardXp(input: AwardXpForEpisodeInput): Promise<AwardXpForEpisodeResult>;
+
+  // STORY-015 — auto-mark the matching pending session plan item completed on episode close.
+  // Optional: when the planner isn't wired the deps adapter returns null, so updateProfile
+  // skips the auto-mark step. Idempotency is the implementation's problem (markItemCompleted
+  // in @learnpro/db is a no-op for already-completed items).
+  markPlanItemCompleted?(input: {
+    user_id: string;
+    problem_slug: string;
+    episode_id: string;
+  }): Promise<{ updated: boolean }>;
 }
 
 export interface AwardXpForEpisodeInput {
@@ -185,4 +195,33 @@ export interface UpdateProfileEpisodeContext {
   hints_used: number;
   attempts: number;
   started_at: number;
+}
+
+// STORY-015 — session-plan agent. The planner LLM call is a one-shot completion (no tool use).
+// The deps surface keeps the agent free of LLM SDK / DB knowledge; the production wiring in
+// apps/api passes a `generatePlan` adapter that calls Haiku with the SESSION_PLAN_SYSTEM_PROMPT
+// and the apps/api wiring writes the resulting plan via @learnpro/db's createPlan helper.
+export interface PlanSessionDeps {
+  generatePlan(input: PlanSessionGenerateInput): Promise<PlanSessionGenerateOutput>;
+}
+
+export interface PlanSessionRecentEpisode {
+  slug: string;
+  final_outcome: string | null;
+  difficulty: string | null;
+}
+
+export interface PlanSessionGenerateInput {
+  user_id: string;
+  time_budget_min: number;
+  target_role: string | null;
+  primary_goal: string | null;
+  current_track: string;
+  recent_episodes: ReadonlyArray<PlanSessionRecentEpisode>;
+}
+
+// `raw_text` is the LLM's verbatim response — the tool parses + Zod-validates it; on parse
+// failure we fall back to a deterministic 3-item plan so the route never 500s.
+export interface PlanSessionGenerateOutput {
+  raw_text: string;
 }
