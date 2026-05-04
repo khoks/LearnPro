@@ -47,6 +47,9 @@ importers:
       '@learnpro/llm':
         specifier: workspace:*
         version: link:../../packages/llm
+      '@learnpro/notifications':
+        specifier: workspace:*
+        version: link:../../packages/notifications
       '@learnpro/problems':
         specifier: workspace:*
         version: link:../../packages/problems
@@ -68,6 +71,9 @@ importers:
       fastify:
         specifier: ^5.2.0
         version: 5.8.5
+      web-push:
+        specifier: ^3.6.7
+        version: 3.6.7
       zod:
         specifier: ^3.24.1
         version: 3.25.76
@@ -75,6 +81,9 @@ importers:
       '@types/node':
         specifier: ^22.10.2
         version: 22.19.17
+      '@types/web-push':
+        specifier: ^3.6.4
+        version: 3.6.4
       tsx:
         specifier: ^4.19.2
         version: 4.21.0
