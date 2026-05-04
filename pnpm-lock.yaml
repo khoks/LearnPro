@@ -194,6 +194,9 @@ importers:
       '@learnpro/llm':
         specifier: workspace:*
         version: link:../llm
+      '@learnpro/scoring':
+        specifier: workspace:*
+        version: link:../scoring
       '@learnpro/shared':
         specifier: workspace:*
         version: link:../shared

@@ -45,3 +45,17 @@ export {
   type ExportFetcher,
   type ExportUserDataOptions,
 } from "./data-export.js";
+export {
+  awardXp,
+  consumeGraceDay,
+  getActiveTrackSlugs,
+  getStreakInputs,
+  getStreakSnapshot,
+  getTrackProgress,
+  getUserXp,
+  replenishGraceDays,
+  type AwardXpInput,
+  type AwardXpResult,
+  type StreakInputs,
+  type TrackProgress,
+} from "./xp-streak.js";
