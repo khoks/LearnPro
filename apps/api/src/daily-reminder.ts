@@ -1,10 +1,17 @@
-import { createDb, loadDatabaseUrl } from "@learnpro/db";
+import {
+  createDb,
+  getQuietHoursConfig,
+  insertDeferredNotification,
+  loadDatabaseUrl,
+} from "@learnpro/db";
 import {
   dailyDedupeKey,
   DAILY_REMINDER_BODY,
   DAILY_REMINDER_TITLE,
+  dispatcherWithQuietHours,
   InAppChannel,
   NotificationDispatcher,
+  QuietHoursDispatcher,
   WebPushChannel,
   type NotificationChannel,
 } from "@learnpro/notifications";
@@ -18,9 +25,9 @@ import { buildWebPushSender, configureVapid, type WebPushConfig } from "./notifi
 // (when configured) web_push channels. Idempotent inside a 24h window via `dailyDedupeKey()`
 // — running twice in the same UTC day delivers exactly once per channel.
 //
-// Design note: STORY-024 will add quiet-hours filtering. The dispatcher's `shouldDeliverNow`
-// hook is the seam — STORY-024 wires its quiet-hours predicate into the same `dispatcher`
-// constructor here without touching the rest of this file.
+// STORY-024 — production wiring uses `dispatcherWithQuietHours()`: dispatches inside a user's
+// quiet window are written to `deferred_notifications` instead of being sent. The flusher drains
+// the table when the window opens. Notifications are deferred, never dropped (AC #4).
 
 interface ReminderOutcome {
   user_id: string;
@@ -31,7 +38,7 @@ interface ReminderOutcome {
 export interface RunDailyReminderOptions {
   // Drizzle handle. Production resolves from DATABASE_URL.
   db: import("@learnpro/db").LearnProDb;
-  dispatcher: NotificationDispatcher;
+  dispatcher: NotificationDispatcher | QuietHoursDispatcher;
   now?: Date;
 }
 
@@ -85,7 +92,20 @@ async function main(): Promise<void> {
       configureVapid(vapid);
       channels.push(new WebPushChannel({ db, sender: buildWebPushSender() }));
     }
-    const dispatcher = new NotificationDispatcher({ channels });
+    // STORY-024 — wrap with quiet-hours filtering. Dispatches inside the user's window get
+    // serialized into deferred_notifications and a separate cron drains the table.
+    const { dispatcher } = dispatcherWithQuietHours({
+      channels,
+      getQuietHoursConfig: (user_id) => getQuietHoursConfig(db, user_id),
+      deferDelivery: async (input) => {
+        await insertDeferredNotification({
+          db,
+          user_id: input.user_id,
+          payload: input.payload,
+          deliver_after: input.deliver_after,
+        });
+      },
+    });
     const outcomes = await runDailyReminder({ db, dispatcher });
     const delivered = outcomes.filter((o) => o.any_delivered).length;
     console.log(

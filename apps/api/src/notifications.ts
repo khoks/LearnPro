@@ -6,7 +6,12 @@ import {
   unreadCount,
   type LearnProDb,
 } from "@learnpro/db";
-import { NotificationDispatcher, TEST_PUSH_BODY, TEST_PUSH_TITLE } from "@learnpro/notifications";
+import {
+  NotificationDispatcher,
+  QuietHoursDispatcher,
+  TEST_PUSH_BODY,
+  TEST_PUSH_TITLE,
+} from "@learnpro/notifications";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import type { SessionResolver } from "./session.js";
@@ -28,7 +33,7 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 
 export interface NotificationsRouteOptions {
   db: LearnProDb;
-  dispatcher: NotificationDispatcher;
+  dispatcher: NotificationDispatcher | QuietHoursDispatcher;
   sessionResolver: SessionResolver;
   // The VAPID public key the browser uses when calling `pushManager.subscribe`. Public-key
   // material — safe to ship to the client. Empty string disables the subscribe + test-push
