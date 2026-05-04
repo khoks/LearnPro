@@ -26,6 +26,7 @@ import {
   tracks,
   users,
   verificationTokens,
+  web_push_subscriptions,
   xp_awards,
 } from "./schema.js";
 
@@ -277,6 +278,47 @@ describe("schema: Auth.js drizzle-adapter tables (STORY-005)", () => {
     expect(ALL_TABLES).toContain(accounts);
     expect(ALL_TABLES).toContain(sessions);
     expect(ALL_TABLES).toContain(verificationTokens);
+  });
+});
+
+describe("schema: notifications + web_push (STORY-023)", () => {
+  it("notifications has nullable dedupe_key for cron idempotency", () => {
+    const cols = getTableColumns(notifications);
+    expect(cols.dedupe_key).toBeDefined();
+    expect(cols.dedupe_key?.notNull).toBe(false);
+  });
+
+  it("notifications keeps the (user_id, sent_at) index for the bell-icon list query", () => {
+    const config = getTableConfig(notifications);
+    const names = config.indexes.map((i) => i.config.name);
+    expect(names).toContain("notifications_user_sent_idx");
+  });
+
+  it("web_push_subscriptions has id / org_id / user_id / endpoint / p256dh / auth / created_at", () => {
+    const cols = getTableColumns(web_push_subscriptions);
+    expect(cols.id?.primary).toBe(true);
+    expect(cols.org_id?.notNull).toBe(true);
+    expect(cols.user_id?.notNull).toBe(true);
+    expect(cols.endpoint?.notNull).toBe(true);
+    expect(cols.p256dh?.notNull).toBe(true);
+    expect(cols.auth?.notNull).toBe(true);
+    expect(cols.created_at?.notNull).toBe(true);
+  });
+
+  it("web_push_subscriptions declares a unique endpoint index + a user_id index", () => {
+    const config = getTableConfig(web_push_subscriptions);
+    const uniq = config.indexes.find(
+      (i) => i.config.name === "web_push_subscriptions_endpoint_uniq",
+    );
+    expect(uniq, "endpoint unique index missing").toBeDefined();
+    expect(uniq?.config.unique).toBe(true);
+    const userIdx = config.indexes.find((i) => i.config.name === "web_push_subscriptions_user_idx");
+    expect(userIdx, "user_id index missing").toBeDefined();
+  });
+
+  it("web_push_subscriptions is included in both ALL_TABLES and ORG_SCOPED_TABLES", () => {
+    expect(ALL_TABLES).toContain(web_push_subscriptions);
+    expect(ORG_SCOPED_TABLES as readonly unknown[]).toContain(web_push_subscriptions);
   });
 });
 

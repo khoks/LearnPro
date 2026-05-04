@@ -29,11 +29,19 @@ import {
 } from "@learnpro/sandbox";
 import { createDb, drizzleExportFetcher, exportUserData, updateProfileFields } from "@learnpro/db";
 import {
+  InAppChannel,
+  NotificationDispatcher,
+  WebPushChannel,
+  type NotificationChannel,
+} from "@learnpro/notifications";
+import {
   loadExportWindowMs,
   noDbExporter,
   registerExportRoute,
   type DataExporter,
 } from "./export.js";
+import { buildWebPushSender, configureVapid, type WebPushConfig } from "./notifications-vapid.js";
+import { registerNotificationsRoutes } from "./notifications.js";
 import { registerOnboardingRoute, type OnboardingProfileWriter } from "./onboarding.js";
 import { MemoryRateLimiter, type RateLimiter } from "./rate-limiter.js";
 import { buildSessionResolver, type SessionResolver } from "./session.js";
@@ -67,6 +75,13 @@ export interface BuildServerOptions {
   // STORY-011 — tutor agent factory. Default in production wires the Drizzle/LLM-backed factory
   // when DATABASE_URL is set; tests inject a fake factory so they don't need DB or LLM.
   tutorAgentFactory?: TutorAgentFactory;
+  // STORY-023 — bell-icon panel + Web Push routes. Tests inject a fake dispatcher / fake DB so
+  // they don't need Postgres or VAPID keys. Production wiring lives in defaultsFromEnv().
+  notifications?: {
+    db: import("@learnpro/db").LearnProDb;
+    dispatcher: NotificationDispatcher;
+    vapidPublicKey: string;
+  };
 }
 
 // Default impl when no store is provided — drops events on the floor. Useful for tests and
@@ -234,6 +249,18 @@ export function buildServer(opts: BuildServerOptions = {}) {
     registerTutorRoutes(app, { factory: opts.tutorAgentFactory, sessionResolver });
   }
 
+  // STORY-023 — bell-icon panel + Web Push routes. Wired only when a notifications config is
+  // supplied; defaultsFromEnv() builds it when DATABASE_URL is set (VAPID keys optional — the
+  // routes report 503 vapid_unconfigured when missing).
+  if (opts.notifications) {
+    registerNotificationsRoutes(app, {
+      db: opts.notifications.db,
+      dispatcher: opts.notifications.dispatcher,
+      vapidPublicKey: opts.notifications.vapidPublicKey,
+      sessionResolver,
+    });
+  }
+
   // STORY-060 deferred AC — friendly 429 mapping for the per-user daily token budget. Any handler
   // that calls into the LLM provider can throw `TokenBudgetExceededError`; this hook catches it
   // before Fastify's default 500 path so the playground can render the friendly message AC from
@@ -265,11 +292,32 @@ function defaultsFromEnv(): {
   onboardingProfileWriter?: OnboardingProfileWriter;
   dataExporter?: DataExporter;
   tutorAgentFactory?: TutorAgentFactory;
+  notifications?: BuildServerOptions["notifications"];
 } {
   const url = process.env["DATABASE_URL"];
   if (!url) return {};
   const { db } = createDb({ connectionString: url });
   const fetcher = drizzleExportFetcher(db);
+  // STORY-023 — wire the dispatcher with both channels. Web Push is optional: when VAPID keys
+  // are missing, the channel still exists in the dispatcher's list but its `send()` is a no-op
+  // (no subscriptions will exist either, so it'd return `no_subscriptions` even if it tried).
+  const vapid = (() => {
+    const publicKey = process.env["VAPID_PUBLIC_KEY"];
+    const privateKey = process.env["VAPID_PRIVATE_KEY"];
+    const subject = process.env["VAPID_SUBJECT"] ?? "mailto:hello@learnpro.local";
+    if (!publicKey || !privateKey) return null;
+    return { publicKey, privateKey, subject };
+  })();
+  let webPushSender: ReturnType<typeof buildWebPushSender> | null = null;
+  if (vapid) {
+    configureVapid(vapid as WebPushConfig);
+    webPushSender = buildWebPushSender();
+  }
+  const channels: NotificationChannel[] = [new InAppChannel({ db })];
+  if (webPushSender) {
+    channels.push(new WebPushChannel({ db, sender: webPushSender }));
+  }
+  const dispatcher = new NotificationDispatcher({ channels });
   return {
     sessionResolver: buildSessionResolver({ db }),
     onboardingProfileWriter: async (user_id, updates) => {
@@ -283,6 +331,11 @@ function defaultsFromEnv(): {
       llm: defaultLLM(),
       sandbox: defaultSandbox(),
     }),
+    notifications: {
+      db,
+      dispatcher,
+      vapidPublicKey: vapid?.publicKey ?? "",
+    },
   };
 }
 

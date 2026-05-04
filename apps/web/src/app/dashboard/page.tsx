@@ -10,6 +10,7 @@ import { redirect } from "next/navigation";
 import { auth, signOut } from "../../auth/auth.js";
 import { getAuthDb } from "../../auth/db.js";
 import { destinationForUser } from "../../auth/post-signin.js";
+import { NotificationBell } from "../../components/header/NotificationBell.js";
 import { StreakCard, TrackProgressBar, XpCard } from "./dashboard-components.js";
 
 export const dynamic = "force-dynamic";
@@ -71,20 +72,23 @@ export default async function DashboardPage() {
             Welcome back, {session.user.email}.
           </p>
         </div>
-        <Link
-          href={sessionHref}
-          style={{
-            display: "inline-block",
-            padding: "0.6rem 1.1rem",
-            background: "#3a82f7",
-            color: "white",
-            borderRadius: 6,
-            fontWeight: 600,
-            textDecoration: "none",
-          }}
-        >
-          Start a session
-        </Link>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+          <NotificationBell />
+          <Link
+            href={sessionHref}
+            style={{
+              display: "inline-block",
+              padding: "0.6rem 1.1rem",
+              background: "#3a82f7",
+              color: "white",
+              borderRadius: 6,
+              fontWeight: 600,
+              textDecoration: "none",
+            }}
+          >
+            Start a session
+          </Link>
+        </div>
       </header>
 
       <section

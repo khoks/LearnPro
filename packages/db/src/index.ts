@@ -59,3 +59,19 @@ export {
   type StreakInputs,
   type TrackProgress,
 } from "./xp-streak.js";
+export {
+  addWebPushSubscription,
+  findRecentDuplicate,
+  gcOldNotifications,
+  listRecentNotifications,
+  listWebPushSubscriptions,
+  markAllRead,
+  markRead,
+  removeWebPushSubscription,
+  unreadCount,
+  type AddWebPushSubscriptionOptions,
+  type FindRecentDuplicateOptions,
+  type ListRecentNotificationsOptions,
+  type MarkAllReadOptions,
+  type MarkReadOptions,
+} from "./notifications.js";

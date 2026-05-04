@@ -14,6 +14,7 @@ import {
   submissions,
   tracks,
   users,
+  web_push_subscriptions,
 } from "./schema.js";
 
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -26,6 +27,7 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   agent_calls: many(agent_calls),
   interactions: many(interactions),
   notifications: many(notifications),
+  web_push_subscriptions: many(web_push_subscriptions),
 }));
 
 export const accountsRelations = relations(accounts, ({ one }) => ({
@@ -88,4 +90,8 @@ export const interactionsRelations = relations(interactions, ({ one }) => ({
 
 export const notificationsRelations = relations(notifications, ({ one }) => ({
   user: one(users, { fields: [notifications.user_id], references: [users.id] }),
+}));
+
+export const webPushSubscriptionsRelations = relations(web_push_subscriptions, ({ one }) => ({
+  user: one(users, { fields: [web_push_subscriptions.user_id], references: [users.id] }),
 }));
