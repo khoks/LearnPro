@@ -12,6 +12,7 @@ import {
   type PolicyRegistry,
 } from "@learnpro/scoring";
 import {
+  ANTHROPIC_HAIKU,
   AnthropicSdkTransport,
   buildLLMProvider,
   InMemoryUsageStore,
@@ -45,8 +46,21 @@ import { registerNotificationsRoutes } from "./notifications.js";
 import { registerOnboardingRoute, type OnboardingProfileWriter } from "./onboarding.js";
 import { MemoryRateLimiter, type RateLimiter } from "./rate-limiter.js";
 import { buildSessionResolver, type SessionResolver } from "./session.js";
+import {
+  buildDbSessionPlanAdapters,
+  buildSessionPlanFactory,
+  registerSessionPlanRoutes,
+  type SessionPlanCreateInput,
+  type SessionPlanFactory,
+} from "./session-plan.js";
 import { registerTutorRoutes, type TutorAgentFactory } from "./tutor.js";
 import { buildDrizzleTutorFactory } from "./tutor-factory.js";
+import {
+  SESSION_PLAN_PROMPT_VERSION,
+  SESSION_PLAN_SYSTEM_PROMPT,
+  buildSessionPlanUserPrompt,
+} from "@learnpro/prompts";
+import { createPlanSessionTool, type PlanSessionDeps } from "@learnpro/agent";
 
 const PORT = Number(process.env["PORT"] ?? 4000);
 const HOST = process.env["HOST"] ?? "0.0.0.0";
@@ -82,6 +96,10 @@ export interface BuildServerOptions {
     dispatcher: NotificationDispatcher;
     vapidPublicKey: string;
   };
+  // STORY-015 — session-plan factory. When provided, registers GET /v1/session-plan,
+  // POST /v1/session-plan, POST /v1/session-plan/items/:slug/complete. Default in production
+  // wires the Drizzle/LLM-backed factory when DATABASE_URL is set; tests inject a fake.
+  sessionPlanFactory?: SessionPlanFactory;
 }
 
 // Default impl when no store is provided — drops events on the floor. Useful for tests and
@@ -261,6 +279,14 @@ export function buildServer(opts: BuildServerOptions = {}) {
     });
   }
 
+  // STORY-015 — session-plan routes. Same factory-injection pattern as the tutor routes.
+  if (opts.sessionPlanFactory) {
+    registerSessionPlanRoutes(app, {
+      factory: opts.sessionPlanFactory,
+      sessionResolver,
+    });
+  }
+
   // STORY-060 deferred AC — friendly 429 mapping for the per-user daily token budget. Any handler
   // that calls into the LLM provider can throw `TokenBudgetExceededError`; this hook catches it
   // before Fastify's default 500 path so the playground can render the friendly message AC from
@@ -293,11 +319,13 @@ function defaultsFromEnv(): {
   dataExporter?: DataExporter;
   tutorAgentFactory?: TutorAgentFactory;
   notifications?: BuildServerOptions["notifications"];
+  sessionPlanFactory?: SessionPlanFactory;
 } {
   const url = process.env["DATABASE_URL"];
   if (!url) return {};
   const { db } = createDb({ connectionString: url });
   const fetcher = drizzleExportFetcher(db);
+  const llm = defaultLLM();
   // STORY-023 — wire the dispatcher with both channels. Web Push is optional: when VAPID keys
   // are missing, the channel still exists in the dispatcher's list but its `send()` is a no-op
   // (no subscriptions will exist either, so it'd return `no_subscriptions` even if it tried).
@@ -328,7 +356,7 @@ function defaultsFromEnv(): {
     },
     tutorAgentFactory: buildDrizzleTutorFactory({
       db,
-      llm: defaultLLM(),
+      llm,
       sandbox: defaultSandbox(),
     }),
     notifications: {
@@ -336,7 +364,58 @@ function defaultsFromEnv(): {
       dispatcher,
       vapidPublicKey: vapid?.publicKey ?? "",
     },
+    sessionPlanFactory: buildDefaultSessionPlanFactory({ db, llm }),
   };
+}
+
+// Builds the production session-plan factory: planSession agent tool wired to Haiku +
+// session_plans DB helpers. Lives next to defaultsFromEnv so the wiring stays close to its only
+// caller.
+function buildDefaultSessionPlanFactory(input: {
+  db: import("@learnpro/db").LearnProDb;
+  llm: LLMProvider;
+}): SessionPlanFactory {
+  const llm = input.llm;
+  const planDeps: PlanSessionDeps = {
+    async generatePlan(req) {
+      const res = await llm.complete({
+        messages: [
+          {
+            role: "user",
+            content: buildSessionPlanUserPrompt({
+              time_budget_min: req.time_budget_min,
+              target_role: req.target_role,
+              primary_goal: req.primary_goal,
+              current_track: req.current_track,
+              recent_episodes: req.recent_episodes,
+            }),
+          },
+        ],
+        system: SESSION_PLAN_SYSTEM_PROMPT,
+        model: ANTHROPIC_HAIKU,
+        role: "router",
+        max_tokens: 600,
+        temperature: 0.3,
+        prompt_version: SESSION_PLAN_PROMPT_VERSION,
+        user_id: req.user_id,
+      });
+      return { raw_text: res.text };
+    },
+  };
+  const planTool = createPlanSessionTool({ deps: planDeps });
+  const dbAdapters = buildDbSessionPlanAdapters({ db: input.db });
+  return buildSessionPlanFactory({
+    loadLatest: dbAdapters.loadLatest,
+    persist: dbAdapters.persist,
+    markCompleted: dbAdapters.markCompleted,
+    async generate(req: SessionPlanCreateInput) {
+      const out = await planTool.run({
+        user_id: req.user_id,
+        time_budget_min: req.time_budget_min,
+      });
+      return { items: out.items, fallback: out.fallback };
+    },
+  });
 }
 
 async function start() {
