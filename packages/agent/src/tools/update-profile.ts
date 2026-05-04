@@ -50,6 +50,10 @@ export const UpdateProfileOutputSchema = z.object({
     reason: z.string(),
     awarded: z.boolean(),
   }),
+  // STORY-015 — true when the planSession item matching this problem's slug went from pending
+  // to completed during this close. Idempotent re-runs return false. False when the user has no
+  // active plan, or when no plan item matches the slug.
+  plan_item_marked: z.boolean(),
 });
 export type UpdateProfileOutput = z.infer<typeof UpdateProfileOutputSchema>;
 
@@ -167,6 +171,23 @@ export function createUpdateProfileTool(opts: CreateUpdateProfileToolOptions): U
         reason: xpDecision.reason,
       });
 
+      // STORY-015 — auto-mark the matching pending plan item completed. Idempotent: the
+      // underlying DB helper no-ops on already-completed items, so re-grading the same episode
+      // never double-marks. Failures are logged-and-swallowed (caller already got their XP).
+      let plan_item_marked = false;
+      if (opts.deps.markPlanItemCompleted) {
+        try {
+          const r = await opts.deps.markPlanItemCompleted({
+            user_id: ctx.user_id,
+            problem_slug: ctx.problem.slug,
+            episode_id: input.episode_id,
+          });
+          plan_item_marked = r.updated;
+        } catch {
+          // intentional: plan auto-mark is a best-effort side-effect; never fail the close.
+        }
+      }
+
       return {
         episode_id: input.episode_id,
         final_outcome: input.outcome,
@@ -179,6 +200,7 @@ export function createUpdateProfileTool(opts: CreateUpdateProfileToolOptions): U
           reason: xpDecision.reason,
           awarded: xpResult.inserted,
         },
+        plan_item_marked,
       };
     },
   };

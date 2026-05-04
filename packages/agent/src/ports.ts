@@ -162,6 +162,16 @@ export interface UpdateProfileDeps {
   // even for failed/abandoned episodes — so the user's "you tried 12 problems" history is
   // complete (failed grants are amount=0).
   awardXp(input: AwardXpForEpisodeInput): Promise<AwardXpForEpisodeResult>;
+
+  // STORY-015 — auto-mark the matching pending session plan item completed on episode close.
+  // Optional: when the planner isn't wired the deps adapter returns null, so updateProfile
+  // skips the auto-mark step. Idempotency is the implementation's problem (markItemCompleted
+  // in @learnpro/db is a no-op for already-completed items).
+  markPlanItemCompleted?(input: {
+    user_id: string;
+    problem_slug: string;
+    episode_id: string;
+  }): Promise<{ updated: boolean }>;
 }
 
 export interface AwardXpForEpisodeInput {

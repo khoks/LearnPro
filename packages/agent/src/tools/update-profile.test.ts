@@ -35,25 +35,45 @@ function pdef(overrides: Partial<ProblemDef> = {}): ProblemDef {
   };
 }
 
-function fakeDeps(opts: {
+interface FakeDepsOpts {
   ctx?: UpdateProfileEpisodeContext | null;
   resolved?: Map<string, string>;
   prior_skill?: ConceptSkill | null;
   // Allow tests to force a specific awardXp result (e.g. simulate idempotent re-run by returning
   // inserted: false). Defaults to "first-time award".
   awardXpResult?: (input: AwardXpForEpisodeInput) => AwardXpForEpisodeResult;
-}): UpdateProfileDeps & {
+  // STORY-015 — when provided, the tool calls markPlanItemCompleted on close. The fake records
+  // every call so tests can assert idempotency. The result governs the boolean returned to the
+  // caller; default is "marked, first time".
+  markPlanResult?: (input: { user_id: string; problem_slug: string; episode_id: string }) => {
+    updated: boolean;
+  };
+  // When true, the tool's call to markPlanItemCompleted will throw — tests assert the close
+  // still completes (auto-mark is best-effort).
+  markPlanThrows?: boolean;
+}
+
+interface MarkPlanCall {
+  user_id: string;
+  problem_slug: string;
+  episode_id: string;
+}
+
+function fakeDeps(opts: FakeDepsOpts): UpdateProfileDeps & {
   closed: number;
   upserts: Array<{ concept_id: string; skill: ConceptSkill }>;
   xpCalls: AwardXpForEpisodeInput[];
   closeMock: ReturnType<typeof vi.fn>;
+  markPlanCalls: MarkPlanCall[];
 } {
   let closed = 0;
   const upserts: Array<{ concept_id: string; skill: ConceptSkill }> = [];
   const xpCalls: AwardXpForEpisodeInput[] = [];
+  const markPlanCalls: MarkPlanCall[] = [];
   const closeMock = vi.fn(async () => {
     closed += 1;
   });
+  const wirePlan = opts.markPlanResult !== undefined || opts.markPlanThrows === true;
   return {
     closeMock,
     get closed() {
@@ -64,6 +84,9 @@ function fakeDeps(opts: {
     },
     get xpCalls() {
       return xpCalls;
+    },
+    get markPlanCalls() {
+      return markPlanCalls;
     },
     async loadEpisodeForClose() {
       return opts.ctx === undefined
@@ -101,6 +124,15 @@ function fakeDeps(opts: {
         ? opts.awardXpResult(input)
         : { inserted: true, amount: input.amount };
     },
+    ...(wirePlan && {
+      markPlanItemCompleted: async (input: MarkPlanCall) => {
+        markPlanCalls.push(input);
+        if (opts.markPlanThrows) {
+          throw new Error("simulated plan markCompleted outage");
+        }
+        return opts.markPlanResult ? opts.markPlanResult(input) : { updated: true };
+      },
+    }),
   };
 }
 
@@ -351,5 +383,104 @@ describe("createUpdateProfileTool: XP awarding (STORY-022)", () => {
     // The intended grant is still surfaced in `amount` so the caller can show "would have been
     // 15 XP — already credited".
     expect(out.xp_award.amount).toBe(15);
+  });
+});
+
+describe("createUpdateProfileTool: plan item auto-mark (STORY-015)", () => {
+  it("calls markPlanItemCompleted with the problem slug + episode_id when wired", async () => {
+    const deps = fakeDeps({ markPlanResult: () => ({ updated: true }) });
+    const tool = createUpdateProfileTool({ deps });
+    const out = await tool.run({
+      episode_id: EPISODE_ID,
+      outcome: "passed",
+      passed: true,
+      submit_count: 1,
+      hints_used: 0,
+      finished_at_ms: 1700000060000,
+    });
+    expect(out.plan_item_marked).toBe(true);
+    expect(deps.markPlanCalls).toHaveLength(1);
+    expect(deps.markPlanCalls[0]).toEqual({
+      user_id: "user-1",
+      problem_slug: "two-sum",
+      episode_id: EPISODE_ID,
+    });
+  });
+
+  it("plan_item_marked=false when no plan item matches (dep returns updated=false)", async () => {
+    const deps = fakeDeps({ markPlanResult: () => ({ updated: false }) });
+    const tool = createUpdateProfileTool({ deps });
+    const out = await tool.run({
+      episode_id: EPISODE_ID,
+      outcome: "passed",
+      passed: true,
+      submit_count: 1,
+      hints_used: 0,
+      finished_at_ms: 1700000060000,
+    });
+    expect(out.plan_item_marked).toBe(false);
+    expect(deps.markPlanCalls).toHaveLength(1);
+  });
+
+  it("idempotency: re-grading the same episode (markPlan returns updated=false) → plan_item_marked=false", async () => {
+    let calls = 0;
+    const deps = fakeDeps({
+      markPlanResult: () => {
+        calls += 1;
+        return { updated: calls === 1 };
+      },
+    });
+    const tool = createUpdateProfileTool({ deps });
+    const first = await tool.run({
+      episode_id: EPISODE_ID,
+      outcome: "passed",
+      passed: true,
+      submit_count: 1,
+      hints_used: 0,
+      finished_at_ms: 1700000060000,
+    });
+    const second = await tool.run({
+      episode_id: EPISODE_ID,
+      outcome: "passed",
+      passed: true,
+      submit_count: 1,
+      hints_used: 0,
+      finished_at_ms: 1700000060000,
+    });
+    expect(first.plan_item_marked).toBe(true);
+    expect(second.plan_item_marked).toBe(false);
+    expect(deps.markPlanCalls).toHaveLength(2);
+  });
+
+  it("plan_item_marked=false when the planner isn't wired (no markPlanItemCompleted dep)", async () => {
+    const deps = fakeDeps({});
+    const tool = createUpdateProfileTool({ deps });
+    const out = await tool.run({
+      episode_id: EPISODE_ID,
+      outcome: "passed",
+      passed: true,
+      submit_count: 1,
+      hints_used: 0,
+      finished_at_ms: 1700000060000,
+    });
+    expect(out.plan_item_marked).toBe(false);
+    expect(deps.markPlanCalls).toEqual([]);
+  });
+
+  it("auto-mark failure is swallowed: close still succeeds, plan_item_marked=false", async () => {
+    const deps = fakeDeps({ markPlanThrows: true });
+    const tool = createUpdateProfileTool({ deps });
+    const out = await tool.run({
+      episode_id: EPISODE_ID,
+      outcome: "passed",
+      passed: true,
+      submit_count: 1,
+      hints_used: 0,
+      finished_at_ms: 1700000060000,
+    });
+    expect(out.plan_item_marked).toBe(false);
+    // The close itself still completed.
+    expect(deps.closed).toBe(1);
+    expect(out.xp_award.awarded).toBe(true);
   });
 });

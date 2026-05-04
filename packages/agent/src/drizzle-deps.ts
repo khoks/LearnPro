@@ -4,6 +4,8 @@ import {
   awardXp,
   concepts,
   episodes,
+  getLatestActivePlan,
+  markItemCompleted,
   problems,
   skill_scores,
   submissions,
@@ -410,6 +412,12 @@ export function buildUpdateProfileDrizzleDeps(
         amount: input.amount,
         reason: input.reason,
       });
+    },
+    async markPlanItemCompleted(input) {
+      const plan = await getLatestActivePlan(opts.db, input.user_id);
+      if (!plan) return { updated: false };
+      const r = await markItemCompleted(opts.db, plan.id, input.problem_slug, input.episode_id);
+      return { updated: r.updated };
     },
   };
 }
