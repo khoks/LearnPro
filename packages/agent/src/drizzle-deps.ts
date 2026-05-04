@@ -1,6 +1,7 @@
 import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 import {
   agent_calls,
+  awardXp,
   concepts,
   episodes,
   problems,
@@ -400,6 +401,15 @@ export function buildUpdateProfileDrizzleDeps(
         attempts: 0,
       };
       return score;
+    },
+    async awardXp(input) {
+      return awardXp(opts.db, {
+        user_id: input.user_id,
+        org_id: input.org_id,
+        episode_id: input.episode_id,
+        amount: input.amount,
+        reason: input.reason,
+      });
     },
   };
 }
