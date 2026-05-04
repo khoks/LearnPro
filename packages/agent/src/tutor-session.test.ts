@@ -77,6 +77,7 @@ function fakeUpdateProfileOutput(): UpdateProfileOutput {
         attempts: 1,
       },
     ],
+    xp_award: { amount: 5, reason: "episode-passed-with-hints", awarded: true },
   };
 }
 

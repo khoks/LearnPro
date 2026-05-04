@@ -116,7 +116,8 @@
             "next_confidence": 0.095,
             "attempts": 1
           }
-        ]
+        ],
+        "xp_award": { "amount": 0, "reason": "episode-passed-with-hints", "awarded": true }
       }
     }
   ],

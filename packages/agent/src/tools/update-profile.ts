@@ -1,10 +1,13 @@
 import { z } from "zod";
 import {
+  awardXpForEpisode,
   DEFAULT_DIFFICULTY_HEURISTIC,
+  DEFAULT_XP_POLICY,
   updateSkillScore,
   type ConceptSkill,
   type DifficultyHeuristicConfig,
   type EpisodeSignalInput,
+  type XpPolicyConfig,
 } from "@learnpro/scoring";
 import type { UpdateProfileDeps } from "../ports.js";
 import { FinalOutcomeSchema, type FinalOutcome } from "../state.js";
@@ -40,6 +43,13 @@ export const UpdateProfileOutputSchema = z.object({
       attempts: z.number().int().min(0),
     }),
   ),
+  // STORY-022 — XP grant for this episode. `awarded` is false when an idempotent re-run hit the
+  // unique constraint (the second grade call for the same episode + reason is a no-op).
+  xp_award: z.object({
+    amount: z.number().int().min(0),
+    reason: z.string(),
+    awarded: z.boolean(),
+  }),
 });
 export type UpdateProfileOutput = z.infer<typeof UpdateProfileOutputSchema>;
 
@@ -51,6 +61,7 @@ export interface UpdateProfileTool {
 export interface CreateUpdateProfileToolOptions {
   deps: UpdateProfileDeps;
   difficulty_config?: DifficultyHeuristicConfig;
+  xp_config?: XpPolicyConfig;
 }
 
 export class UpdateProfileEpisodeMissingError extends Error {
@@ -77,6 +88,7 @@ export function deriveFinalOutcome(opts: {
 
 export function createUpdateProfileTool(opts: CreateUpdateProfileToolOptions): UpdateProfileTool {
   const config = opts.difficulty_config ?? DEFAULT_DIFFICULTY_HEURISTIC;
+  const xpConfig = opts.xp_config ?? DEFAULT_XP_POLICY;
 
   return {
     name: "updateProfile",
@@ -139,6 +151,22 @@ export function createUpdateProfileTool(opts: CreateUpdateProfileToolOptions): U
         });
       }
 
+      const xpDecision = awardXpForEpisode(
+        {
+          outcome: input.outcome,
+          difficulty: ctx.problem.difficulty,
+          hints_used,
+        },
+        xpConfig,
+      );
+      const xpResult = await opts.deps.awardXp({
+        user_id: ctx.user_id,
+        org_id: ctx.org_id,
+        episode_id: input.episode_id,
+        amount: xpDecision.amount,
+        reason: xpDecision.reason,
+      });
+
       return {
         episode_id: input.episode_id,
         final_outcome: input.outcome,
@@ -146,6 +174,11 @@ export function createUpdateProfileTool(opts: CreateUpdateProfileToolOptions): U
         attempts,
         hints_used,
         skill_updates,
+        xp_award: {
+          amount: xpDecision.amount,
+          reason: xpDecision.reason,
+          awarded: xpResult.inserted,
+        },
       };
     },
   };

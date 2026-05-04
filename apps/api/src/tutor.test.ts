@@ -84,6 +84,7 @@ function fakeUpdateProfileOutput(): UpdateProfileOutput {
         attempts: 1,
       },
     ],
+    xp_award: { amount: 15, reason: "episode-passed", awarded: true },
   };
 }
 

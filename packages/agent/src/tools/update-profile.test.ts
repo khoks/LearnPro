@@ -1,7 +1,12 @@
 import type { ProblemDef } from "@learnpro/problems";
 import type { ConceptSkill } from "@learnpro/scoring";
 import { describe, expect, it, vi } from "vitest";
-import type { UpdateProfileDeps, UpdateProfileEpisodeContext } from "../ports.js";
+import type {
+  AwardXpForEpisodeInput,
+  AwardXpForEpisodeResult,
+  UpdateProfileDeps,
+  UpdateProfileEpisodeContext,
+} from "../ports.js";
 import {
   coldStartSkill,
   createUpdateProfileTool,
@@ -12,7 +17,7 @@ import {
 const EPISODE_ID = "11111111-1111-4111-8111-111111111111";
 const ORG_ID = "self";
 
-function pdef(): ProblemDef {
+function pdef(overrides: Partial<ProblemDef> = {}): ProblemDef {
   return {
     slug: "two-sum",
     name: "Two sum",
@@ -26,6 +31,7 @@ function pdef(): ProblemDef {
     public_examples: [{ input: [[2, 7], 9], expected: [0, 1] }],
     hidden_tests: [{ input: [[2, 7], 9], expected: [0, 1] }],
     expected_median_time_to_solve_ms: 60_000,
+    ...overrides,
   };
 }
 
@@ -33,13 +39,18 @@ function fakeDeps(opts: {
   ctx?: UpdateProfileEpisodeContext | null;
   resolved?: Map<string, string>;
   prior_skill?: ConceptSkill | null;
+  // Allow tests to force a specific awardXp result (e.g. simulate idempotent re-run by returning
+  // inserted: false). Defaults to "first-time award".
+  awardXpResult?: (input: AwardXpForEpisodeInput) => AwardXpForEpisodeResult;
 }): UpdateProfileDeps & {
   closed: number;
   upserts: Array<{ concept_id: string; skill: ConceptSkill }>;
+  xpCalls: AwardXpForEpisodeInput[];
   closeMock: ReturnType<typeof vi.fn>;
 } {
   let closed = 0;
   const upserts: Array<{ concept_id: string; skill: ConceptSkill }> = [];
+  const xpCalls: AwardXpForEpisodeInput[] = [];
   const closeMock = vi.fn(async () => {
     closed += 1;
   });
@@ -50,6 +61,9 @@ function fakeDeps(opts: {
     },
     get upserts() {
       return upserts;
+    },
+    get xpCalls() {
+      return xpCalls;
     },
     async loadEpisodeForClose() {
       return opts.ctx === undefined
@@ -80,6 +94,12 @@ function fakeDeps(opts: {
     },
     async upsertSkillScore({ concept_id, skill }) {
       upserts.push({ concept_id, skill });
+    },
+    async awardXp(input) {
+      xpCalls.push(input);
+      return opts.awardXpResult
+        ? opts.awardXpResult(input)
+        : { inserted: true, amount: input.amount };
     },
   };
 }
@@ -210,5 +230,126 @@ describe("createUpdateProfileTool", () => {
     });
     expect(out.skill_updates).toHaveLength(1);
     expect(out.skill_updates[0]?.concept_slug).toBe("arrays");
+  });
+});
+
+describe("createUpdateProfileTool: XP awarding (STORY-022)", () => {
+  it("awards XP for a clean pass and surfaces it in the output", async () => {
+    const deps = fakeDeps({});
+    const tool = createUpdateProfileTool({ deps });
+    const out = await tool.run({
+      episode_id: EPISODE_ID,
+      outcome: "passed",
+      passed: true,
+      submit_count: 1,
+      hints_used: 0,
+      finished_at_ms: 1700000060000,
+    });
+    // difficulty 2 default → base 10 × 1.5 × 1.0 = 15. No hints, no rung cost.
+    expect(out.xp_award).toEqual({ amount: 15, reason: "episode-passed", awarded: true });
+    expect(deps.xpCalls).toHaveLength(1);
+    expect(deps.xpCalls[0]?.episode_id).toBe(EPISODE_ID);
+    expect(deps.xpCalls[0]?.user_id).toBe("user-1");
+  });
+
+  it("awards reduced XP for a passed_with_hints outcome", async () => {
+    const deps = fakeDeps({});
+    const tool = createUpdateProfileTool({ deps });
+    const out = await tool.run({
+      episode_id: EPISODE_ID,
+      outcome: "passed_with_hints",
+      passed: true,
+      submit_count: 1,
+      hints_used: 1,
+      finished_at_ms: 1700000060000,
+    });
+    // difficulty 2 → 10 × 1.5 × 0.7 = 10.5; minus rung-1 cost 5 = 5.5; floored = 5.
+    expect(out.xp_award).toEqual({ amount: 5, reason: "episode-passed-with-hints", awarded: true });
+  });
+
+  it("awards 0 XP for a failed episode but still records the reason row", async () => {
+    const deps = fakeDeps({});
+    const tool = createUpdateProfileTool({ deps });
+    const out = await tool.run({
+      episode_id: EPISODE_ID,
+      outcome: "failed",
+      passed: false,
+      submit_count: 3,
+      hints_used: 1,
+      finished_at_ms: 1700000180000,
+    });
+    expect(out.xp_award).toEqual({ amount: 0, reason: "episode-failed", awarded: true });
+  });
+
+  it("awards 0 XP for a revealed outcome (correctness multiplier 0)", async () => {
+    const deps = fakeDeps({});
+    const tool = createUpdateProfileTool({ deps });
+    const out = await tool.run({
+      episode_id: EPISODE_ID,
+      outcome: "revealed",
+      passed: true,
+      reveal_clicked: true,
+      submit_count: 1,
+      hints_used: 0,
+      finished_at_ms: 1700000060000,
+    });
+    expect(out.xp_award).toEqual({ amount: 0, reason: "episode-revealed", awarded: true });
+  });
+
+  it("awards 0 XP for an abandoned outcome", async () => {
+    const deps = fakeDeps({});
+    const tool = createUpdateProfileTool({ deps });
+    const out = await tool.run({
+      episode_id: EPISODE_ID,
+      outcome: "abandoned",
+      passed: false,
+      submit_count: 1,
+      hints_used: 0,
+      finished_at_ms: 1700000060000,
+    });
+    expect(out.xp_award).toEqual({ amount: 0, reason: "episode-abandoned", awarded: true });
+  });
+
+  it("scales XP with problem difficulty (level 5 = 4.5x base)", async () => {
+    const deps = fakeDeps({
+      ctx: {
+        episode_id: EPISODE_ID,
+        user_id: "user-1",
+        org_id: ORG_ID,
+        problem: pdef({ difficulty: 5 }),
+        hints_used: 0,
+        attempts: 0,
+        started_at: 1700000000000,
+      },
+    });
+    const tool = createUpdateProfileTool({ deps });
+    const out = await tool.run({
+      episode_id: EPISODE_ID,
+      outcome: "passed",
+      passed: true,
+      submit_count: 1,
+      hints_used: 0,
+      finished_at_ms: 1700000060000,
+    });
+    expect(out.xp_award.amount).toBe(45); // 10 × 4.5 × 1.0 = 45
+  });
+
+  it("reports awarded=false when the dep returns inserted=false (idempotent re-run)", async () => {
+    const deps = fakeDeps({
+      awardXpResult: () => ({ inserted: false, amount: 0 }),
+    });
+    const tool = createUpdateProfileTool({ deps });
+    const out = await tool.run({
+      episode_id: EPISODE_ID,
+      outcome: "passed",
+      passed: true,
+      submit_count: 1,
+      hints_used: 0,
+      finished_at_ms: 1700000060000,
+    });
+    expect(out.xp_award.awarded).toBe(false);
+    // The intended grant is still surfaced in `amount` so the caller can show "would have been
+    // 15 XP — already credited".
+    expect(out.xp_award.amount).toBe(15);
   });
 });

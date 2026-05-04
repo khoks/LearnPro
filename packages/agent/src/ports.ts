@@ -155,6 +155,26 @@ export interface UpdateProfileDeps {
   // Reads the current skill_score row for a (user, concept) — null when none exists yet (which is
   // the cold-start case for a new concept).
   loadSkillScore(input: { user_id: string; concept_id: string }): Promise<ConceptSkill | null>;
+
+  // Idempotently awards XP for a closed episode. The implementation in apps/api wires through
+  // @learnpro/db's awardXp, which uses ON CONFLICT DO NOTHING on (user_id, episode_id, reason)
+  // so re-running grade for the same episode never double-awards. The tool always calls this —
+  // even for failed/abandoned episodes — so the user's "you tried 12 problems" history is
+  // complete (failed grants are amount=0).
+  awardXp(input: AwardXpForEpisodeInput): Promise<AwardXpForEpisodeResult>;
+}
+
+export interface AwardXpForEpisodeInput {
+  user_id: string;
+  org_id: string;
+  episode_id: string;
+  amount: number;
+  reason: string;
+}
+
+export interface AwardXpForEpisodeResult {
+  inserted: boolean;
+  amount: number;
 }
 
 export interface UpdateProfileEpisodeContext {
