@@ -15,6 +15,7 @@
     "@learnpro/agent": "workspace:*",
     "@learnpro/db": "workspace:^",
     "@learnpro/sandbox": "workspace:*",
+    "@learnpro/scoring": "workspace:*",
     "@learnpro/shared": "workspace:*",
     "@monaco-editor/react": "^4.6.0",
     "monaco-editor": "^0.52.2",
