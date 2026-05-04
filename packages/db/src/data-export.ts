@@ -216,6 +216,11 @@ function serializeProfile(user: User, profile: Profile | null): Record<string, u
     image: user.image,
     emailVerified: user.emailVerified ? user.emailVerified.toISOString() : null,
     created_at: user.created_at.toISOString(),
+    xp: user.xp,
+    streak_grace_days_remaining: user.streak_grace_days_remaining,
+    streak_grace_last_replenished_at: user.streak_grace_last_replenished_at
+      ? user.streak_grace_last_replenished_at.toISOString()
+      : null,
     profile: profile
       ? {
           target_role: profile.target_role,

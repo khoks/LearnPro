@@ -26,6 +26,7 @@ import {
   tracks,
   users,
   verificationTokens,
+  xp_awards,
 } from "./schema.js";
 
 describe("schema: SaaS-readiness primitive (org_id everywhere)", () => {
@@ -276,5 +277,57 @@ describe("schema: Auth.js drizzle-adapter tables (STORY-005)", () => {
     expect(ALL_TABLES).toContain(accounts);
     expect(ALL_TABLES).toContain(sessions);
     expect(ALL_TABLES).toContain(verificationTokens);
+  });
+});
+
+describe("schema: xp + streak (STORY-022)", () => {
+  it("users carries an xp counter (notNull, default 0)", () => {
+    const cols = getTableColumns(users);
+    expect(cols.xp).toBeDefined();
+    expect(cols.xp?.notNull).toBe(true);
+    expect(cols.xp?.default).toBe(0);
+  });
+
+  it("users carries a monthly-replenishing streak grace counter (notNull, default 2)", () => {
+    const cols = getTableColumns(users);
+    expect(cols.streak_grace_days_remaining).toBeDefined();
+    expect(cols.streak_grace_days_remaining?.notNull).toBe(true);
+    expect(cols.streak_grace_days_remaining?.default).toBe(2);
+  });
+
+  it("users tracks the last grace-day replenish month (nullable until first refill)", () => {
+    const cols = getTableColumns(users);
+    expect(cols.streak_grace_last_replenished_at).toBeDefined();
+    expect(cols.streak_grace_last_replenished_at?.notNull).toBe(false);
+  });
+
+  it("xp_awards table exists with id / user_id / episode_id / amount / reason / awarded_at", () => {
+    const cols = getTableColumns(xp_awards);
+    expect(cols.id?.primary).toBe(true);
+    expect(cols.org_id?.notNull).toBe(true);
+    expect(cols.user_id?.notNull).toBe(true);
+    expect(cols.episode_id).toBeDefined();
+    expect(cols.episode_id?.notNull).toBe(false); // nullable for future non-episode grants
+    expect(cols.amount?.notNull).toBe(true);
+    expect(cols.reason?.notNull).toBe(true);
+    expect(cols.awarded_at?.notNull).toBe(true);
+  });
+
+  it("xp_awards declares (user_id, awarded_at) index for per-user history scans", () => {
+    const config = getTableConfig(xp_awards);
+    const names = config.indexes.map((i) => i.config.name);
+    expect(names).toContain("xp_awards_user_awarded_idx");
+  });
+
+  it("xp_awards declares (user_id, episode_id, reason) unique index for idempotent awards", () => {
+    const config = getTableConfig(xp_awards);
+    const uniq = config.indexes.find((i) => i.config.name === "xp_awards_user_episode_reason_uniq");
+    expect(uniq, "xp_awards idempotency unique index missing").toBeDefined();
+    expect(uniq?.config.unique).toBe(true);
+  });
+
+  it("xp_awards is included in both ALL_TABLES and ORG_SCOPED_TABLES", () => {
+    expect(ALL_TABLES).toContain(xp_awards);
+    expect(ORG_SCOPED_TABLES as readonly unknown[]).toContain(xp_awards);
   });
 });

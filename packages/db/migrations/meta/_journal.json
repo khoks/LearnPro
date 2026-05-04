@@ -36,6 +36,13 @@
       "when": 1777355153655,
       "tag": "0004_auth_tables",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1777853194068,
+      "tag": "0005_xp_streak",
+      "breakpoints": true
     }
   ]
 }
