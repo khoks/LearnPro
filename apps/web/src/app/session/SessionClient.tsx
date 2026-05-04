@@ -12,16 +12,15 @@ import {
   initialSessionState,
   nextHintRung,
   transition,
-  type HintEntry,
   type SessionEvent,
   type SessionState,
 } from "../../lib/session-state";
 import {
-  assignEpisode,
-  finishEpisode,
-  requestHint,
-  submitCode,
-} from "../../lib/tutor-api";
+  driveAssign,
+  driveFinish,
+  driveHint,
+  driveSubmit,
+} from "../../lib/session-driver";
 import {
   DifficultyBadge,
   ErrorBanner,
@@ -73,25 +72,17 @@ export function SessionClient({ trackId }: SessionClientProps) {
   const startEpisode = useCallback(async () => {
     if (assigningRef.current) return;
     assigningRef.current = true;
-    dispatch({ type: "assign_started" });
-    const r = await assignEpisode({ track_id: trackId });
+    const { events } = await driveAssign({ phase: "assigning" }, trackId);
     assigningRef.current = false;
-    if (!r.ok) {
-      dispatch({ type: "assign_failed", error: r.error });
-      return;
+    for (const ev of events) dispatch(ev);
+    const succeeded = events.find(
+      (e): e is Extract<SessionEvent, { type: "assign_succeeded" }> =>
+        e.type === "assign_succeeded",
+    );
+    if (succeeded) {
+      setCode(succeeded.assigned.problem.starter_code);
+      setRunResult(null);
     }
-    const assigned = {
-      episode_id: r.data.episode_id,
-      problem_id: r.data.problem_id,
-      problem_slug: r.data.problem_slug,
-      problem: r.data.problem,
-      difficulty_tier: r.data.difficulty_tier,
-      why_this_difficulty: r.data.why_this_difficulty,
-      started_at: r.data.started_at,
-    };
-    setCode(r.data.problem.starter_code);
-    setRunResult(null);
-    dispatch({ type: "assign_succeeded", assigned });
   }, [trackId]);
 
   // Kick off the first assign on mount (and again on each `reset` → assigning transition).
@@ -127,45 +118,39 @@ export function SessionClient({ trackId }: SessionClientProps) {
 
   const onSubmit = useCallback(async () => {
     if (state.phase !== "coding" && state.phase !== "grading") return;
-    const episode_id = state.assigned.episode_id;
-    dispatch({ type: "submit", code });
-    const r = await submitCode(episode_id, code);
-    if (!r.ok) {
-      dispatch({ type: "submit_failed", error: r.error });
-      return;
+    const { events } = await driveSubmit(state, code);
+    for (const ev of events) dispatch(ev);
+    const succeeded = events.find(
+      (e): e is Extract<SessionEvent, { type: "submit_succeeded" }> =>
+        e.type === "submit_succeeded",
+    );
+    if (succeeded) {
+      capture.emit({ type: "submit", payload: { passed: succeeded.grade.passed } });
     }
-    capture.emit({ type: "submit", payload: { passed: r.data.passed } });
-    dispatch({ type: "submit_succeeded", grade: r.data });
   }, [state, code, capture]);
 
   const onRequestHint = useCallback(async () => {
     if (state.phase !== "coding" && state.phase !== "grading") return;
     const rung = nextHintRung(state.hints);
     if (rung === null) return;
-    const episode_id = state.assigned.episode_id;
     capture.emit({ type: "hint_request", payload: { rung } });
-    dispatch({ type: "request_hint", rung });
-    const r = await requestHint(episode_id, rung);
-    if (!r.ok) {
-      dispatch({ type: "hint_failed", error: r.error });
-      return;
+    const { events } = await driveHint(state, rung);
+    for (const ev of events) dispatch(ev);
+    const succeeded = events.find(
+      (e): e is Extract<SessionEvent, { type: "hint_succeeded" }> =>
+        e.type === "hint_succeeded",
+    );
+    if (succeeded) {
+      capture.emit({ type: "hint_received", payload: { rung: succeeded.hint.rung } });
     }
-    capture.emit({ type: "hint_received", payload: { rung: r.data.rung } });
-    const hint: HintEntry = { rung: r.data.rung, hint: r.data.hint, xp_cost: r.data.xp_cost };
-    dispatch({ type: "hint_succeeded", hint });
   }, [state, capture]);
 
   const onFinish = useCallback(async () => {
     if (state.phase !== "coding" && state.phase !== "grading") return;
-    const episode_id = state.assigned.episode_id;
-    dispatch({ type: "finish" });
-    const r = await finishEpisode(episode_id);
-    if (!r.ok) {
-      dispatch({ type: "finish_failed", error: r.error });
-      return;
-    }
-    void capture.flush();
-    dispatch({ type: "finish_succeeded", profile: r.data });
+    const { events } = await driveFinish(state);
+    for (const ev of events) dispatch(ev);
+    const succeeded = events.some((e) => e.type === "finish_succeeded");
+    if (succeeded) void capture.flush();
   }, [state, capture]);
 
   const onNext = useCallback(() => {
