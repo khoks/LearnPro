@@ -2,14 +2,14 @@
 id: STORY-025
 title: Responsive web app (Windows browser baseline)
 type: story
-status: backlog
+status: in-progress
 priority: P1
 estimate: S
 parent: EPIC-013
 phase: mvp
 tags: [responsive, ui, tailwind]
 created: 2026-04-25
-updated: 2026-04-25
+updated: 2026-05-01
 ---
 
 ## Description
@@ -36,3 +36,4 @@ We are **not** shipping a polished mobile experience in MVP. We're just making s
 ## Activity log
 
 - 2026-04-25 — created
+- 2026-05-01 — picked up
