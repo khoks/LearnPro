@@ -3,6 +3,7 @@
 import { useCallback, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import type { SandboxLanguage, SandboxRunResponse } from "@learnpro/sandbox";
+import { StatusBadge } from "../../components/status-badge";
 import { runSandbox, type RunSandboxResult } from "../../lib/run-sandbox";
 import { useInteractionCapture, type MonacoLikeEditor } from "../../lib/use-interaction-capture";
 import { statusFor } from "./status";
@@ -111,8 +112,12 @@ export function PlaygroundClient() {
         >
           {running ? "Running…" : "Run"}
         </button>
-        <span aria-live="polite" style={{ color: status.color, fontWeight: 600 }}>
-          {status.label}
+        <span aria-live="polite">
+          {status.tone === "idle" ? (
+            <span style={{ color: status.color, fontWeight: 600 }}>{status.label}</span>
+          ) : (
+            <StatusBadge variant={status.tone}>{status.label}</StatusBadge>
+          )}
         </span>
         <label
           style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 6 }}
@@ -128,26 +133,34 @@ export function PlaygroundClient() {
         </label>
       </div>
 
-      <div
-        style={{ border: "1px solid #ccc", borderRadius: 4, overflow: "hidden" }}
+      <section
+        role="region"
         aria-label="Code editor"
+        aria-describedby="playground-editor-help"
+        style={{ display: "grid", gap: "0.4rem" }}
       >
-        <Editor
-          height="360px"
-          language={MONACO_LANGUAGE[language]}
-          value={code}
-          theme="vs-dark"
-          onChange={(v) => setCode(v ?? "")}
-          onMount={onEditorMount}
-          options={{
-            minimap: { enabled: false },
-            fontSize: 14,
-            scrollBeyondLastLine: false,
-            tabFocusMode: false,
-            ariaLabel: "Code editor",
-          }}
-        />
-      </div>
+        <div style={{ border: "1px solid #ccc", borderRadius: 4, overflow: "hidden" }}>
+          <Editor
+            height="360px"
+            language={MONACO_LANGUAGE[language]}
+            value={code}
+            theme="vs-dark"
+            onChange={(v) => setCode(v ?? "")}
+            onMount={onEditorMount}
+            options={{
+              minimap: { enabled: false },
+              fontSize: 14,
+              scrollBeyondLastLine: false,
+              tabFocusMode: false,
+              ariaLabel: "Code editor",
+            }}
+          />
+        </div>
+        <p id="playground-editor-help" style={{ margin: 0, fontSize: 12, color: "#666" }}>
+          Keyboard: <kbd>Esc</kbd> exits the editor focus trap; <kbd>Shift</kbd> + <kbd>F10</kbd>{" "}
+          opens the context menu.
+        </p>
+      </section>
 
       <ResultPanel result={result} running={running} />
     </div>

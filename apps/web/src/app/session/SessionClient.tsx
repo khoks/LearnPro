@@ -228,27 +228,35 @@ function ActiveSessionView(props: ActiveStateProps) {
 
       <InlineErrorBanner state={state} onDismiss={props.onDismissError} />
 
-      <div
-        style={{ border: "1px solid #ccc", borderRadius: 4, overflow: "hidden" }}
+      <section
+        role="region"
         aria-label="Code editor"
+        aria-describedby="session-editor-help"
+        style={{ display: "grid", gap: "0.4rem" }}
       >
-        <Editor
-          height="360px"
-          language={MONACO_LANGUAGE[language]}
-          value={props.code}
-          theme="vs-dark"
-          onChange={(v) => props.onCodeChange(v ?? "")}
-          onMount={props.onEditorMount}
-          options={{
-            readOnly: editorDisabled,
-            minimap: { enabled: false },
-            fontSize: 14,
-            scrollBeyondLastLine: false,
-            tabFocusMode: false,
-            ariaLabel: "Code editor",
-          }}
-        />
-      </div>
+        <div style={{ border: "1px solid #ccc", borderRadius: 4, overflow: "hidden" }}>
+          <Editor
+            height="360px"
+            language={MONACO_LANGUAGE[language]}
+            value={props.code}
+            theme="vs-dark"
+            onChange={(v) => props.onCodeChange(v ?? "")}
+            onMount={props.onEditorMount}
+            options={{
+              readOnly: editorDisabled,
+              minimap: { enabled: false },
+              fontSize: 14,
+              scrollBeyondLastLine: false,
+              tabFocusMode: false,
+              ariaLabel: "Code editor",
+            }}
+          />
+        </div>
+        <p id="session-editor-help" style={{ margin: 0, fontSize: 12, color: "#666" }}>
+          Keyboard: <kbd>Esc</kbd> exits the editor focus trap; <kbd>Shift</kbd> + <kbd>F10</kbd>{" "}
+          opens the context menu.
+        </p>
+      </section>
 
       <div style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap", alignItems: "center" }}>
         <ActionButton

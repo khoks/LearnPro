@@ -10,7 +10,10 @@ export default async function OnboardingPage() {
     redirect("/auth/signin");
   }
   return (
-    <main style={{ padding: "2rem", fontFamily: "system-ui, sans-serif", maxWidth: 720 }}>
+    <main
+      id="main-content"
+      style={{ padding: "2rem", fontFamily: "system-ui, sans-serif", maxWidth: 720 }}
+    >
       <header style={{ marginBottom: "1rem" }}>
         <h1 style={{ margin: 0 }}>Welcome to LearnPro</h1>
         <p style={{ margin: "0.25rem 0 0", color: "#555" }}>

@@ -1,6 +1,7 @@
 "use client";
 
 import type { FinalOutcome, GradeOutput, UpdateProfileOutput } from "@learnpro/agent";
+import { StatusBadge } from "../../components/status-badge";
 import type { HintEntry, SessionError } from "../../lib/session-state";
 import {
   difficultyBadgePalette,
@@ -118,14 +119,10 @@ export function HiddenTestsTable({ results }: { results: GradeOutput["hidden_tes
             <td style={{ padding: "0.3rem 0.4rem", fontVariantNumeric: "tabular-nums" }}>
               {r.index}
             </td>
-            <td
-              style={{
-                padding: "0.3rem 0.4rem",
-                color: r.passed ? "#1b5e20" : "#bf360c",
-                fontWeight: 600,
-              }}
-            >
-              {r.passed ? "pass" : "fail"}
+            <td style={{ padding: "0.3rem 0.4rem" }}>
+              <StatusBadge variant={r.passed ? "pass" : "fail"}>
+                {r.passed ? "pass" : "fail"}
+              </StatusBadge>
             </td>
             <td style={{ padding: "0.3rem 0.4rem", color: "#555" }}>
               {r.passed ? "" : (r.detail ?? formatExpectedGot(r.expected, r.got))}
@@ -224,8 +221,10 @@ export function GradeResultPanel({ grade }: { grade: GradeOutput }) {
         background: grade.passed ? "#f1f8e9" : "#fff3e0",
       }}
     >
-      <div style={{ fontWeight: 700, fontSize: 16, color: grade.passed ? "#1b5e20" : "#bf360c" }}>
-        {grade.passed ? "All hidden tests passed" : "Some hidden tests failed"}
+      <div style={{ fontWeight: 700, fontSize: 16 }}>
+        <StatusBadge variant={grade.passed ? "pass" : "fail"}>
+          {grade.passed ? "All hidden tests passed" : "Some hidden tests failed"}
+        </StatusBadge>
       </div>
       <RubricBars rubric={grade.rubric} />
       <p style={{ margin: 0, lineHeight: 1.5, whiteSpace: "pre-wrap" }}>

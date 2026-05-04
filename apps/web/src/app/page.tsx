@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 export default async function HomePage() {
   const session = await auth();
   return (
-    <main style={{ padding: "2rem", fontFamily: "system-ui, sans-serif" }}>
+    <main id="main-content" style={{ padding: "2rem", fontFamily: "system-ui, sans-serif" }}>
       <h1>LearnPro</h1>
       <p>Adaptive AI-tutored self-hosted learning platform.</p>
       <ul>
