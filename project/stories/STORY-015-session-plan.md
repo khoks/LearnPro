@@ -2,14 +2,14 @@
 id: STORY-015
 title: Session plan agent (3–5 micro-objectives per session)
 type: story
-status: backlog
+status: done
 priority: P0
 estimate: M
 parent: EPIC-006
 phase: mvp
 tags: [planning, agent, session]
 created: 2026-04-25
-updated: 2026-04-25
+updated: 2026-05-03
 ---
 
 ## Description
@@ -20,11 +20,11 @@ When the user clicks "Start session," they get a 3–5 item plan rendered in the
 
 ## Acceptance criteria
 
-- [ ] Plan renders within 2s of session start (parallel with editor load).
-- [ ] Plan is 3–5 items, each with a one-line objective and an estimated duration.
-- [ ] Items tick off automatically when the corresponding problem is graded.
-- [ ] Unfinished items at session end persist as `pending` for the next session.
-- [ ] Plan generation logs an `agent_calls` row.
+- [x] Plan renders within 2s of session start (parallel with editor load).
+- [x] Plan is 3–5 items, each with a one-line objective and an estimated duration.
+- [x] Items tick off automatically when the corresponding problem is graded.
+- [x] Unfinished items at session end persist as `pending` for the next session.
+- [x] Plan generation logs an `agent_calls` row.
 
 ## Dependencies
 
@@ -32,8 +32,10 @@ When the user clicks "Start session," they get a 3–5 item plan rendered in the
 
 ## Tasks
 
-(To be created when work begins.)
+(Implemented inline as a single-PR Story.)
 
 ## Activity log
 
 - 2026-04-25 — created
+- 2026-05-03 — picked up
+- 2026-05-03 — done. Schema: `session_plans` jsonb-items table with 24h TTL + `(user_id, created_at)` index (migration 0006_session_plans.sql). Agent: `planSession` tool calls Haiku with the SESSION_PLAN_SYSTEM_PROMPT (PROMPT_VERSION = "session-plan-2026-05-03"); deterministic 3-item fallback on parse failure / over-budget so the route never 500s. DB: getLatestActivePlan / createPlan / markItemCompleted / rollOverPending helpers (jsonb round-trip Zod-validated). API: 3 routes (GET / POST /v1/session-plan, POST /v1/session-plan/items/:slug/complete) auth-gated and idempotent. Tutor: updateProfile auto-marks the matching plan item slug on episode close (best-effort; idempotent re-grade never double-marks). UI: SessionPlanSidebar (3-5 item checklist + skeleton + Skip plan + fallback badge) wired into SessionClient with a small reducer; Next.js proxy routes for both endpoints. Test counts — schema.test.ts +4, plan-session.test.ts 19, session-plan.test.ts (db) 13 (DATABASE_URL-gated), update-profile.test.ts +5 (auto-mark), session-plan.test.ts (api) 14, session-plan-state.test.ts 9, SessionPlanSidebar.test.tsx 8.
