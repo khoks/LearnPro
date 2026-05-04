@@ -90,6 +90,9 @@ importers:
       '@auth/drizzle-adapter':
         specifier: ^1.7.4
         version: 1.11.2(nodemailer@7.0.13)
+      '@learnpro/agent':
+        specifier: workspace:*
+        version: link:../../packages/agent
       '@learnpro/db':
         specifier: workspace:^
         version: link:../../packages/db
