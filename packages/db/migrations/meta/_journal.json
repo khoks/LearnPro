@@ -57,6 +57,13 @@
       "when": 1778005000000,
       "tag": "0007_session_plans",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1777881913625,
+      "tag": "0008_repair_snapshot_post_023",
+      "breakpoints": true
     }
   ]
 }
