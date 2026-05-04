@@ -1,0 +1,29 @@
+{
+  "name": "@learnpro/notifications",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "lint": "eslint src",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@learnpro/db": "workspace:*",
+    "drizzle-orm": "^0.36.4",
+    "web-push": "^3.6.7",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/web-push": "^3.6.4",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}
