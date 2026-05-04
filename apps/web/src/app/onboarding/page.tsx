@@ -12,7 +12,16 @@ export default async function OnboardingPage() {
   return (
     <main
       id="main-content"
-      style={{ padding: "2rem", fontFamily: "system-ui, sans-serif", maxWidth: 720 }}
+      style={{
+        // STORY-025: clamp padding + cap with `maxWidth` so the page fits 320px+ viewports
+        // without a horizontal scrollbar. The previous fixed `2rem` padding plus 720px max-
+        // width left a ~32px overflow on a 768px viewport because nothing constrained the
+        // content box itself.
+        padding: "1.25rem",
+        fontFamily: "system-ui, sans-serif",
+        maxWidth: 720,
+        margin: "0 auto",
+      }}
     >
       <header style={{ marginBottom: "1rem" }}>
         <h1 style={{ margin: 0 }}>Welcome to LearnPro</h1>
