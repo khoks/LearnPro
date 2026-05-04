@@ -42,11 +42,22 @@
 }
 
 /* Global focus-visible rule. Applies a 2px high-contrast ring to every interactive element
-   that receives keyboard focus (focus-visible avoids ring-on-mouse-click visual noise). */
+   that receives keyboard focus (focus-visible avoids ring-on-mouse-click visual noise). The
+   double-ring (white inner box-shadow + dark blue outer outline) keeps the ring visible
+   against any background — green/blue/grey buttons, light cards, the dark Monaco backdrop. */
 :focus-visible {
   outline: 2px solid #1976d2;
   outline-offset: 2px;
+  box-shadow: 0 0 0 2px #fff;
   border-radius: 2px;
+}
+
+/* Inputs already have a border; the box-shadow ring would visually clash with their borders.
+   Strip the inner white ring on form controls — the outline alone is enough. */
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  box-shadow: none;
 }
 
 /* Honour reduced-motion preferences (some users get motion sickness from CSS transitions). */
