@@ -309,5 +309,6 @@ function serializeNotification(row: Notification): Record<string, unknown> {
     body: row.body,
     sent_at: row.sent_at.toISOString(),
     read_at: row.read_at ? row.read_at.toISOString() : null,
+    dedupe_key: row.dedupe_key,
   };
 }

@@ -343,9 +343,37 @@ export const notifications = pgTable(
     body: text("body"),
     sent_at: timestamp("sent_at", { withTimezone: true }).notNull().defaultNow(),
     read_at: timestamp("read_at", { withTimezone: true }),
+    // STORY-023 — idempotency hook for cron-triggered notifications. When set, the in-app channel
+    // skips the insert if a row with the same (user_id, dedupe_key) already exists in the last 24h
+    // — so a daily-reminder cron firing twice in the same UTC day delivers exactly once. Nullable
+    // because user-triggered notifications (e.g. test push) don't need it.
+    dedupe_key: text("dedupe_key"),
   },
   (t) => ({
+    // Bell-icon list query: descending by sent_at, scoped to a user.
     user_sent_idx: index("notifications_user_sent_idx").on(t.user_id, t.sent_at),
+  }),
+);
+
+// STORY-023 — per-browser-endpoint Web Push subscription. One user can have many (laptop browser
+// + phone browser, etc.); `endpoint` is unique because the Push API spec says it identifies a
+// single push subscription. 410 Gone responses delete the row in `web-push-channel.ts`.
+export const web_push_subscriptions = pgTable(
+  "web_push_subscriptions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    org_id: orgId(),
+    user_id: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    endpoint: text("endpoint").notNull(),
+    p256dh: text("p256dh").notNull(),
+    auth: text("auth").notNull(),
+    created_at: createdAt(),
+  },
+  (t) => ({
+    endpoint_uniq: uniqueIndex("web_push_subscriptions_endpoint_uniq").on(t.endpoint),
+    user_idx: index("web_push_subscriptions_user_idx").on(t.user_id),
   }),
 );
 
@@ -409,6 +437,8 @@ export type Interaction = typeof interactions.$inferSelect;
 export type NewInteraction = typeof interactions.$inferInsert;
 export type Notification = typeof notifications.$inferSelect;
 export type NewNotification = typeof notifications.$inferInsert;
+export type WebPushSubscription = typeof web_push_subscriptions.$inferSelect;
+export type NewWebPushSubscription = typeof web_push_subscriptions.$inferInsert;
 export type XpAward = typeof xp_awards.$inferSelect;
 export type NewXpAward = typeof xp_awards.$inferInsert;
 
@@ -428,6 +458,7 @@ export const ALL_TABLES = [
   agent_calls,
   interactions,
   notifications,
+  web_push_subscriptions,
   xp_awards,
 ] as const;
 
@@ -446,6 +477,7 @@ export const ORG_SCOPED_TABLES = [
   agent_calls,
   interactions,
   notifications,
+  web_push_subscriptions,
   xp_awards,
 ] as const;
 
