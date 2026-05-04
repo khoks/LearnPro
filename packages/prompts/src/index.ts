@@ -22,3 +22,10 @@ export {
   buildGradeUserPrompt,
   type GradePromptOptions,
 } from "./grade.js";
+
+export {
+  SESSION_PLAN_SYSTEM_PROMPT,
+  PROMPT_VERSION as SESSION_PLAN_PROMPT_VERSION,
+  buildSessionPlanUserPrompt,
+  type SessionPlanPromptOptions,
+} from "./session-plan.js";
