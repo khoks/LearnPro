@@ -1,6 +1,6 @@
 # LearnPro Board
 
-> **Last updated:** 2026-05-03 (STORY-020 done. The TypeScript fundamentals track now mirrors the Python one: `typescript-fundamentals.yaml` covers **12 of 13 spec'd concepts** (`modules` deferred until a TS problem in the bank exercises module syntax — same bank-coverage discipline STORY-019 applied to its 3 deferrals) with 28 refs into 25 of the 30 TS problems. Loader unchanged from STORY-019; only adds `TYPESCRIPT_FUNDAMENTALS_PATH` alongside `PYTHON_FUNDAMENTALS_PATH`. Loader rejects orphan refs / forward prerequisites / duplicate concept slugs at parse time — same invariants as the Python track. 11 new unit tests + 1 DATABASE_URL-gated integration test. Track-picker UI + progress-bar UI deferred to STORY-022 / dashboard, same as STORY-019. **Both MVP-language tracks are now seedable**, ready for the `/dashboard` work to render them.) (Earlier: STORY-026 + STORY-019 + STORY-011 all done. **MVP loop is API-complete.** STORY-011: hand-rolled tutor agent harness in new `@learnpro/agent` (no LangChain — per ADR-0003) with state machine `assign → coding → (hint | submit) → grading → profile-update → next` + 4 tools (`assignProblem` / `giveHint` / `grade` / `updateProfile`); 4 Fastify routes (`/v1/tutor/episodes/...`); replay-fixture eval test + DATABASE_URL-gated integration. UI deferred to STORY-062 (filed). STORY-026: GDPR-style `GET /v1/export` streams JSON envelope (profile / episodes / submissions / agent_calls / notifications / settings) scoped by session cookie; in-memory `MemoryRateLimiter` 1/hr per user; round-trip-importable shape; `importDump()` → STORY-061, Redis limiter → STORY-062 (existing). STORY-019: new `@learnpro/tracks` package mirrors `@learnpro/problems`; `python-fundamentals.yaml` covers 9 ordered concepts (3 spec concepts deferred until seed bank covers them) with 21 refs into 19 of 33 Python problems; loader rejects orphan refs / forward prerequisites at parse time.)
+> **Last updated:** 2026-05-03 (STORY-062 + STORY-017 + STORY-020 all done. **MVP loop is now end-to-end through the UI.** STORY-062: new `/session?track=...` page wires the 4 tutor API routes (STORY-011) into a real React UX. Pure state machine `apps/web/src/lib/session-state.ts` (discriminated union: assigning | coding | hint_loading | submitting | grading | finishing | finished | error) drives transitions. Pure orchestration layer `session-driver.ts` used in production AND the integration test — keeps SessionClient minimal and lets vitest exercise the full assign → submit → finish flow without jsdom+RTL. 4 Next.js Route Handlers under `/api/tutor/episodes/*` proxy with cookie forwarding. STORY-017: single Hint button escalates rung 1 → 2 → 3, disabled after rung 3, XP cost values (5/15/30) rendered from API; `hint_request` + `hint_received` events flow into STORY-055's interactions table via the existing `useInteractionCapture` hook. STORY-020: TypeScript fundamentals track — 12 of 13 spec'd concepts (modules deferred until bank exercises module syntax, same bank-coverage discipline as STORY-019), 28 refs into 25 of 30 TS problems. Friendly inline banners for 401/403/404/409/429/502/503 — never blank-screens. 65 + 11 + 1 new tests; **~491 passing repo-wide**.)
 > **How to read this:** This is the live status of every Epic, Story, and Task in the project. Hand-maintained for now (a regenerator script lives in the v1 backlog). When you change an item's `status:` frontmatter, also update the row here in the same commit.
 
 ---
@@ -16,11 +16,12 @@
 
 ## Up Next (Ready) — MVP build begins here
 
-Path A locked 2026-04-25. EPIC-019 (foundation) + auth (STORY-005) + onboarding (STORY-053) + seed bank (STORY-016) all shipped. The remaining bottleneck is **STORY-011 (tutor agent)** — once it lands the MVP loop closes (track → tutor assigns problem → user codes → sandbox runs → grader → tutor explains → next problem).
+Path A locked 2026-04-25. EPIC-019 (foundation) + auth (STORY-005) + onboarding (STORY-053) + seed bank (STORY-016) + tutor agent (STORY-011) + tutor session UI (STORY-062) + 3-rung hint ladder (STORY-017) all shipped. **The MVP single learning loop is end-to-end through the UI.** Next up: a track-picker dashboard surface so the user can land on `/session?track=...` from a friendly page rather than copy-pasting a UUID — see STORY-022 (XP, streak, progress bar).
 
 | ID | Title | Epic | Phase | Priority | Est |
 |----|-------|------|------|----------|-----|
-| [STORY-011](stories/STORY-011-tutor-agent-tools.md) | Tutor agent with `assign-problem` / `give-hint` / `grade` / `update-profile` tools | EPIC-004 | mvp | P0 | L |
+| [STORY-022](stories/STORY-022-xp-and-streak.md) | XP, streak with grace days, per-track progress bar | EPIC-011 | mvp | P0 | S |
+| [STORY-021](stories/STORY-021-onboarding-interview.md) | Career-aware onboarding interview (target role, time budget, level) | EPIC-010 | mvp | P0 | S |
 
 ---
 
@@ -29,7 +30,6 @@ Path A locked 2026-04-25. EPIC-019 (foundation) + auth (STORY-005) + onboarding 
 | ID | Title | Epic | Phase | Priority | Est |
 |----|-------|------|-------|----------|-----|
 | [STORY-015](stories/STORY-015-session-plan.md) | Session plan agent (3–5 micro-objectives per session) | EPIC-006 | mvp | P0 | M |
-| [STORY-017](stories/STORY-017-hint-ladder.md) | 3-rung hint ladder | EPIC-007 | mvp | P0 | S |
 | [STORY-021](stories/STORY-021-onboarding-interview.md) | Career-aware onboarding interview (target role, time budget, level) | EPIC-010 | mvp | P0 | S |
 | [STORY-022](stories/STORY-022-xp-and-streak.md) | XP, streak with grace days, per-track progress bar | EPIC-011 | mvp | P0 | S |
 | [STORY-023](stories/STORY-023-notifications-mvp.md) | In-app notification center + browser Web Push | EPIC-012 | mvp | P1 | M |
@@ -86,6 +86,8 @@ STORY-053 (conversational onboarding agent) landed 2026-04-28 — `POST /v1/onbo
 
 | ID | Title | Done |
 |----|-------|------|
+| [STORY-062](stories/STORY-062-tutor-session-ui.md) | Tutor session UI (`/session` page wires the 4 tutor API routes — pure state machine + driver + 4 Next.js proxies + Monaco editor + result panel + skill-update summary; 65 new tests in apps/web) | 2026-05-03 |
+| [STORY-017](stories/STORY-017-hint-ladder.md) | 3-rung hint ladder (single Hint button, escalates 1 → 2 → 3, disabled after rung 3; XP cost from API; `hint_request` / `hint_received` events feed STORY-055's interactions table) | 2026-05-03 |
 | [STORY-020](stories/STORY-020-typescript-track.md) | TypeScript fundamentals track — 12-concept ordered YAML mirrors the Python track + 11 loader tests + DATABASE_URL-gated seed integration test (1 spec concept `modules` deferred until seed bank covers it; track-picker UI + progress-bar UI deferred to STORY-022 / dashboard, same shape as STORY-019) | 2026-05-03 |
 | [STORY-011](stories/STORY-011-tutor-agent-tools.md) | Tutor agent with `assign-problem` / `give-hint` / `grade` / `update-profile` tools (hand-rolled state machine + 4 tools + 4 API routes + replay fixture; `/session` UI → STORY-062) | 2026-05-03 |
 | [STORY-026](stories/STORY-026-data-export.md) | GDPR-style JSON data export endpoint (`GET /v1/export` streaming + `MemoryRateLimiter` + round-trip-importable shape; `importDump()` → STORY-061, Redis limiter → STORY-062) | 2026-05-03 |
