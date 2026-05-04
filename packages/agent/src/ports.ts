@@ -186,3 +186,32 @@ export interface UpdateProfileEpisodeContext {
   attempts: number;
   started_at: number;
 }
+
+// STORY-015 — session-plan agent. The planner LLM call is a one-shot completion (no tool use).
+// The deps surface keeps the agent free of LLM SDK / DB knowledge; the production wiring in
+// apps/api passes a `generatePlan` adapter that calls Haiku with the SESSION_PLAN_SYSTEM_PROMPT
+// and the apps/api wiring writes the resulting plan via @learnpro/db's createPlan helper.
+export interface PlanSessionDeps {
+  generatePlan(input: PlanSessionGenerateInput): Promise<PlanSessionGenerateOutput>;
+}
+
+export interface PlanSessionRecentEpisode {
+  slug: string;
+  final_outcome: string | null;
+  difficulty: string | null;
+}
+
+export interface PlanSessionGenerateInput {
+  user_id: string;
+  time_budget_min: number;
+  target_role: string | null;
+  primary_goal: string | null;
+  current_track: string;
+  recent_episodes: ReadonlyArray<PlanSessionRecentEpisode>;
+}
+
+// `raw_text` is the LLM's verbatim response — the tool parses + Zod-validates it; on parse
+// failure we fall back to a deterministic 3-item plan so the route never 500s.
+export interface PlanSessionGenerateOutput {
+  raw_text: string;
+}

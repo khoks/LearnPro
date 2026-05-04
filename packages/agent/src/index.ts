@@ -24,6 +24,10 @@ export type {
   HiddenTestResult,
   HintEpisodeContext,
   GradeEpisodeContext,
+  PlanSessionDeps,
+  PlanSessionGenerateInput,
+  PlanSessionGenerateOutput,
+  PlanSessionRecentEpisode,
   ProblemCatalogEntry,
   RecentEpisode,
   UpdateProfileDeps,
@@ -82,6 +86,21 @@ export {
   type UpdateProfileOutput,
   type UpdateProfileTool,
 } from "./tools/update-profile.js";
+
+export {
+  PlanSessionInputSchema,
+  PlanSessionItemSchema,
+  PlanSessionOutputSchema,
+  createPlanSessionTool,
+  deterministicFallbackItems,
+  parsePlanItems,
+  truncateToBudget,
+  type CreatePlanSessionToolOptions,
+  type PlanSessionInput,
+  type PlanSessionItem,
+  type PlanSessionOutput,
+  type PlanSessionTool,
+} from "./tools/plan-session.js";
 
 export { TutorSession, type TutorSessionOptions, type TutorSessionTools } from "./tutor-session.js";
 
