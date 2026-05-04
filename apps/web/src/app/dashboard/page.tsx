@@ -5,13 +5,13 @@ import {
   getUserXp,
   type TrackProgress,
 } from "@learnpro/db";
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth, signOut } from "../../auth/auth.js";
 import { getAuthDb } from "../../auth/db.js";
 import { destinationForUser } from "../../auth/post-signin.js";
-import { NotificationBell } from "../../components/header/NotificationBell.js";
-import { StreakCard, TrackProgressBar, XpCard } from "./dashboard-components.js";
+import { TrackProgressBar } from "./dashboard-components.js";
+import { DashboardCardsRow } from "./DashboardCardsRow.js";
+import { DashboardHeader } from "./DashboardHeader.js";
 
 export const dynamic = "force-dynamic";
 
@@ -51,58 +51,21 @@ export default async function DashboardPage() {
     <main
       id="main-content"
       style={{
-        padding: "2rem",
+        padding: "1.25rem",
         fontFamily: "system-ui, sans-serif",
         maxWidth: 960,
         margin: "0 auto",
       }}
     >
-      <header
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: "1rem",
-          marginBottom: "2rem",
-        }}
-      >
-        <div>
-          <h1 style={{ margin: 0 }}>Dashboard</h1>
-          <p style={{ margin: "0.25rem 0 0", color: "#666" }}>
-            Welcome back, {session.user.email}.
-          </p>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-          <NotificationBell />
-          <Link
-            href={sessionHref}
-            style={{
-              display: "inline-block",
-              padding: "0.6rem 1.1rem",
-              background: "#3a82f7",
-              color: "white",
-              borderRadius: 6,
-              fontWeight: 600,
-              textDecoration: "none",
-            }}
-          >
-            Start a session
-          </Link>
-        </div>
-      </header>
+      <DashboardHeader email={session.user.email} sessionHref={sessionHref} />
 
-      <section
-        aria-label="Your progress"
-        style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}
-      >
-        <XpCard xp={xp} />
-        <StreakCard
-          streakDays={streak.streakDays}
-          graceDaysRemaining={streak.graceDaysRemaining}
-          graceDaysUsedThisCheck={streak.graceDaysUsed}
-          monthlyGraceCap={MONTHLY_GRACE_CAP}
-        />
-      </section>
+      <DashboardCardsRow
+        xp={xp}
+        streakDays={streak.streakDays}
+        graceDaysRemaining={streak.graceDaysRemaining}
+        graceDaysUsedThisCheck={streak.graceDaysUsed}
+        monthlyGraceCap={MONTHLY_GRACE_CAP}
+      />
 
       <section aria-label="Per-track progress" style={{ marginTop: "2rem" }}>
         <h2 style={{ fontSize: "1.1rem", marginBottom: "0.75rem" }}>Tracks</h2>

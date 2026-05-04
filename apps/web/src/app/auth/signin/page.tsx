@@ -23,7 +23,9 @@ export default async function SignInPage({
     <main
       id="main-content"
       style={{
-        padding: "3rem 2rem",
+        // STORY-025: tighten the side padding from 2rem to 1.25rem so the form fits comfortably
+        // at 375px (the form itself is already capped at 420px max-width).
+        padding: "2rem 1.25rem",
         maxWidth: 420,
         margin: "0 auto",
         fontFamily: "system-ui, sans-serif",

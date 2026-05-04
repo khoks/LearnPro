@@ -233,7 +233,10 @@ function Bubble({ message }: { message: OnboardingMessage }) {
     <div
       style={{
         alignSelf: isAssistant ? "flex-start" : "flex-end",
-        maxWidth: "80%",
+        // STORY-025: clamp bubbles to 600px so wide-laptop renders don't span the entire
+        // rail. `min(100%, 600px)` keeps the small-viewport behaviour (bubble shrinks to
+        // fit) while capping the upper end.
+        maxWidth: "min(100%, 600px)",
         padding: "0.55rem 0.75rem",
         background: isAssistant ? "#fff" : "#0a7",
         color: isAssistant ? "#222" : "white",

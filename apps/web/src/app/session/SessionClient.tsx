@@ -1,10 +1,12 @@
 "use client";
 
+import * as React from "react";
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import type { HintRung } from "@learnpro/agent";
 import { runSandbox, type RunSandboxResult } from "../../lib/run-sandbox";
 import { useInteractionCapture, type MonacoLikeEditor } from "../../lib/use-interaction-capture";
+import { useViewportSize } from "../../lib/use-viewport-size";
 import {
   initialSessionState,
   nextHintRung,
@@ -28,6 +30,10 @@ import {
   HintHistory,
   SkillUpdateSummary,
 } from "./session-view";
+
+// Reference React explicitly so vitest's classic-runtime JSX transform doesn't strip the
+// import. Same workaround pattern as elsewhere in apps/web.
+void React;
 
 const Editor = dynamic(() => import("@monaco-editor/react").then((m) => m.Editor), {
   ssr: false,
@@ -230,13 +236,14 @@ export function SessionClient({ trackId }: SessionClientProps) {
   }, []);
 
   return (
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: "minmax(0, 1fr) 280px",
-        gap: "1rem",
-        alignItems: "start",
-      }}
+    <SessionLayout
+      planSidebar={
+        <SessionPlanSidebar
+          state={planState}
+          onSkip={() => planDispatch({ type: "skip" })}
+          onRetry={loadOrCreatePlan}
+        />
+      }
     >
       <SessionView
         state={state}
@@ -252,11 +259,76 @@ export function SessionClient({ trackId }: SessionClientProps) {
         onNext={onNext}
         onDismissError={() => dispatch({ type: "dismiss_error" })}
       />
-      <SessionPlanSidebar
-        state={planState}
-        onSkip={() => planDispatch({ type: "skip" })}
-        onRetry={loadOrCreatePlan}
-      />
+    </SessionLayout>
+  );
+}
+
+// SessionLayout — a client component that picks between the laptop 2-column grid (sidebar
+// always visible to the right) and the <1024 single-column drawer (sidebar collapsed behind a
+// "Show plan" disclosure). The drawer state is local — it doesn't affect the plan reducer or
+// session state — so collapsing the drawer is a purely-cosmetic toggle.
+interface SessionLayoutProps {
+  children: React.ReactNode;
+  planSidebar: React.ReactNode;
+}
+
+function SessionLayout({ children, planSidebar }: SessionLayoutProps): React.ReactElement {
+  const { breakpoint } = useViewportSize();
+  const isLaptop = breakpoint === "laptop";
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  if (isLaptop) {
+    return (
+      <div
+        data-testid="session-layout"
+        data-breakpoint={breakpoint}
+        style={{
+          display: "grid",
+          gridTemplateColumns: "minmax(0, 1fr) 280px",
+          gap: "1rem",
+          alignItems: "start",
+        }}
+      >
+        {children}
+        {planSidebar}
+      </div>
+    );
+  }
+
+  // Below 1024: single column with a "Show plan" disclosure on top. Drawer is collapsed
+  // by default so the editor stays the focal point.
+  return (
+    <div
+      data-testid="session-layout"
+      data-breakpoint={breakpoint}
+      style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: "1rem" }}
+    >
+      <button
+        type="button"
+        aria-expanded={drawerOpen}
+        aria-controls="session-plan-drawer"
+        onClick={() => setDrawerOpen((v) => !v)}
+        data-testid="session-plan-toggle"
+        style={{
+          alignSelf: "flex-start",
+          justifySelf: "flex-start",
+          padding: "0.4rem 0.8rem",
+          background: "#eee",
+          border: "1px solid #ccc",
+          borderRadius: 4,
+          cursor: "pointer",
+          fontSize: 13,
+          fontWeight: 600,
+        }}
+      >
+        {drawerOpen ? "Hide plan" : "Show plan"}
+      </button>
+      {drawerOpen ? (
+        <div id="session-plan-drawer" data-testid="session-plan-drawer">
+          {planSidebar}
+        </div>
+      ) : null}
+      {children}
     </div>
   );
 }

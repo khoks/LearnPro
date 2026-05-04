@@ -1,12 +1,18 @@
 "use client";
 
+import * as React from "react";
 import { useCallback, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import type { SandboxLanguage, SandboxRunResponse } from "@learnpro/sandbox";
 import { StatusBadge } from "../../components/status-badge";
 import { runSandbox, type RunSandboxResult } from "../../lib/run-sandbox";
 import { useInteractionCapture, type MonacoLikeEditor } from "../../lib/use-interaction-capture";
+import { useViewportSize } from "../../lib/use-viewport-size";
 import { statusFor } from "./status";
+
+// Reference React explicitly so vitest's classic-runtime JSX transform doesn't strip the
+// import. Same workaround pattern as elsewhere in apps/web.
+void React;
 
 const Editor = dynamic(() => import("@monaco-editor/react").then((m) => m.Editor), {
   ssr: false,
@@ -78,10 +84,22 @@ export function PlaygroundClient() {
   }, [language, code, capture]);
 
   const status = useMemo(() => statusFor(result), [result]);
+  const { breakpoint } = useViewportSize();
+  const isNarrow = breakpoint === "mobile";
 
   return (
     <div style={{ display: "grid", gap: "1rem" }}>
-      <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
+      <div
+        data-testid="playground-controls"
+        data-breakpoint={breakpoint}
+        style={{
+          display: "flex",
+          gap: "0.75rem",
+          alignItems: isNarrow ? "stretch" : "center",
+          flexDirection: isNarrow ? "column" : "row",
+          flexWrap: "wrap",
+        }}
+      >
         <label htmlFor="lang-select" style={{ fontWeight: 600 }}>
           Language
         </label>
@@ -120,7 +138,15 @@ export function PlaygroundClient() {
           )}
         </span>
         <label
-          style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 6 }}
+          style={{
+            // marginLeft: auto pushes the voice opt-in to the right of the row on wide
+            // screens; below the mobile breakpoint the row is column-stacked, so we drop
+            // the auto-margin to keep the checkbox flush-left like every other control.
+            marginLeft: isNarrow ? 0 : "auto",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+          }}
           title="Voice capture is opt-in. Transcript ingestion lands once redaction is in place (STORY-056)."
         >
           <input

@@ -19,7 +19,12 @@ export default async function SessionPage({ searchParams }: SessionPageProps) {
     return (
       <main
         id="main-content"
-        style={{ padding: "2rem", fontFamily: "system-ui, sans-serif", maxWidth: 720 }}
+        style={{
+          padding: "1.25rem",
+          fontFamily: "system-ui, sans-serif",
+          maxWidth: 720,
+          margin: "0 auto",
+        }}
       >
         <h1 style={{ margin: 0 }}>Pick a track</h1>
         <p style={{ color: "#555" }}>
@@ -32,7 +37,12 @@ export default async function SessionPage({ searchParams }: SessionPageProps) {
   return (
     <main
       id="main-content"
-      style={{ padding: "1.5rem", fontFamily: "system-ui, sans-serif", maxWidth: 1080 }}
+      style={{
+        padding: "1.25rem",
+        fontFamily: "system-ui, sans-serif",
+        maxWidth: 1080,
+        margin: "0 auto",
+      }}
     >
       <header style={{ marginBottom: "1rem" }}>
         <h1 style={{ margin: 0, fontSize: 22 }}>Session</h1>

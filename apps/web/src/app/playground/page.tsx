@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic";
 
 export default function PlaygroundPage() {
   return (
-    <main id="main-content" style={{ padding: "1.5rem", fontFamily: "system-ui, sans-serif" }}>
+    <main id="main-content" style={{ padding: "1.25rem", fontFamily: "system-ui, sans-serif" }}>
       <header style={{ marginBottom: "1rem" }}>
         <h1 style={{ margin: 0 }}>Playground</h1>
         <p style={{ margin: "0.25rem 0 0", color: "#555" }}>
