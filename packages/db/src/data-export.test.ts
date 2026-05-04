@@ -410,6 +410,10 @@ function makeProfile(overrides: Partial<Profile> = {}): Profile {
     primary_goal: null,
     self_assessed_level: null,
     language_comfort: null,
+    quiet_hours_enabled: true,
+    quiet_hours_start_min: 1320,
+    quiet_hours_end_min: 480,
+    timezone: "UTC",
     updated_at: new Date(0),
     ...overrides,
   };
