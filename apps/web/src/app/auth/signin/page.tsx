@@ -21,6 +21,7 @@ export default async function SignInPage({
 
   return (
     <main
+      id="main-content"
       style={{
         padding: "3rem 2rem",
         maxWidth: 420,

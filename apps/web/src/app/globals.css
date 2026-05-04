@@ -1,0 +1,57 @@
+/* STORY-027 (a11y baseline). The MVP a11y bar — keyboard reachability, visible focus, screen-
+   reader-friendly skip link. Not a design-system; just enough that we don't exclude
+   keyboard-only or screen-reader users. Full WCAG AA conformance is v1+ work. */
+
+/* sr-only pattern (visually hidden but reachable by AT). Same recipe Tailwind ships under
+   .sr-only — copied here verbatim because we have no Tailwind in apps/web yet. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Skip link — first focusable element on every page. Hidden until focused; on focus, jumps to
+   the top-left corner with a high-contrast pill so a Tab-key user immediately sees where to
+   go and can press Enter to skip past header navigation. */
+.skip-link {
+  position: absolute;
+  top: -100px;
+  left: 16px;
+  padding: 0.6rem 1rem;
+  background: #0a7;
+  color: white;
+  border-radius: 4px;
+  font-weight: 600;
+  font-family: system-ui, sans-serif;
+  font-size: 14px;
+  text-decoration: none;
+  z-index: 1000;
+  transition: top 120ms ease-out;
+}
+
+.skip-link:focus {
+  top: 16px;
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+/* Global focus-visible rule. Applies a 2px high-contrast ring to every interactive element
+   that receives keyboard focus (focus-visible avoids ring-on-mouse-click visual noise). */
+:focus-visible {
+  outline: 2px solid #1976d2;
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Honour reduced-motion preferences (some users get motion sickness from CSS transitions). */
+@media (prefers-reduced-motion: reduce) {
+  .skip-link {
+    transition: none;
+  }
+}

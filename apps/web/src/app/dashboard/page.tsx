@@ -48,6 +48,7 @@ export default async function DashboardPage() {
 
   return (
     <main
+      id="main-content"
       style={{
         padding: "2rem",
         fontFamily: "system-ui, sans-serif",

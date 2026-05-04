@@ -17,7 +17,10 @@ export default async function SessionPage({ searchParams }: SessionPageProps) {
   const trackId = sp.track;
   if (!trackId || !isUuid(trackId)) {
     return (
-      <main style={{ padding: "2rem", fontFamily: "system-ui, sans-serif", maxWidth: 720 }}>
+      <main
+        id="main-content"
+        style={{ padding: "2rem", fontFamily: "system-ui, sans-serif", maxWidth: 720 }}
+      >
         <h1 style={{ margin: 0 }}>Pick a track</h1>
         <p style={{ color: "#555" }}>
           Open a session with <code>?track=&lt;track-id&gt;</code>. The dashboard track-picker UI
@@ -27,7 +30,10 @@ export default async function SessionPage({ searchParams }: SessionPageProps) {
     );
   }
   return (
-    <main style={{ padding: "1.5rem", fontFamily: "system-ui, sans-serif", maxWidth: 1080 }}>
+    <main
+      id="main-content"
+      style={{ padding: "1.5rem", fontFamily: "system-ui, sans-serif", maxWidth: 1080 }}
+    >
       <header style={{ marginBottom: "1rem" }}>
         <h1 style={{ margin: 0, fontSize: 22 }}>Session</h1>
         <p style={{ margin: "0.25rem 0 0", color: "#555", fontSize: 14 }}>
