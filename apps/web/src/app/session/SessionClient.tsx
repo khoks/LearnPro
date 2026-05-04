@@ -4,10 +4,7 @@ import dynamic from "next/dynamic";
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import type { HintRung } from "@learnpro/agent";
 import { runSandbox, type RunSandboxResult } from "../../lib/run-sandbox";
-import {
-  useInteractionCapture,
-  type MonacoLikeEditor,
-} from "../../lib/use-interaction-capture";
+import { useInteractionCapture, type MonacoLikeEditor } from "../../lib/use-interaction-capture";
 import {
   initialSessionState,
   nextHintRung,
@@ -15,12 +12,7 @@ import {
   type SessionEvent,
   type SessionState,
 } from "../../lib/session-state";
-import {
-  driveAssign,
-  driveFinish,
-  driveHint,
-  driveSubmit,
-} from "../../lib/session-driver";
+import { driveAssign, driveFinish, driveHint, driveSubmit } from "../../lib/session-driver";
 import {
   DifficultyBadge,
   ErrorBanner,
@@ -137,8 +129,7 @@ export function SessionClient({ trackId }: SessionClientProps) {
     const { events } = await driveHint(state, rung);
     for (const ev of events) dispatch(ev);
     const succeeded = events.find(
-      (e): e is Extract<SessionEvent, { type: "hint_succeeded" }> =>
-        e.type === "hint_succeeded",
+      (e): e is Extract<SessionEvent, { type: "hint_succeeded" }> => e.type === "hint_succeeded",
     );
     if (succeeded) {
       capture.emit({ type: "hint_received", payload: { rung: succeeded.hint.rung } });

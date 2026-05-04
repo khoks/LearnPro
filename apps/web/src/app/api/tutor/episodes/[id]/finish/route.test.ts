@@ -66,9 +66,11 @@ describe("POST /api/tutor/episodes/[id]/finish", () => {
   });
 
   it("forwards the Auth.js session cookie upstream", async () => {
-    const fakeFetch = vi.fn().mockResolvedValue(
-      new Response("{}", { status: 200, headers: { "content-type": "application/json" } }),
-    );
+    const fakeFetch = vi
+      .fn()
+      .mockResolvedValue(
+        new Response("{}", { status: 200, headers: { "content-type": "application/json" } }),
+      );
     globalThis.fetch = fakeFetch as unknown as typeof fetch;
 
     await POST(postRequest({ outcome: "abandoned" }), ctx(EPISODE_ID));
@@ -79,9 +81,11 @@ describe("POST /api/tutor/episodes/[id]/finish", () => {
   });
 
   it("accepts an empty body (treated as {})", async () => {
-    const fakeFetch = vi.fn().mockResolvedValue(
-      new Response("{}", { status: 200, headers: { "content-type": "application/json" } }),
-    );
+    const fakeFetch = vi
+      .fn()
+      .mockResolvedValue(
+        new Response("{}", { status: 200, headers: { "content-type": "application/json" } }),
+      );
     globalThis.fetch = fakeFetch as unknown as typeof fetch;
 
     const res = await POST(postRequest({}, { rawBody: "" }), ctx(EPISODE_ID));

@@ -285,7 +285,10 @@ export function nextHintRung(hints: ReadonlyArray<HintEntry>): HintRung | null {
 
 // Friendly user-facing message for an HTTP failure response. The proxy returns a JSON envelope
 // `{ error: code, message?: text }`; this maps it to a one-line banner.
-export function friendlyError(status: number, body: { error?: string; message?: string }): SessionError {
+export function friendlyError(
+  status: number,
+  body: { error?: string; message?: string },
+): SessionError {
   const code = body.error ?? "request_failed";
   const message = body.message ?? defaultMessageFor(status, code);
   return { status, code, message };

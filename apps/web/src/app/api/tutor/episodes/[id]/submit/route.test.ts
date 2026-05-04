@@ -66,9 +66,11 @@ describe("POST /api/tutor/episodes/[id]/submit", () => {
   });
 
   it("forwards the Auth.js session cookie upstream", async () => {
-    const fakeFetch = vi.fn().mockResolvedValue(
-      new Response("{}", { status: 200, headers: { "content-type": "application/json" } }),
-    );
+    const fakeFetch = vi
+      .fn()
+      .mockResolvedValue(
+        new Response("{}", { status: 200, headers: { "content-type": "application/json" } }),
+      );
     globalThis.fetch = fakeFetch as unknown as typeof fetch;
 
     await POST(postRequest({ code: "x = 1" }), ctx(EPISODE_ID));

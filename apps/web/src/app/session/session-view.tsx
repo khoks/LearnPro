@@ -160,15 +160,14 @@ export function SkillUpdateSummary({
         Episode finished — {humanizeOutcome(profile.final_outcome as FinalOutcome)}
       </div>
       <div style={{ fontSize: 13, color: "#555" }}>
-        time: {Math.round(profile.time_to_solve_ms / 1000)}s · attempts: {profile.attempts} ·
-        hints: {profile.hints_used}
+        time: {Math.round(profile.time_to_solve_ms / 1000)}s · attempts: {profile.attempts} · hints:{" "}
+        {profile.hints_used}
       </div>
       {profile.skill_updates.length > 0 ? (
         <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "grid", gap: "0.3rem" }}>
           {profile.skill_updates.map((u) => {
             const arrow = skillDeltaArrow(u.next_skill - u.prev_skill);
-            const tone =
-              arrow === "up" ? "#1b5e20" : arrow === "down" ? "#c62828" : "#666";
+            const tone = arrow === "up" ? "#1b5e20" : arrow === "down" ? "#c62828" : "#666";
             return (
               <li
                 key={u.concept_id}
@@ -225,9 +224,7 @@ export function GradeResultPanel({ grade }: { grade: GradeOutput }) {
         background: grade.passed ? "#f1f8e9" : "#fff3e0",
       }}
     >
-      <div
-        style={{ fontWeight: 700, fontSize: 16, color: grade.passed ? "#1b5e20" : "#bf360c" }}
-      >
+      <div style={{ fontWeight: 700, fontSize: 16, color: grade.passed ? "#1b5e20" : "#bf360c" }}>
         {grade.passed ? "All hidden tests passed" : "Some hidden tests failed"}
       </div>
       <RubricBars rubric={grade.rubric} />

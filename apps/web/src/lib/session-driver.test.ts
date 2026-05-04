@@ -190,9 +190,8 @@ describe("session-driver: error paths surface friendly banners (no blank screen)
       },
     ]);
 
-    const state: SessionState = (
-      await driveAssign(initialSessionState, TRACK_ID, { fetchImpl })
-    ).state;
+    const state: SessionState = (await driveAssign(initialSessionState, TRACK_ID, { fetchImpl }))
+      .state;
     expect(state.phase).toBe("error");
     if (state.phase === "error") {
       expect(state.error.status).toBe(429);

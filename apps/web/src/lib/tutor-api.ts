@@ -29,7 +29,11 @@ export interface TutorApiOptions {
   signal?: AbortSignal;
 }
 
-async function postJson<T>(url: string, body: unknown, opts: TutorApiOptions): Promise<TutorResult<T>> {
+async function postJson<T>(
+  url: string,
+  body: unknown,
+  opts: TutorApiOptions,
+): Promise<TutorResult<T>> {
   const f = opts.fetchImpl ?? fetch;
   let res: Response;
   try {
