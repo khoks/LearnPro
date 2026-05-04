@@ -64,6 +64,7 @@ const profile: UpdateProfileOutput = {
     },
   ],
   xp_award: { amount: 30, reason: "episode-passed", awarded: true },
+  plan_item_marked: false,
 };
 
 const hint1Body = { rung: 1 as const, hint: "Think about pairs.", xp_cost: 5 };
