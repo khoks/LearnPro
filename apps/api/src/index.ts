@@ -30,9 +30,12 @@ import {
 } from "@learnpro/sandbox";
 import {
   createDb,
+  deleteUserAccount,
+  deleteUserVoiceTranscripts,
   drizzleExportFetcher,
   exportUserData,
   getQuietHoursConfig,
+  getUserDataSummary,
   insertDeferredNotification,
   updateProfileFields,
 } from "@learnpro/db";
@@ -50,6 +53,8 @@ import {
   registerExportRoute,
   type DataExporter,
 } from "./export.js";
+import { buildDefaultRedactor, inertRedactor, type PiiRedactor } from "./redactor.js";
+import { registerDataControlsRoutes, type DataControlsAdapters } from "./data-controls.js";
 import { buildWebPushSender, configureVapid, type WebPushConfig } from "./notifications-vapid.js";
 import { registerNotificationsRoutes } from "./notifications.js";
 import { registerQuietHoursRoutes } from "./quiet-hours.js";
@@ -115,6 +120,15 @@ export interface BuildServerOptions {
   // /v1/settings/quiet-hours; tests inject a fake DB. Production wiring shares the same `db`
   // instance the dispatcher uses (via `defaultsFromEnv()`).
   quietHoursDb?: import("@learnpro/db").LearnProDb;
+  // STORY-056 — PII redactor. Wired into every free-text ingestion path: voice transcripts on
+  // POST /v1/interactions, user + LLM messages on POST /v1/onboarding/turn, code submissions on
+  // POST /v1/tutor/episodes/:id/submit. Tests inject `inertRedactor`; production wires
+  // `buildDefaultRedactor({ llm })` (regex + Haiku second pass).
+  redactor?: PiiRedactor;
+  // STORY-056 — user-facing data control routes. When provided, registers `GET /v1/data/summary`,
+  // `DELETE /v1/data/voice`, `DELETE /v1/data/account`. Tests inject fake adapters; production
+  // wires `buildDrizzleDataControlsAdapters(db)` via defaultsFromEnv.
+  dataControls?: DataControlsAdapters;
 }
 
 // Default impl when no store is provided — drops events on the floor. Useful for tests and
@@ -175,6 +189,7 @@ export function buildServer(opts: BuildServerOptions = {}) {
   const dataExporter = opts.dataExporter ?? noDbExporter;
   const exportRateLimiter =
     opts.exportRateLimiter ?? new MemoryRateLimiter({ windowMs: loadExportWindowMs(process.env) });
+  const redactor = opts.redactor ?? inertRedactor;
 
   app.get("/health", async () => healthPayload({ service: "api" }));
 
@@ -229,6 +244,9 @@ export function buildServer(opts: BuildServerOptions = {}) {
 
   // STORY-055 — batched ingestion of rich interaction telemetry. STORY-005 wires the user_id
   // from the cross-app session lookup; unauthenticated requests still pass through as null.
+  // STORY-056 — voice events get their `payload.transcript` run through `redactor.redact()`
+  // before persistence. The redaction summary is stamped on the row's payload so the user's
+  // /settings/data view can show what categories were scrubbed.
   app.post("/v1/interactions", async (req, reply) => {
     const parsed = InteractionsBatchSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -237,13 +255,28 @@ export function buildServer(opts: BuildServerOptions = {}) {
     const session = await sessionResolver(req);
     const userId = session?.user_id ?? null;
     const now = new Date();
-    const stored: StoredInteraction[] = parsed.data.events.map((e: InteractionEvent) => ({
-      type: e.type,
-      payload: e.payload,
-      t: e.t ? new Date(e.t) : now,
-      user_id: userId,
-      episode_id: e.episode_id ?? null,
-    }));
+
+    const stored: StoredInteraction[] = [];
+    for (const e of parsed.data.events) {
+      let payload: InteractionEvent["payload"] = e.payload;
+      if (e.type === "voice") {
+        const transcript = e.payload.transcript;
+        const redaction = await redactor.redact(transcript);
+        payload = {
+          ...e.payload,
+          transcript: redaction.redacted,
+          redaction_summary: { types_scrubbed: redaction.scrubbed.map((s) => s.type) },
+        };
+      }
+      stored.push({
+        type: e.type,
+        payload,
+        t: e.t ? new Date(e.t) : now,
+        user_id: userId,
+        episode_id: e.episode_id ?? null,
+      });
+    }
+
     try {
       await interactionStore.recordBatch(stored);
       return reply.code(202).send({ accepted: stored.length });
@@ -262,6 +295,7 @@ export function buildServer(opts: BuildServerOptions = {}) {
   registerOnboardingRoute(app, {
     llm,
     sessionResolver,
+    redactor,
     ...(opts.onboardingProfileWriter !== undefined && {
       profileWriter: opts.onboardingProfileWriter,
     }),
@@ -274,12 +308,17 @@ export function buildServer(opts: BuildServerOptions = {}) {
     rateLimiter: exportRateLimiter,
   });
 
+  // STORY-056 — user-facing data controls. GET summary + DELETE voice + DELETE account.
+  if (opts.dataControls) {
+    registerDataControlsRoutes(app, { adapters: opts.dataControls, sessionResolver });
+  }
+
   // STORY-011 — tutor agent routes. The factory tuple (TutorSession + 4 tools) is constructed
   // per-request inside `registerTutorRoutes` so each HTTP call sees a fresh state hydrated from
   // the episode row. Production wires `buildDrizzleTutorFactory` via `defaultsFromEnv()`; tests
   // inject `tutorAgentFactory` directly.
   if (opts.tutorAgentFactory) {
-    registerTutorRoutes(app, { factory: opts.tutorAgentFactory, sessionResolver });
+    registerTutorRoutes(app, { factory: opts.tutorAgentFactory, sessionResolver, redactor });
   }
 
   // STORY-023 — bell-icon panel + Web Push routes. Wired only when a notifications config is
@@ -342,6 +381,8 @@ function defaultsFromEnv(): {
   notifications?: BuildServerOptions["notifications"];
   sessionPlanFactory?: SessionPlanFactory;
   quietHoursDb?: import("@learnpro/db").LearnProDb;
+  redactor?: PiiRedactor;
+  dataControls?: DataControlsAdapters;
 } {
   const url = process.env["DATABASE_URL"];
   if (!url) return {};
@@ -402,6 +443,12 @@ function defaultsFromEnv(): {
     },
     sessionPlanFactory: buildDefaultSessionPlanFactory({ db, llm }),
     quietHoursDb: db,
+    redactor: buildDefaultRedactor({ llm }),
+    dataControls: {
+      summary: (user_id) => getUserDataSummary(db, user_id),
+      deleteVoice: (user_id) => deleteUserVoiceTranscripts(db, user_id),
+      deleteAccount: (user_id) => deleteUserAccount(db, user_id),
+    },
   };
 }
 

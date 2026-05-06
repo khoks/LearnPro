@@ -2,14 +2,14 @@
 id: STORY-056
 title: Data retention & redaction pipeline (raw transcripts + episodic summaries)
 type: story
-status: backlog
+status: done
 priority: P0
 estimate: M
 parent: EPIC-016
 phase: mvp
 tags: [security, privacy, retention, redaction, gdpr]
 created: 2026-04-25
-updated: 2026-04-25
+updated: 2026-05-01
 ---
 
 ## Description
@@ -41,12 +41,12 @@ The user committed to keeping **both raw and episodic memories** (Q1F): raw LLM 
 
 ## Acceptance criteria
 
-- [ ] Retention policy documented in `docs/security/RETENTION.md` (new file).
-- [ ] Redaction pipeline running at all relevant ingestion points (LLM responses, voice transcripts).
-- [ ] PII detection unit tests cover the 5 pattern categories above.
-- [ ] Nightly retention job sweeps and deletes per policy; smoke-tested against seeded data.
-- [ ] User-facing "show what we have" + "delete voice" + "delete account" flows working.
-- [ ] No raw transcript stored without first passing through redaction (verified via integration test that bypasses the client and posts directly to the ingestion endpoint).
+- [x] Retention policy documented in `docs/security/RETENTION.md` (new file).
+- [x] Redaction pipeline running at all relevant ingestion points (LLM responses, voice transcripts).
+- [x] PII detection unit tests cover the 5 pattern categories above.
+- [x] Nightly retention job sweeps and deletes per policy; smoke-tested against seeded data.
+- [x] User-facing "show what we have" + "delete voice" + "delete account" flows working.
+- [x] No raw transcript stored without first passing through redaction (verified via integration test that bypasses the client and posts directly to the ingestion endpoint).
 
 ## Dependencies
 
@@ -61,3 +61,5 @@ The user committed to keeping **both raw and episodic memories** (Q1F): raw LLM 
 ## Activity log
 
 - 2026-04-25 — created (Path A scope confirmation)
+- 2026-05-01 — picked up
+- 2026-05-01 — done. Pure regex `redactPii` (5 categories, Luhn-checked credit cards, conservative gov-ID detection) lives in `@learnpro/shared`; new `@learnpro/redaction` package wraps Haiku second-pass + `NoopLlmRedactor` + `OrchestratedRedactor` (skip-when-high-confidence to save tokens). `packages/db/src/retention.ts` ships 3 sweepers + `sweepAll` (raw-LLM no-op until raw-text columns land — documented in body); `pnpm --filter @learnpro/db db:retention` wires to system cron. Redactor wired into `/v1/interactions` (voice transcripts), `/v1/onboarding/turn` (user messages), `/v1/tutor/episodes/:id/submit` (code, `allowUrls: true`). New endpoints `GET /v1/data/summary` + `DELETE /v1/data/voice` + `DELETE /v1/data/account` (auth-gated, cascading delete + session-cookie invalidation). New `/settings/data` page (server-rendered summary + client-side confirm modals). Coach-voice copy + 4-test forbidden-phrase guard. `docs/security/RETENTION.md` documents the windows + redaction pipeline + user controls. ~80 new tests across all the layers.

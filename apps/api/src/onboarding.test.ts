@@ -407,6 +407,33 @@ describe("POST /v1/onboarding/turn (STORY-053)", () => {
     await app.close();
   });
 
+  it("STORY-056: redacts PII from user messages before they reach the LLM", async () => {
+    const responseJson = JSON.stringify({
+      assistant_message: "got it",
+      captured: {},
+      done: false,
+    });
+    const llm = new FakeLLMProvider(responseJson);
+    const { regexOnlyRedactor } = await import("./redactor.js");
+    const app = buildServer({
+      llm,
+      sessionResolver: userSession(USER_ID),
+      redactor: regexOnlyRedactor(),
+    });
+    await app.inject({
+      method: "POST",
+      url: "/v1/onboarding/turn",
+      payload: {
+        messages: [{ role: "user", content: "ping me at me@foo.com if I get stuck" }],
+      },
+    });
+    const sentMessages = llm.lastRequest?.messages ?? [];
+    const userMessage = sentMessages.find((m) => m.role === "user");
+    expect(userMessage?.content).not.toContain("me@foo.com");
+    expect(userMessage?.content).toContain("[REDACTED:email]");
+    await app.close();
+  });
+
   it("profile writer throwing does NOT break the user-facing turn — the response still goes back", async () => {
     const responseJson = JSON.stringify({
       assistant_message: "got it",

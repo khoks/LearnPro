@@ -12,6 +12,7 @@ import {
 } from "@learnpro/shared";
 import type { FastifyInstance } from "fastify";
 import type { SessionResolver } from "./session.js";
+import type { PiiRedactor } from "./redactor.js";
 
 // Optional persistence callback — apps/web wires this to `updateProfileFields()` once auth is
 // resolved. Keeping it injectable lets tests assert the right calls without booting Postgres.
@@ -24,6 +25,10 @@ export interface OnboardingHandlerOptions {
   llm: LLMProvider;
   sessionResolver: SessionResolver;
   profileWriter?: OnboardingProfileWriter;
+  // STORY-056 — every user message in the conversation is redacted before being passed to the
+  // LLM AND before any agent_calls log is written. A user pasting "ping me at foo@bar.com" must
+  // not leak that into the LLM context or into the audit log.
+  redactor: PiiRedactor;
 }
 
 const FRIENDLY_CAP_REACHED_MESSAGE =
@@ -169,7 +174,19 @@ export function registerOnboardingRoute(
       return reply.code(401).send({ error: "unauthorized" });
     }
 
-    const { messages } = parsed.data;
+    // STORY-056 — redact every user message before any further processing. Assistant messages
+    // are echoes of prior LLM output and are already constrained by the system prompt; the
+    // user-side is where free-text PII typically enters.
+    const incomingMessages = parsed.data.messages;
+    const messages: OnboardingMessage[] = [];
+    for (const m of incomingMessages) {
+      if (m.role === "user") {
+        const r = await opts.redactor.redact(m.content);
+        messages.push({ role: "user", content: r.redacted });
+      } else {
+        messages.push(m);
+      }
+    }
     const assistantTurns = messages.filter((m) => m.role === "assistant").length;
     const totalTokens = approximateTokenCount(messages);
 

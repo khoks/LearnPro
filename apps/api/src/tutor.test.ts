@@ -379,6 +379,94 @@ describe("POST /v1/tutor/episodes/:id/submit (STORY-011)", () => {
   });
 });
 
+describe("POST /v1/tutor/episodes/:id/submit — code redaction (STORY-056)", () => {
+  it("scrubs PII from submitted code (allowUrls=true preserves doc links)", async () => {
+    let receivedCode: string | null = null;
+    const tools: TutorSessionTools = {
+      assignProblem: {
+        name: "assignProblem",
+        async run() {
+          return fakeAssignOutput();
+        },
+      },
+      giveHint: {
+        name: "giveHint",
+        async run() {
+          return fakeHintOutput(1);
+        },
+      },
+      grade: {
+        name: "grade",
+        async run({ code }) {
+          receivedCode = code;
+          return fakeGradeOutput(true);
+        },
+      },
+      updateProfile: {
+        name: "updateProfile",
+        async run() {
+          return fakeUpdateProfileOutput();
+        },
+      },
+    };
+    const factory: TutorAgentFactory = {
+      async createForAssign(input) {
+        return {
+          session: new TutorSession({
+            user_id: input.user_id,
+            org_id: input.org_id,
+            track_id: input.track_id,
+            tools,
+          }),
+          tools,
+        };
+      },
+      async createForExisting(input) {
+        return {
+          session: new TutorSession({
+            user_id: input.user_id,
+            org_id: input.org_id,
+            track_id: TRACK_ID,
+            tools,
+            initial_state: {
+              phase: "coding",
+              user_id: input.user_id,
+              org_id: input.org_id,
+              track_id: TRACK_ID,
+              episode_id: EPISODE_ID,
+              problem_id: PROBLEM_ID,
+              problem_slug: "two-sum",
+              started_at: 1700000000000,
+              hints: [],
+              attempts: 0,
+            },
+          }),
+          tools,
+        };
+      },
+    };
+    const { regexOnlyRedactor } = await import("./redactor.js");
+    const app = buildServer({
+      tutorAgentFactory: factory,
+      sessionResolver: userSession(USER_ID),
+      redactor: regexOnlyRedactor(),
+    });
+    const codeWithPii =
+      "// see https://docs.python.org/3/ for ref\n// contact me@foo.com\nprint('hello')";
+    const res = await app.inject({
+      method: "POST",
+      url: `/v1/tutor/episodes/${EPISODE_ID}/submit`,
+      payload: { code: codeWithPii },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(receivedCode).not.toBeNull();
+    expect(receivedCode!).toContain("https://docs.python.org/3/"); // URL preserved (allowUrls=true)
+    expect(receivedCode!).not.toContain("me@foo.com"); // email scrubbed
+    expect(receivedCode!).toContain("[REDACTED:email]");
+    await app.close();
+  });
+});
+
 describe("POST /v1/tutor/episodes/:id/finish (STORY-011)", () => {
   it("401 unauth", async () => {
     const app = buildServer({ tutorAgentFactory: makeFactory() });

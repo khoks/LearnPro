@@ -46,6 +46,14 @@ export {
   type ExportUserDataOptions,
 } from "./data-export.js";
 export {
+  deleteUserAccount,
+  deleteUserVoiceTranscripts,
+  getUserDataSummary,
+  listRecentAgentCalls,
+  type DeleteAccountResult,
+  type UserDataSummary,
+} from "./data-controls.js";
+export {
   awardXp,
   consumeGraceDay,
   getActiveTrackSlugs,
@@ -88,6 +96,14 @@ export {
   type DeferredPayload,
   type InsertDeferredNotificationOptions,
 } from "./deferred-notifications.js";
+export {
+  sweepAll,
+  sweepInteractionTelemetry,
+  sweepRawLlmCalls,
+  sweepVoiceTranscripts,
+  type SweepAllResult,
+  type SweepOptions,
+} from "./retention.js";
 export {
   DEFAULT_PLAN_TTL_HOURS,
   SessionPlanItemSchema,
