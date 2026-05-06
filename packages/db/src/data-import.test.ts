@@ -465,6 +465,125 @@ describe.skipIf(!DATABASE_URL)("importDump (integration)", () => {
     expect(tgtSubs).toHaveLength(2);
   });
 
+  it("is idempotent — running the same dump twice doesn't double-insert", async () => {
+    const newUserId = randomUuid();
+    importedUserIds.push(newUserId);
+    const epId = randomUuid();
+    const subId = randomUuid();
+    const callId = randomUuid();
+    const notifId = randomUuid();
+    const dump = makeMinimalDump({ user_id: newUserId });
+    dump.episodes = [
+      {
+        id: epId,
+        org_id: "self",
+        user_id: newUserId,
+        problem_id: testProblemId,
+        started_at: new Date().toISOString(),
+        finished_at: null,
+        hints_used: 0,
+        attempts: 0,
+        final_outcome: null,
+        time_to_solve_ms: null,
+        interactions_summary: null,
+      },
+    ];
+    dump.submissions = [
+      {
+        id: subId,
+        org_id: "self",
+        episode_id: epId,
+        submitted_at: new Date().toISOString(),
+        code: "noop",
+        passed: false,
+        runtime_ms: null,
+      },
+    ];
+    dump.agent_calls = [
+      {
+        id: callId,
+        org_id: "self",
+        user_id: newUserId,
+        session_id: null,
+        episode_id: null,
+        provider: "anthropic",
+        model: "claude-haiku",
+        role: null,
+        task: "complete",
+        prompt_version: null,
+        input_tokens: 0,
+        output_tokens: 0,
+        cached_tokens: null,
+        cost_usd: "0",
+        pricing_version: "unknown",
+        tool_used: null,
+        latency_ms: 0,
+        ok: true,
+        called_at: new Date().toISOString(),
+      },
+    ];
+    dump.notifications = [
+      {
+        id: notifId,
+        org_id: "self",
+        user_id: newUserId,
+        channel: "in_app",
+        title: "First-run",
+        body: null,
+        sent_at: new Date().toISOString(),
+        read_at: null,
+        dedupe_key: null,
+      },
+    ];
+
+    const first = await importDump(db, dump);
+    expect(first.user_created).toBe(true);
+    expect(first.inserted.episodes).toBe(1);
+    expect(first.inserted.submissions).toBe(1);
+    expect(first.inserted.agent_calls).toBe(1);
+    expect(first.inserted.notifications).toBe(1);
+
+    const logs: string[] = [];
+    const second = await importDump(db, dump, { logger: (l) => logs.push(l) });
+    expect(second.user_created).toBe(false);
+    expect(second.inserted.episodes).toBe(0);
+    expect(second.inserted.submissions).toBe(0);
+    expect(second.inserted.agent_calls).toBe(0);
+    expect(second.inserted.notifications).toBe(0);
+    expect(second.skipped.episodes).toBe(1);
+    expect(second.skipped.submissions).toBe(1);
+    expect(second.skipped.agent_calls).toBe(1);
+    expect(second.skipped.notifications).toBe(1);
+    // Each section emits one collision warning per skipped row.
+    expect(logs.filter((l) => l.includes("episodes row"))).toHaveLength(1);
+    expect(logs.filter((l) => l.includes("submissions row"))).toHaveLength(1);
+    expect(logs.filter((l) => l.includes("agent_calls row"))).toHaveLength(1);
+    expect(logs.filter((l) => l.includes("notifications row"))).toHaveLength(1);
+
+    // The DB still has exactly one of each row (no duplicates).
+    const epRows = await db.select().from(episodes).where(eq(episodes.id, epId));
+    expect(epRows).toHaveLength(1);
+    const subRows = await db.select().from(submissions).where(eq(submissions.id, subId));
+    expect(subRows).toHaveLength(1);
+    const callRows = await db.select().from(agent_calls).where(eq(agent_calls.id, callId));
+    expect(callRows).toHaveLength(1);
+    const notifRows = await db.select().from(notifications).where(eq(notifications.id, notifId));
+    expect(notifRows).toHaveLength(1);
+  });
+
+  it("populates result.warnings array (mirrors the logger sink)", async () => {
+    const newUserId = randomUuid();
+    importedUserIds.push(newUserId);
+    await db.insert(users).values({
+      id: newUserId,
+      email: `warnings-${Date.now()}@learnpro.local`,
+    });
+
+    const dump = makeMinimalDump({ user_id: newUserId });
+    const result = await importDump(db, dump);
+    expect(result.warnings.some((w) => w.includes("already exists"))).toBe(true);
+  });
+
   // exportUserData is used by the round-trip test above.
   void exportUserData;
 });
