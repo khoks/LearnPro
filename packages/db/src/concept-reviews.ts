@@ -1,9 +1,5 @@
 import { and, eq, sql } from "drizzle-orm";
-import {
-  FsrsCardStateSchema,
-  isDue,
-  type FsrsCardState,
-} from "@learnpro/scoring";
+import { FsrsCardStateSchema, isDue, type FsrsCardState } from "@learnpro/scoring";
 import type { LearnProDb } from "./client.js";
 import { concept_reviews, SELF_HOSTED_ORG_ID } from "./schema.js";
 
@@ -32,9 +28,7 @@ export async function getCardState(
   const rows = await db
     .select({ state: concept_reviews.state })
     .from(concept_reviews)
-    .where(
-      and(eq(concept_reviews.user_id, user_id), eq(concept_reviews.concept_id, concept_id)),
-    )
+    .where(and(eq(concept_reviews.user_id, user_id), eq(concept_reviews.concept_id, concept_id)))
     .limit(1);
   const raw = rows[0]?.state;
   if (raw === null || raw === undefined) return null;

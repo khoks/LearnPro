@@ -59,6 +59,7 @@ import { buildWebPushSender, configureVapid, type WebPushConfig } from "./notifi
 import { registerNotificationsRoutes } from "./notifications.js";
 import { registerQuietHoursRoutes } from "./quiet-hours.js";
 import { registerAutonomyRoutes } from "./autonomy.js";
+import { registerSpacedRepetitionRoutes } from "./spaced-repetition.js";
 import { registerOnboardingRoute, type OnboardingProfileWriter } from "./onboarding.js";
 import { registerRecommendationRoute } from "./recommendation.js";
 import { MemoryRateLimiter, type RateLimiter } from "./rate-limiter.js";
@@ -138,6 +139,9 @@ export interface BuildServerOptions {
   // STORY-021 — career-aware recommendation. When provided, registers `GET /v1/recommendation`.
   // Production wires the same DB instance everything else uses; tests inject a fake DB.
   recommendationDb?: import("@learnpro/db").LearnProDb;
+  // STORY-031 — DB handle for the `GET /v1/spaced-repetition/due` route. Same wiring pattern as
+  // quiet-hours / autonomy: tests inject a fake DB; production wires the same `db` instance.
+  spacedRepetitionDb?: import("@learnpro/db").LearnProDb;
 }
 
 // Default impl when no store is provided — drops events on the floor. Useful for tests and
@@ -368,6 +372,12 @@ export function buildServer(opts: BuildServerOptions = {}) {
     registerRecommendationRoute(app, { db: opts.recommendationDb, sessionResolver });
   }
 
+  // STORY-031 — `GET /v1/spaced-repetition/due`. Wired only when a db is supplied; defaultsFromEnv
+  // forwards the same `db` instance the rest of the API uses.
+  if (opts.spacedRepetitionDb) {
+    registerSpacedRepetitionRoutes(app, { db: opts.spacedRepetitionDb, sessionResolver });
+  }
+
   // STORY-060 deferred AC — friendly 429 mapping for the per-user daily token budget. Any handler
   // that calls into the LLM provider can throw `TokenBudgetExceededError`; this hook catches it
   // before Fastify's default 500 path so the playground can render the friendly message AC from
@@ -406,6 +416,7 @@ function defaultsFromEnv(): {
   redactor?: PiiRedactor;
   dataControls?: DataControlsAdapters;
   recommendationDb?: import("@learnpro/db").LearnProDb;
+  spacedRepetitionDb?: import("@learnpro/db").LearnProDb;
 } {
   const url = process.env["DATABASE_URL"];
   if (!url) return {};
@@ -468,6 +479,7 @@ function defaultsFromEnv(): {
     quietHoursDb: db,
     autonomyDb: db,
     recommendationDb: db,
+    spacedRepetitionDb: db,
     redactor: buildDefaultRedactor({ llm }),
     dataControls: {
       summary: (user_id) => getUserDataSummary(db, user_id),

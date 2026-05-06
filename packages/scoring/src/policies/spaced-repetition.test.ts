@@ -118,9 +118,7 @@ describe("spaced-repetition: recomputeAfterReview - post-cold-start grades", () 
     });
     return {
       ...seeded,
-      last_reviewed: new Date(
-        FIXED_NOW.getTime() - daysSinceReview * 86400_000,
-      ).toISOString(),
+      last_reviewed: new Date(FIXED_NOW.getTime() - daysSinceReview * 86400_000).toISOString(),
     };
   }
 
@@ -182,47 +180,33 @@ describe("spaced-repetition: recomputeAfterReview - post-cold-start grades", () 
     const prev = reviewedCard(7);
     const reviewAt = new Date(FIXED_NOW.getTime() + 7 * 86400_000);
     const afterAgain = recomputeAfterReview({ state: prev, grade: "again", now: reviewAt });
-    expect(new Date(afterAgain.due).getTime()).toBeLessThan(
-      reviewAt.getTime() + 30 * 86400_000,
-    );
+    expect(new Date(afterAgain.due).getTime()).toBeLessThan(reviewAt.getTime() + 30 * 86400_000);
   });
 });
 
 describe("spaced-repetition: mapEpisodeOutcomeToGrade", () => {
   it("revealed -> again", () => {
-    expect(
-      mapEpisodeOutcomeToGrade({ outcome: "revealed", hints_used: 0 }),
-    ).toBe("again");
+    expect(mapEpisodeOutcomeToGrade({ outcome: "revealed", hints_used: 0 })).toBe("again");
   });
 
   it("failed -> again", () => {
-    expect(
-      mapEpisodeOutcomeToGrade({ outcome: "failed", hints_used: 0 }),
-    ).toBe("again");
+    expect(mapEpisodeOutcomeToGrade({ outcome: "failed", hints_used: 0 })).toBe("again");
   });
 
   it("abandoned -> again", () => {
-    expect(
-      mapEpisodeOutcomeToGrade({ outcome: "abandoned", hints_used: 0 }),
-    ).toBe("again");
+    expect(mapEpisodeOutcomeToGrade({ outcome: "abandoned", hints_used: 0 })).toBe("again");
   });
 
   it("passed_with_hints with exactly 1 hint -> good", () => {
-    expect(
-      mapEpisodeOutcomeToGrade({ outcome: "passed_with_hints", hints_used: 1 }),
-    ).toBe("good");
+    expect(mapEpisodeOutcomeToGrade({ outcome: "passed_with_hints", hints_used: 1 })).toBe("good");
   });
 
   it("passed_with_hints with 2 hints -> hard", () => {
-    expect(
-      mapEpisodeOutcomeToGrade({ outcome: "passed_with_hints", hints_used: 2 }),
-    ).toBe("hard");
+    expect(mapEpisodeOutcomeToGrade({ outcome: "passed_with_hints", hints_used: 2 })).toBe("hard");
   });
 
   it("passed_with_hints with 3 hints -> hard", () => {
-    expect(
-      mapEpisodeOutcomeToGrade({ outcome: "passed_with_hints", hints_used: 3 }),
-    ).toBe("hard");
+    expect(mapEpisodeOutcomeToGrade({ outcome: "passed_with_hints", hints_used: 3 })).toBe("hard");
   });
 
   it("passed with 0 hints + under-target time -> easy", () => {
@@ -248,9 +232,7 @@ describe("spaced-repetition: mapEpisodeOutcomeToGrade", () => {
   });
 
   it("passed with 0 hints + no time data -> good (safe default)", () => {
-    expect(
-      mapEpisodeOutcomeToGrade({ outcome: "passed", hints_used: 0 }),
-    ).toBe("good");
+    expect(mapEpisodeOutcomeToGrade({ outcome: "passed", hints_used: 0 })).toBe("good");
   });
 
   it("passed with 1 hint despite under-target time -> good (no upgrade with hints)", () => {

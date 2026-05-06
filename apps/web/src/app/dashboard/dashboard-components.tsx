@@ -105,6 +105,71 @@ export function StreakCard(props: StreakCardProps): ReactElement {
   );
 }
 
+export interface DueReviewsCardProps {
+  // Number of concepts whose FSRS due timestamp is at or before "now". Capped at 50 by the API.
+  count: number;
+  // Active track slug for deep-linking the CTA. When null, the CTA still renders but links to
+  // the generic /session start.
+  activeTrackSlug: string | null;
+}
+
+// STORY-031 — coach-voice "N concepts ready for review" surface. Anti-dark-pattern: never says
+// "DON'T LOSE", "you'll forget", "fading", or anything coercive. Zero state is just absence —
+// the card doesn't render when count === 0. The CTA links to /session?review=1 (reserved for
+// STORY-046's review-session view).
+export function DueReviewsCard(props: DueReviewsCardProps): ReactElement | null {
+  const { count, activeTrackSlug } = props;
+  if (count <= 0) return null;
+  const headline =
+    count === 1
+      ? "1 concept is ready for a quick review."
+      : `${count} concepts are ready for a quick review.`;
+  const supporting =
+    count >= 3
+      ? "A short review session will help these stick."
+      : "A few minutes will keep these fresh.";
+  const href = activeTrackSlug
+    ? `/session?track=${encodeURIComponent(activeTrackSlug)}&review=1`
+    : "/session?review=1";
+  return (
+    <section
+      data-testid="due-reviews-card"
+      aria-labelledby="due-reviews-card-label"
+      style={{ ...cardBaseStyle }}
+    >
+      <div
+        id="due-reviews-card-label"
+        style={{
+          fontSize: "0.85rem",
+          color: "#666",
+          textTransform: "uppercase",
+          letterSpacing: 0.5,
+        }}
+      >
+        Ready to review
+      </div>
+      <div style={{ fontSize: "1.4rem", fontWeight: 600, marginTop: "0.25rem" }}>{headline}</div>
+      <div style={{ fontSize: "0.95rem", color: "#444", marginTop: "0.5rem" }}>{supporting}</div>
+      <a
+        href={href}
+        data-testid="due-reviews-card-cta"
+        style={{
+          display: "inline-block",
+          marginTop: "0.75rem",
+          padding: "0.5rem 0.85rem",
+          background: "#3a82f7",
+          color: "white",
+          textDecoration: "none",
+          borderRadius: 6,
+          fontSize: "0.9rem",
+        }}
+      >
+        Start a review session
+      </a>
+    </section>
+  );
+}
+
 export interface TrackProgressBarProps {
   trackName: string;
   trackSlug: string;

@@ -492,9 +492,7 @@ describe("schema: concept_reviews (STORY-031)", () => {
 
   it("declares a unique (user_id, concept_id) index for idempotent UPSERT", () => {
     const config = getTableConfig(concept_reviews);
-    const uniq = config.indexes.find(
-      (i) => i.config.name === "concept_reviews_user_concept_uniq",
-    );
+    const uniq = config.indexes.find((i) => i.config.name === "concept_reviews_user_concept_uniq");
     expect(uniq, "concept_reviews unique (user_id, concept_id) index missing").toBeDefined();
     expect(uniq?.config.unique).toBe(true);
   });
