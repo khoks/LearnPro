@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { z } from "zod";
 import type { LearnProDb } from "./client.js";
 import {
@@ -188,13 +188,20 @@ export async function importDump(
   opts: ImportDumpOptions = {},
 ): Promise<ImportDumpResult> {
   const envelope = DumpEnvelopeSchema.parse(dump);
-  const log = opts.logger ?? ((line) => console.warn(line));
+  const sink = opts.logger ?? ((line: string) => console.warn(line));
 
   const result: ImportDumpResult = {
     user_created: false,
     inserted: { profiles: 0, episodes: 0, submissions: 0, agent_calls: 0, notifications: 0 },
     skipped: { episodes: 0, submissions: 0, agent_calls: 0, notifications: 0 },
     warnings: [],
+  };
+
+  // Mirrors every warning into the result so callers can read them programmatically — the
+  // CLI prints them to stderr; integration tests assert on the array.
+  const log = (line: string): void => {
+    result.warnings.push(line);
+    sink(line);
   };
 
   // The whole import runs inside a single transaction so a partial failure (e.g. missing
@@ -271,12 +278,151 @@ export async function importDump(
       result.inserted.profiles = 1;
     }
 
-    // Per-section insert helpers land in the next commit.
-    void problems;
-    void episodes;
-    void submissions;
-    void agent_calls;
-    void notifications;
+    // ----- pre-flight: every referenced problem_id must exist in the target instance.
+    // The export envelope intentionally omits the problems catalog (self-hosted migrations
+    // assume both instances seed from the same `@learnpro/problems` bank). A missing
+    // problem_id is fatal — fail with a clear error before inserting anything.
+    const referencedProblemIds = Array.from(new Set(envelope.episodes.map((e) => e.problem_id)));
+    if (referencedProblemIds.length > 0) {
+      const existingProblems = await tx
+        .select({ id: problems.id })
+        .from(problems)
+        .where(inArray(problems.id, referencedProblemIds));
+      const existingIds = new Set(existingProblems.map((p) => p.id));
+      const missing = referencedProblemIds.filter((id) => !existingIds.has(id));
+      if (missing.length > 0) {
+        throw new Error(
+          `[importDump] target DB is missing ${missing.length} problem_id(s) referenced by ` +
+            `the dump's episodes — seed the same problem catalog before importing. ` +
+            `First missing: ${missing[0]}`,
+        );
+      }
+    }
+
+    // ----- episodes (FK: user, problem) -----
+    // ON CONFLICT DO NOTHING + RETURNING id lets us detect collisions: returned-id-set is
+    // the rows actually inserted; everything else collided on the (id) primary key.
+    if (envelope.episodes.length > 0) {
+      const epRows = envelope.episodes.map((ep) => ({
+        id: ep.id,
+        org_id: ep.org_id || SELF_HOSTED_ORG_ID,
+        user_id: ep.user_id,
+        problem_id: ep.problem_id,
+        started_at: new Date(ep.started_at),
+        finished_at: ep.finished_at ? new Date(ep.finished_at) : null,
+        hints_used: ep.hints_used,
+        attempts: ep.attempts,
+        final_outcome: ep.final_outcome,
+        time_to_solve_ms: ep.time_to_solve_ms,
+        // `embedding` is intentionally omitted — re-derivable from the next tutor call.
+        interactions_summary: ep.interactions_summary ?? null,
+      }));
+      const inserted = await tx
+        .insert(episodes)
+        .values(epRows)
+        .onConflictDoNothing({ target: episodes.id })
+        .returning({ id: episodes.id });
+      const insertedSet = new Set(inserted.map((r) => r.id));
+      result.inserted.episodes = inserted.length;
+      for (const ep of envelope.episodes) {
+        if (!insertedSet.has(ep.id)) {
+          result.skipped.episodes++;
+          log(`[importDump] episodes row ${ep.id} already exists — skipped`);
+        }
+      }
+    }
+
+    // ----- submissions (FK: episode) -----
+    if (envelope.submissions.length > 0) {
+      const subRows = envelope.submissions.map((sub) => ({
+        id: sub.id,
+        org_id: sub.org_id || SELF_HOSTED_ORG_ID,
+        episode_id: sub.episode_id,
+        submitted_at: new Date(sub.submitted_at),
+        code: sub.code,
+        passed: sub.passed,
+        runtime_ms: sub.runtime_ms,
+      }));
+      const inserted = await tx
+        .insert(submissions)
+        .values(subRows)
+        .onConflictDoNothing({ target: submissions.id })
+        .returning({ id: submissions.id });
+      const insertedSet = new Set(inserted.map((r) => r.id));
+      result.inserted.submissions = inserted.length;
+      for (const sub of envelope.submissions) {
+        if (!insertedSet.has(sub.id)) {
+          result.skipped.submissions++;
+          log(`[importDump] submissions row ${sub.id} already exists — skipped`);
+        }
+      }
+    }
+
+    // ----- agent_calls (FK: user, optional episode) -----
+    if (envelope.agent_calls.length > 0) {
+      const callRows = envelope.agent_calls.map((c) => ({
+        id: c.id,
+        org_id: c.org_id || SELF_HOSTED_ORG_ID,
+        user_id: c.user_id,
+        session_id: c.session_id,
+        episode_id: c.episode_id,
+        provider: c.provider,
+        model: c.model,
+        role: c.role,
+        task: c.task,
+        prompt_version: c.prompt_version,
+        input_tokens: c.input_tokens,
+        output_tokens: c.output_tokens,
+        cached_tokens: c.cached_tokens,
+        cost_usd: c.cost_usd,
+        pricing_version: c.pricing_version,
+        tool_used: c.tool_used,
+        latency_ms: c.latency_ms,
+        ok: c.ok,
+        called_at: new Date(c.called_at),
+      }));
+      const inserted = await tx
+        .insert(agent_calls)
+        .values(callRows)
+        .onConflictDoNothing({ target: agent_calls.id })
+        .returning({ id: agent_calls.id });
+      const insertedSet = new Set(inserted.map((r) => r.id));
+      result.inserted.agent_calls = inserted.length;
+      for (const c of envelope.agent_calls) {
+        if (!insertedSet.has(c.id)) {
+          result.skipped.agent_calls++;
+          log(`[importDump] agent_calls row ${c.id} already exists — skipped`);
+        }
+      }
+    }
+
+    // ----- notifications (FK: user) -----
+    if (envelope.notifications.length > 0) {
+      const notifRows = envelope.notifications.map((n) => ({
+        id: n.id,
+        org_id: n.org_id || SELF_HOSTED_ORG_ID,
+        user_id: n.user_id,
+        channel: n.channel,
+        title: n.title,
+        body: n.body,
+        sent_at: new Date(n.sent_at),
+        read_at: n.read_at ? new Date(n.read_at) : null,
+        dedupe_key: n.dedupe_key,
+      }));
+      const inserted = await tx
+        .insert(notifications)
+        .values(notifRows)
+        .onConflictDoNothing({ target: notifications.id })
+        .returning({ id: notifications.id });
+      const insertedSet = new Set(inserted.map((r) => r.id));
+      result.inserted.notifications = inserted.length;
+      for (const n of envelope.notifications) {
+        if (!insertedSet.has(n.id)) {
+          result.skipped.notifications++;
+          log(`[importDump] notifications row ${n.id} already exists — skipped`);
+        }
+      }
+    }
   });
 
   return result;
