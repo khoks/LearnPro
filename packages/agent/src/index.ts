@@ -103,6 +103,25 @@ export {
 } from "./tools/plan-session.js";
 
 export {
+  buildTodayPlan,
+  computeDampeningReason,
+  reasoningForPlanItem,
+  reasoningForReview,
+  SUPPRESSED_REPLAN_ONE_DAY,
+  SUPPRESSED_REPLAN_WEEKEND,
+  TodayPlanDampeningSchema,
+  TodayPlanSchema,
+  TodayReviewItemSchema,
+  TodaySessionPlanItemSchema,
+  type BuildTodayPlanInput,
+  type TodayPlan,
+  type TodayPlanDampening,
+  type TodayPlanDeps,
+  type TodayReviewItem,
+  type TodaySessionPlanItem,
+} from "./today-plan.js";
+
+export {
   AUTONOMY_ACTION_CONSEQUENCE,
   TutorSession,
   type AutonomyActionKind,

@@ -72,6 +72,7 @@ import {
   type SessionPlanCreateInput,
   type SessionPlanFactory,
 } from "./session-plan.js";
+import { buildDbTodayPlanDeps, registerTodayPlanRoutes } from "./today-plan.js";
 import { registerTutorRoutes, type TutorAgentFactory } from "./tutor.js";
 import { buildDrizzleTutorFactory } from "./tutor-factory.js";
 import {
@@ -79,7 +80,7 @@ import {
   SESSION_PLAN_SYSTEM_PROMPT,
   buildSessionPlanUserPrompt,
 } from "@learnpro/prompts";
-import { createPlanSessionTool, type PlanSessionDeps } from "@learnpro/agent";
+import { createPlanSessionTool, type PlanSessionDeps, type TodayPlanDeps } from "@learnpro/agent";
 
 const PORT = Number(process.env["PORT"] ?? 4000);
 const HOST = process.env["HOST"] ?? "0.0.0.0";
@@ -146,6 +147,10 @@ export interface BuildServerOptions {
   // STORY-044 — DB handle for the `GET /v1/dashboard/install-eligible` route. Same wiring
   // pattern as the others; production shares the single `db` instance via defaultsFromEnv().
   installEligibleDb?: import("@learnpro/db").LearnProDb;
+  // STORY-046 — today's-plan deps adapter. When supplied (alongside `sessionPlanFactory`),
+  // registers `GET /v1/today-plan` + `POST /v1/today-plan/replan`. Tests inject a fake deps
+  // object; production wires `buildDbTodayPlanDeps(db)` via defaultsFromEnv.
+  todayPlanDeps?: TodayPlanDeps;
 }
 
 // Default impl when no store is provided — drops events on the floor. Useful for tests and
@@ -358,6 +363,18 @@ export function buildServer(opts: BuildServerOptions = {}) {
     });
   }
 
+  // STORY-046 — today's-plan routes. Composes today's plan from session_plans + concept_reviews
+  // + episodes count. Wired only when both today-plan deps AND session-plan factory are present
+  // (the replan path needs the factory to actually re-generate when not dampened). Tests inject
+  // a fake deps + fake factory; production wires both via defaultsFromEnv.
+  if (opts.todayPlanDeps && opts.sessionPlanFactory) {
+    registerTodayPlanRoutes(app, {
+      todayPlanDeps: opts.todayPlanDeps,
+      sessionPlanFactory: opts.sessionPlanFactory,
+      sessionResolver,
+    });
+  }
+
   // STORY-024 — quiet-hours settings routes. Wired only when a db is supplied; defaultsFromEnv()
   // forwards the same `db` instance the notifications dispatcher uses.
   if (opts.quietHoursDb) {
@@ -428,6 +445,7 @@ function defaultsFromEnv(): {
   recommendationDb?: import("@learnpro/db").LearnProDb;
   spacedRepetitionDb?: import("@learnpro/db").LearnProDb;
   installEligibleDb?: import("@learnpro/db").LearnProDb;
+  todayPlanDeps?: TodayPlanDeps;
 } {
   const url = process.env["DATABASE_URL"];
   if (!url) return {};
@@ -492,6 +510,7 @@ function defaultsFromEnv(): {
     recommendationDb: db,
     spacedRepetitionDb: db,
     installEligibleDb: db,
+    todayPlanDeps: buildDbTodayPlanDeps({ db }),
     redactor: buildDefaultRedactor({ llm }),
     dataControls: {
       summary: (user_id) => getUserDataSummary(db, user_id),

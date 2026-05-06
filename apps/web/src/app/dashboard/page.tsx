@@ -6,6 +6,7 @@ import {
   getUserXp,
   type TrackProgress,
 } from "@learnpro/db";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth, signOut } from "../../auth/auth.js";
 import { getAuthDb } from "../../auth/db.js";
@@ -13,6 +14,7 @@ import { destinationForUser } from "../../auth/post-signin.js";
 import { AutonomyBandIndicator } from "../../components/autonomy/AutonomyBandIndicator.js";
 import { InstallPrompt } from "../../components/pwa/InstallPrompt.js";
 import { QuietHoursCard } from "../../components/settings/QuietHoursCard.js";
+import { TodayPlanSummaryCard, type TodayPlanShape } from "../plan/plan-view.js";
 import { DueReviewsCard, TrackProgressBar } from "./dashboard-components.js";
 import { DashboardCardsRow } from "./DashboardCardsRow.js";
 import { DashboardHeader } from "./DashboardHeader.js";
@@ -34,11 +36,12 @@ export default async function DashboardPage() {
   const userId = session.user.id;
   const db = getAuthDb();
   const today = new Date();
-  const [xp, streak, activeTrackSlugs, dueReviews] = await Promise.all([
+  const [xp, streak, activeTrackSlugs, dueReviews, todayPlan] = await Promise.all([
     getUserXp(db, userId),
     getStreakSnapshot(db, userId, today, MONTHLY_GRACE_CAP),
     getActiveTrackSlugs(db, userId),
     getDueConcepts(db, userId, today),
+    loadTodayPlanForDashboard(),
   ]);
 
   const trackProgress = (
@@ -73,6 +76,10 @@ export default async function DashboardPage() {
         graceDaysUsedThisCheck={streak.graceDaysUsed}
         monthlyGraceCap={MONTHLY_GRACE_CAP}
       />
+
+      <section aria-label="Today's plan" style={{ marginTop: "1.25rem" }}>
+        <TodayPlanSummaryCard plan={todayPlan} activeTrackSlug={primaryTrackSlug ?? null} />
+      </section>
 
       {dueReviews.length > 0 ? (
         <section aria-label="Spaced repetition" style={{ marginTop: "1.25rem" }}>
@@ -115,6 +122,29 @@ export default async function DashboardPage() {
       <SignOutButton />
     </main>
   );
+}
+
+async function loadTodayPlanForDashboard(): Promise<TodayPlanShape | null> {
+  // STORY-046 — proxy back through /api/today-plan (which forwards the cookie to Fastify) so
+  // the dashboard's summary card has the same shape the /plan page sees. Fail-soft: when the
+  // API is unreachable or returns 4xx/5xx, return null and the summary card renders an empty
+  // state ("Today's plan is empty.") rather than blocking the dashboard.
+  try {
+    const incoming = await headers();
+    const cookie = incoming.get("cookie") ?? "";
+    const host = incoming.get("host") ?? "localhost:3000";
+    const proto = incoming.get("x-forwarded-proto") ?? "http";
+    const url = `${proto}://${host}/api/today-plan`;
+    const res = await fetch(url, {
+      headers: { ...(cookie ? { cookie } : {}) },
+      cache: "no-store",
+    });
+    if (!res.ok) return null;
+    const json = (await res.json().catch(() => null)) as { today_plan: TodayPlanShape } | null;
+    return json?.today_plan ?? null;
+  } catch {
+    return null;
+  }
 }
 
 function SignOutButton() {
