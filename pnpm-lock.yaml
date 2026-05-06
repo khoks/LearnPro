@@ -53,6 +53,9 @@ importers:
       '@learnpro/problems':
         specifier: workspace:*
         version: link:../../packages/problems
+      '@learnpro/profile':
+        specifier: workspace:*
+        version: link:../../packages/profile
       '@learnpro/prompts':
         specifier: workspace:*
         version: link:../../packages/prompts
@@ -327,6 +330,22 @@ importers:
       '@types/js-yaml':
         specifier: ^4.0.9
         version: 4.0.9
+      '@types/node':
+        specifier: ^22.10.2
+        version: 22.19.17
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
+      vitest:
+        specifier: ^2.1.8
+        version: 2.1.9(@types/node@22.19.17)(jsdom@29.1.1)
+
+  packages/profile:
+    dependencies:
+      zod:
+        specifier: ^3.24.1
+        version: 3.25.76
+    devDependencies:
       '@types/node':
         specifier: ^22.10.2
         version: 22.19.17

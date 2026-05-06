@@ -60,6 +60,7 @@ import { registerNotificationsRoutes } from "./notifications.js";
 import { registerQuietHoursRoutes } from "./quiet-hours.js";
 import { registerAutonomyRoutes } from "./autonomy.js";
 import { registerOnboardingRoute, type OnboardingProfileWriter } from "./onboarding.js";
+import { registerRecommendationRoute } from "./recommendation.js";
 import { MemoryRateLimiter, type RateLimiter } from "./rate-limiter.js";
 import { buildSessionResolver, type SessionResolver } from "./session.js";
 import {
@@ -134,6 +135,9 @@ export interface BuildServerOptions {
   // `DELETE /v1/data/voice`, `DELETE /v1/data/account`. Tests inject fake adapters; production
   // wires `buildDrizzleDataControlsAdapters(db)` via defaultsFromEnv.
   dataControls?: DataControlsAdapters;
+  // STORY-021 — career-aware recommendation. When provided, registers `GET /v1/recommendation`.
+  // Production wires the same DB instance everything else uses; tests inject a fake DB.
+  recommendationDb?: import("@learnpro/db").LearnProDb;
 }
 
 // Default impl when no store is provided — drops events on the floor. Useful for tests and
@@ -357,6 +361,13 @@ export function buildServer(opts: BuildServerOptions = {}) {
     registerAutonomyRoutes(app, { db: opts.autonomyDb, sessionResolver });
   }
 
+  // STORY-021 — career-aware recommendation. Looks up the user's `target_role`, runs it through
+  // `@learnpro/profile`'s role library, joins the recommended track slugs against the `tracks`
+  // table. Wired only when a db is supplied; the /recommended page proxies to this endpoint.
+  if (opts.recommendationDb) {
+    registerRecommendationRoute(app, { db: opts.recommendationDb, sessionResolver });
+  }
+
   // STORY-060 deferred AC — friendly 429 mapping for the per-user daily token budget. Any handler
   // that calls into the LLM provider can throw `TokenBudgetExceededError`; this hook catches it
   // before Fastify's default 500 path so the playground can render the friendly message AC from
@@ -394,6 +405,7 @@ function defaultsFromEnv(): {
   autonomyDb?: import("@learnpro/db").LearnProDb;
   redactor?: PiiRedactor;
   dataControls?: DataControlsAdapters;
+  recommendationDb?: import("@learnpro/db").LearnProDb;
 } {
   const url = process.env["DATABASE_URL"];
   if (!url) return {};
@@ -455,6 +467,7 @@ function defaultsFromEnv(): {
     sessionPlanFactory: buildDefaultSessionPlanFactory({ db, llm }),
     quietHoursDb: db,
     autonomyDb: db,
+    recommendationDb: db,
     redactor: buildDefaultRedactor({ llm }),
     dataControls: {
       summary: (user_id) => getUserDataSummary(db, user_id),
