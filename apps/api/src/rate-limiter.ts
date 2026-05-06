@@ -61,17 +61,16 @@ export class MemoryRateLimiter implements RateLimiter {
 }
 
 // Minimal structural interface for the Redis ops we actually need. Lets unit tests inject a
-// fake without pulling in ioredis, while real deployments pass an ioredis client (which
-// satisfies these signatures) into the constructor.
+// fake without pulling in ioredis. Production wiring goes through `redisClientAdapter()`
+// below, which wraps an ioredis instance and exposes only the operations we use — keeping
+// the surface narrow and the swap-without-rewrite contract honest.
 //
-// SET key value NX EX seconds → "OK" on success (key didn't exist), null on no-op (key exists).
-// PTTL key                    → ms remaining on the key (-2 if absent, -1 if no TTL).
+// setNxEx(key, value, seconds) → "OK" if the key was set (didn't exist), null if it already
+//   existed (atomic SET key value EX seconds NX). Two parallel callers always see exactly one
+//   "OK" — that's the AC.
+// pttl(key) → ms remaining on the key (-2 absent, -1 no TTL).
 export interface RedisLikeClient {
-  set(
-    key: string,
-    value: string,
-    ...args: ["NX", "EX", number] | ["EX", number, "NX"]
-  ): Promise<"OK" | null>;
+  setNxEx(key: string, value: string, seconds: number): Promise<"OK" | null>;
   pttl(key: string): Promise<number>;
 }
 
@@ -110,9 +109,9 @@ export class RedisRateLimiter implements RateLimiter {
 
     const key = `${this.keyPrefix}${user_id}`;
     const seconds = Math.ceil(this.windowMs / 1000);
-    // Atomic claim: SET NX EX. Wins return "OK"; losers return null. Two parallel replicas
+    // Atomic claim: SET EX NX. Wins return "OK"; losers return null. Two parallel replicas
     // hitting this for the same user are guaranteed exactly one winner — that's the AC.
-    const result = await this.client.set(key, String(this.now()), "NX", "EX", seconds);
+    const result = await this.client.setNxEx(key, String(this.now()), seconds);
     if (result === "OK") {
       return { allowed: true };
     }
@@ -124,4 +123,28 @@ export class RedisRateLimiter implements RateLimiter {
     const remainingMs = pttl > 0 ? pttl : this.windowMs;
     return { allowed: false, retry_after_seconds: Math.ceil(remainingMs / 1000) };
   }
+}
+
+// Minimal surface a real ioredis client (or any compatible client) must expose. We avoid
+// importing the ioredis types directly so this module stays loadable in environments where
+// ioredis isn't installed (e.g. unit tests that only use FakeRedis).
+export interface IoRedisClientLike {
+  set(
+    key: string,
+    value: string,
+    secondsToken: "EX",
+    seconds: number,
+    nx: "NX",
+  ): Promise<"OK" | null>;
+  pttl(key: string): Promise<number>;
+}
+
+// Adapter: wraps an ioredis-like client into the narrow `RedisLikeClient` shape the limiter
+// consumes. Lives here so both production wiring (`defaultsFromEnv` in index.ts) and the
+// integration test can use it.
+export function redisClientAdapter(client: IoRedisClientLike): RedisLikeClient {
+  return {
+    setNxEx: (key, value, seconds) => client.set(key, value, "EX", seconds, "NX"),
+    pttl: (key) => client.pttl(key),
+  };
 }
