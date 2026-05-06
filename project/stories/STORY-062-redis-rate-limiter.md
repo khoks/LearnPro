@@ -2,14 +2,14 @@
 id: STORY-062
 title: Redis-backed rate limiter for multi-process / multi-replica deployments
 type: story
-status: backlog
+status: in-progress
 priority: P2
 estimate: S
 parent: EPIC-015
 phase: v1
 tags: [rate-limit, scaling, saas-readiness]
 created: 2026-05-03
-updated: 2026-05-03
+updated: 2026-05-06
 ---
 
 ## Description
@@ -38,3 +38,4 @@ This Story ships a Redis-backed `RateLimiter` implementation that shares the per
 ## Activity log
 
 - 2026-05-03 — created (filed during STORY-026 close-out)
+- 2026-05-06 — picked up. Plan: keep impl in `apps/api/src/rate-limiter.ts` (no new package — single consumer for now per Story note); add `ioredis` to `@learnpro/api`; integration test gated by `LEARNPRO_REQUIRE_REDIS=1` boots against `redis://localhost:6379` from `infra/docker/docker-compose.dev.yaml`. Default unit test mocks `ioredis` so it's fast and dockerless.
