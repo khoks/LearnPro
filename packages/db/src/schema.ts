@@ -167,6 +167,10 @@ export const profiles = pgTable("profiles", {
   // IANA zone string ("America/Los_Angeles", etc.). Stored as text — never as a UTC offset, since
   // offsets break across DST transitions.
   timezone: text("timezone").notNull().default("UTC"),
+  // STORY-054 — adaptive autonomy controller. Per-user EWMA over (agreement_rate, engagement,
+  // success) plus episode-count snapshot. Null until the first close lands; the controller's
+  // cold-start safety branch pins users to "low" while this is null or episode_count < 5.
+  confidence_signal: jsonb("confidence_signal"),
   updated_at: updatedAt(),
 });
 

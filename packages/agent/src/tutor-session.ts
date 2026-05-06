@@ -11,6 +11,11 @@ import type { GradeOutput, GradeTool } from "./tools/grade.js";
 import type { PlanSessionInput, PlanSessionOutput, PlanSessionTool } from "./tools/plan-session.js";
 import type { UpdateProfileOutput, UpdateProfileTool } from "./tools/update-profile.js";
 import { deriveFinalOutcome } from "./tools/update-profile.js";
+import type {
+  ActionConsequence,
+  AutonomyBandedDecision,
+  AsyncAutonomyPolicy,
+} from "@learnpro/scoring";
 
 export interface TutorSessionTools {
   assignProblem: AssignProblemTool;
@@ -20,6 +25,30 @@ export interface TutorSessionTools {
   // Optional — present only when the planner is wired into the harness. The /session UI calls
   // `planForToday()` as a side action; the state machine's main loop never depends on it.
   planSession?: PlanSessionTool;
+}
+
+// STORY-054 — kinds of "should I just do this?" branch points the autonomy controller is asked
+// about. Each maps to a well-known `consequence` tier:
+//   `assign-next-problem`    → trivial (next-pick is the steady-state cadence)
+//   `proactive-hint`         → consequential (offering an unsolicited hint changes flow)
+//   `auto-set-final-outcome` → consequential (the user might want to override)
+//   `switch-track`           → disruptive (track switch is a major context change)
+export type AutonomyActionKind =
+  | "assign-next-problem"
+  | "proactive-hint"
+  | "auto-set-final-outcome"
+  | "switch-track";
+
+export const AUTONOMY_ACTION_CONSEQUENCE: Record<AutonomyActionKind, ActionConsequence> = {
+  "assign-next-problem": "trivial",
+  "proactive-hint": "consequential",
+  "auto-set-final-outcome": "consequential",
+  "switch-track": "disruptive",
+};
+
+export interface AutonomyAdvice {
+  kind: AutonomyActionKind;
+  decision: AutonomyBandedDecision;
 }
 
 export interface TutorSessionOptions {
@@ -32,6 +61,13 @@ export interface TutorSessionOptions {
   // Pre-existing state — used by API layer to rehydrate a session from the DB row instead of
   // starting from idle. Default is `idle`.
   initial_state?: TutorState;
+  // STORY-054 — optional adaptive autonomy policy. When wired, the harness asks the policy at
+  // each "should I just do this?" branch point (e.g. assign-next-problem, proactive-hint). Tests
+  // and the MVP default leave this undefined; production wires `EwmaBandedAutonomyPolicy`.
+  autonomyPolicy?: AsyncAutonomyPolicy;
+  // Episode count for the user — fed straight into the autonomy policy's cold-start guard. The
+  // factory layer reads this from `countClosedEpisodes` before constructing the session.
+  episode_count?: number;
 }
 
 // State-machine driver for one tutor episode (or sequence of episodes within a single session).
@@ -48,6 +84,8 @@ export class TutorSession {
   readonly track_id: string;
   private readonly tools: TutorSessionTools;
   private readonly now: () => number;
+  private readonly autonomyPolicy: AsyncAutonomyPolicy | undefined;
+  private readonly episodeCount: number;
   private _state: TutorState;
 
   constructor(opts: TutorSessionOptions) {
@@ -56,6 +94,8 @@ export class TutorSession {
     this.track_id = opts.track_id;
     this.tools = opts.tools;
     this.now = opts.now ?? (() => Date.now());
+    this.autonomyPolicy = opts.autonomyPolicy;
+    this.episodeCount = opts.episode_count ?? 0;
     this._state =
       opts.initial_state ??
       ({
@@ -70,6 +110,22 @@ export class TutorSession {
 
   get state(): TutorState {
     return this._state;
+  }
+
+  // STORY-054 — ask the autonomy controller about a single "should I just do this?" branch
+  // point. Returns null when no policy is wired (the AlwaysConfirm baseline behaviour: callers
+  // must always confirm explicitly through the UI). Otherwise returns the policy's decision so
+  // the caller can decide whether to execute or surface a confirmation prompt.
+  async consultAutonomy(kind: AutonomyActionKind): Promise<AutonomyAdvice | null> {
+    const policy = this.autonomyPolicy;
+    if (!policy) return null;
+    const consequence = AUTONOMY_ACTION_CONSEQUENCE[kind];
+    const decision = await policy.decide({
+      action: { kind, consequence },
+      user_id: this.user_id,
+      episode_count: this.episodeCount,
+    });
+    return { kind, decision };
   }
 
   async assign(): Promise<AssignProblemOutput> {

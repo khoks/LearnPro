@@ -188,6 +188,25 @@ export function createUpdateProfileTool(opts: CreateUpdateProfileToolOptions): U
         }
       }
 
+      // STORY-054 — refresh the autonomy controller's confidence signal. Best-effort: a DB hiccup
+      // shouldn't fail the close (the user already passed/failed). Idempotency: re-grading is rare
+      // on the request path (the API only calls finish() once per episode); the EWMA absorbs any
+      // drift on the next close.
+      if (opts.deps.refreshConfidenceSignal) {
+        try {
+          await opts.deps.refreshConfidenceSignal({
+            user_id: ctx.user_id,
+            org_id: ctx.org_id,
+            episode_id: input.episode_id,
+            final_outcome: input.outcome,
+            time_to_solve_ms,
+            expected_time_ms: Math.max(1, ctx.problem.expected_median_time_to_solve_ms),
+          });
+        } catch {
+          // intentional: signal refresh is best-effort; never fail the close.
+        }
+      }
+
       return {
         episode_id: input.episode_id,
         final_outcome: input.outcome,

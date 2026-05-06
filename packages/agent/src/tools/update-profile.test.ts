@@ -51,6 +51,10 @@ interface FakeDepsOpts {
   // When true, the tool's call to markPlanItemCompleted will throw — tests assert the close
   // still completes (auto-mark is best-effort).
   markPlanThrows?: boolean;
+  // STORY-054 — when true, wire `refreshConfidenceSignal` into the deps. When `wireSignalThrows`
+  // is also set, the dep throws — tests assert the close still completes.
+  wireSignal?: boolean;
+  wireSignalThrows?: boolean;
 }
 
 interface MarkPlanCall {
@@ -59,21 +63,33 @@ interface MarkPlanCall {
   episode_id: string;
 }
 
+interface RefreshSignalCall {
+  user_id: string;
+  org_id: string;
+  episode_id: string;
+  final_outcome: string;
+  time_to_solve_ms: number;
+  expected_time_ms: number;
+}
+
 function fakeDeps(opts: FakeDepsOpts): UpdateProfileDeps & {
   closed: number;
   upserts: Array<{ concept_id: string; skill: ConceptSkill }>;
   xpCalls: AwardXpForEpisodeInput[];
   closeMock: ReturnType<typeof vi.fn>;
   markPlanCalls: MarkPlanCall[];
+  refreshSignalCalls: RefreshSignalCall[];
 } {
   let closed = 0;
   const upserts: Array<{ concept_id: string; skill: ConceptSkill }> = [];
   const xpCalls: AwardXpForEpisodeInput[] = [];
   const markPlanCalls: MarkPlanCall[] = [];
+  const refreshSignalCalls: RefreshSignalCall[] = [];
   const closeMock = vi.fn(async () => {
     closed += 1;
   });
   const wirePlan = opts.markPlanResult !== undefined || opts.markPlanThrows === true;
+  const wireSignal = opts.wireSignal === true || opts.wireSignalThrows === true;
   return {
     closeMock,
     get closed() {
@@ -87,6 +103,9 @@ function fakeDeps(opts: FakeDepsOpts): UpdateProfileDeps & {
     },
     get markPlanCalls() {
       return markPlanCalls;
+    },
+    get refreshSignalCalls() {
+      return refreshSignalCalls;
     },
     async loadEpisodeForClose() {
       return opts.ctx === undefined
@@ -131,6 +150,14 @@ function fakeDeps(opts: FakeDepsOpts): UpdateProfileDeps & {
           throw new Error("simulated plan markCompleted outage");
         }
         return opts.markPlanResult ? opts.markPlanResult(input) : { updated: true };
+      },
+    }),
+    ...(wireSignal && {
+      refreshConfidenceSignal: async (input: RefreshSignalCall) => {
+        refreshSignalCalls.push(input);
+        if (opts.wireSignalThrows) {
+          throw new Error("simulated confidence_signal outage");
+        }
       },
     }),
   };
@@ -482,5 +509,84 @@ describe("createUpdateProfileTool: plan item auto-mark (STORY-015)", () => {
     // The close itself still completed.
     expect(deps.closed).toBe(1);
     expect(out.xp_award.awarded).toBe(true);
+  });
+});
+
+describe("createUpdateProfileTool: confidence signal refresh (STORY-054)", () => {
+  it("calls refreshConfidenceSignal with the close inputs when wired", async () => {
+    const deps = fakeDeps({ wireSignal: true });
+    const tool = createUpdateProfileTool({ deps });
+    await tool.run({
+      episode_id: EPISODE_ID,
+      outcome: "passed",
+      passed: true,
+      submit_count: 1,
+      hints_used: 0,
+      finished_at_ms: 1700000060000,
+    });
+    expect(deps.refreshSignalCalls).toHaveLength(1);
+    expect(deps.refreshSignalCalls[0]).toEqual({
+      user_id: "user-1",
+      org_id: ORG_ID,
+      episode_id: EPISODE_ID,
+      final_outcome: "passed",
+      time_to_solve_ms: 60_000,
+      expected_time_ms: 60_000,
+    });
+  });
+
+  it("idempotency: re-grading the same episode invokes the dep again (signal absorbs drift)", async () => {
+    const deps = fakeDeps({ wireSignal: true });
+    const tool = createUpdateProfileTool({ deps });
+    await tool.run({
+      episode_id: EPISODE_ID,
+      outcome: "passed",
+      passed: true,
+      submit_count: 1,
+      hints_used: 0,
+      finished_at_ms: 1700000060000,
+    });
+    await tool.run({
+      episode_id: EPISODE_ID,
+      outcome: "passed",
+      passed: true,
+      submit_count: 1,
+      hints_used: 0,
+      finished_at_ms: 1700000060000,
+    });
+    // Two calls land — the dep is responsible for being idempotent if the signal must dedupe.
+    // EWMA absorbs the small drift since alpha is small.
+    expect(deps.refreshSignalCalls).toHaveLength(2);
+  });
+
+  it("does not call refreshConfidenceSignal when the dep is unwired", async () => {
+    const deps = fakeDeps({});
+    const tool = createUpdateProfileTool({ deps });
+    await tool.run({
+      episode_id: EPISODE_ID,
+      outcome: "passed",
+      passed: true,
+      submit_count: 1,
+      hints_used: 0,
+      finished_at_ms: 1700000060000,
+    });
+    expect(deps.refreshSignalCalls).toEqual([]);
+  });
+
+  it("signal refresh failure is swallowed: close still succeeds", async () => {
+    const deps = fakeDeps({ wireSignalThrows: true });
+    const tool = createUpdateProfileTool({ deps });
+    const out = await tool.run({
+      episode_id: EPISODE_ID,
+      outcome: "passed",
+      passed: true,
+      submit_count: 1,
+      hints_used: 0,
+      finished_at_ms: 1700000060000,
+    });
+    expect(deps.closed).toBe(1);
+    expect(out.xp_award.awarded).toBe(true);
+    // The dep was attempted (and threw); we record the call so we can assert the swallow happened.
+    expect(deps.refreshSignalCalls).toHaveLength(1);
   });
 });

@@ -414,6 +414,7 @@ function makeProfile(overrides: Partial<Profile> = {}): Profile {
     quiet_hours_start_min: 1320,
     quiet_hours_end_min: 480,
     timezone: "UTC",
+    confidence_signal: null,
     updated_at: new Date(0),
     ...overrides,
   };

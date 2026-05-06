@@ -2,14 +2,14 @@
 id: STORY-054
 title: Adaptive autonomy controller (tutor decides when to ask vs. act)
 type: story
-status: backlog
+status: done
 priority: P1
 estimate: M
 parent: EPIC-004
 phase: mvp
 tags: [tutor-agent, autonomy, policy, novel]
 created: 2026-04-25
-updated: 2026-04-25
+updated: 2026-05-01
 ---
 
 ## Description
@@ -37,11 +37,11 @@ Implements **Q1C** from the MVP scope discussion. NOVEL_IDEAS candidate (#2 in t
 
 ## Acceptance criteria
 
-- [ ] Confidence signal updates after each user accept / reject / abandon.
-- [ ] Switching between bands changes observed tutor behavior (smoke test: simulate 20 high-agreement actions, observe band shift).
-- [ ] Autonomy decisions persist to `interactions` table.
-- [ ] Default policy wired into the tutor agent and used on every action that has a "should I just do this?" branch.
-- [ ] Cold-start safety: brand-new users get `Low` band until ≥ 5 episodes of signal exist.
+- [x] Confidence signal updates after each user accept / reject / abandon. (`updateConfidenceSignal` pure helper + `refreshConfidenceSignal` dep on `UpdateProfileDeps` + Drizzle adapter writing `confidence_signal` jsonb.)
+- [x] Switching between bands changes observed tutor behavior (smoke test: simulate 20 high-agreement actions, observe band shift). (`replay-002-autonomy.json` 20-step transcript covers Low → Medium → High.)
+- [x] Autonomy decisions persist to `interactions` table. (`onDecision` hook on `EwmaBandedAutonomyPolicy` writes via the `autonomy_decision` event type from STORY-055.)
+- [x] Default policy wired into the tutor agent and used on every action that has a "should I just do this?" branch. (`TutorSession.consultAutonomy(kind)` covers `assign-next-problem` / `proactive-hint` / `auto-set-final-outcome` / `switch-track`.)
+- [x] Cold-start safety: brand-new users get `Low` band until ≥ 5 episodes of signal exist. (`cold_start_episodes: 5` config + null-signal short-circuit; covered by 2 dedicated tests.)
 
 ## Dependencies
 
@@ -55,3 +55,5 @@ Implements **Q1C** from the MVP scope discussion. NOVEL_IDEAS candidate (#2 in t
 ## Activity log
 
 - 2026-04-25 — created (Path A scope confirmation)
+- 2026-05-01 — picked up
+- 2026-05-01 — done. Schema: `profiles.confidence_signal jsonb` (migration `0010_autonomy_signal.sql`). Pure policy: `EwmaBandedAutonomyPolicy` in `@learnpro/scoring` (Low <0.3 / Medium 0.3-0.7 / High >0.7) with cold-start safety pinning users to Low for the first 5 episodes; `updateConfidenceSignal` EWMA helper. DB: `getConfidenceSignal` / `updateConfidenceSignalRow` / `countClosedEpisodes` helpers in `@learnpro/db`; partial UPSERT pattern. Tutor: `UpdateProfileDeps.refreshConfidenceSignal` (Drizzle adapter fans out engagement + outcome EWMAs); `TutorSession.consultAutonomy(kind)` covers the four well-known action kinds. Telemetry: `onDecision` hook on the policy emits `autonomy_decision` events through STORY-055's `interactions` schema (extended with optional `band` field, backwards-compatible). Replay: `replay-002-autonomy.json` 20-step Low → Medium → High transcript. API: `GET /v1/autonomy/state` + Next.js proxy. UI: `<AutonomyBandIndicator>` on `/dashboard` with coach-voice tooltip; forbidden-phrase test. ~60 new tests; 144 scoring / 92 agent / 78 db / 139 api / 313 web all green.

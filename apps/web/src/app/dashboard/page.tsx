@@ -9,6 +9,7 @@ import { redirect } from "next/navigation";
 import { auth, signOut } from "../../auth/auth.js";
 import { getAuthDb } from "../../auth/db.js";
 import { destinationForUser } from "../../auth/post-signin.js";
+import { AutonomyBandIndicator } from "../../components/autonomy/AutonomyBandIndicator.js";
 import { QuietHoursCard } from "../../components/settings/QuietHoursCard.js";
 import { TrackProgressBar } from "./dashboard-components.js";
 import { DashboardCardsRow } from "./DashboardCardsRow.js";
@@ -67,6 +68,10 @@ export default async function DashboardPage() {
         graceDaysUsedThisCheck={streak.graceDaysUsed}
         monthlyGraceCap={MONTHLY_GRACE_CAP}
       />
+
+      <section aria-label="Tutor autonomy" style={{ marginTop: "1.25rem" }}>
+        <AutonomyBandIndicator />
+      </section>
 
       <section aria-label="Per-track progress" style={{ marginTop: "2rem" }}>
         <h2 style={{ fontSize: "1.1rem", marginBottom: "0.75rem" }}>Tracks</h2>

@@ -102,7 +102,14 @@ export {
   type PlanSessionTool,
 } from "./tools/plan-session.js";
 
-export { TutorSession, type TutorSessionOptions, type TutorSessionTools } from "./tutor-session.js";
+export {
+  AUTONOMY_ACTION_CONSEQUENCE,
+  TutorSession,
+  type AutonomyActionKind,
+  type AutonomyAdvice,
+  type TutorSessionOptions,
+  type TutorSessionTools,
+} from "./tutor-session.js";
 
 export {
   buildAssignProblemDrizzleDeps,
