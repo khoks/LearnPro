@@ -2,6 +2,7 @@ import { relations } from "drizzle-orm";
 import {
   accounts,
   agent_calls,
+  concept_reviews,
   concepts,
   episodes,
   interactions,
@@ -28,6 +29,7 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   interactions: many(interactions),
   notifications: many(notifications),
   web_push_subscriptions: many(web_push_subscriptions),
+  concept_reviews: many(concept_reviews),
 }));
 
 export const accountsRelations = relations(accounts, ({ one }) => ({
@@ -50,6 +52,12 @@ export const conceptsRelations = relations(concepts, ({ one, many }) => ({
   }),
   children: many(concepts, { relationName: "concept_parent" }),
   skill_scores: many(skill_scores),
+  concept_reviews: many(concept_reviews),
+}));
+
+export const conceptReviewsRelations = relations(concept_reviews, ({ one }) => ({
+  user: one(users, { fields: [concept_reviews.user_id], references: [users.id] }),
+  concept: one(concepts, { fields: [concept_reviews.concept_id], references: [concepts.id] }),
 }));
 
 export const skillScoresRelations = relations(skill_scores, ({ one }) => ({
