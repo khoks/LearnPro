@@ -67,6 +67,7 @@ export {
   type StreakInputs,
   type TrackProgress,
 } from "./xp-streak.js";
+export { countUserEpisodes, getTracksBySlugs, type TrackSummary } from "./tracks-query.js";
 export {
   addWebPushSubscription,
   findRecentDuplicate,

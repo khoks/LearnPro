@@ -53,6 +53,9 @@ importers:
       '@learnpro/problems':
         specifier: workspace:*
         version: link:../../packages/problems
+      '@learnpro/profile':
+        specifier: workspace:*
+        version: link:../../packages/profile
       '@learnpro/prompts':
         specifier: workspace:*
         version: link:../../packages/prompts
