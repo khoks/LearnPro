@@ -1,0 +1,96 @@
+name: Prompt eval
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "packages/prompts/src/**"
+      - "packages/agent/evals/**"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  prompt-eval:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Resolve baseline report from main
+        id: baseline
+        run: |
+          set -e
+          mkdir -p /tmp/eval-baseline
+          # The most recent committed report on main (if any) becomes our baseline.
+          git fetch origin main --depth=1
+          if git show origin/main:packages/agent/evals/reports/README.md > /dev/null 2>&1; then
+            latest=$(git ls-tree -r --name-only origin/main packages/agent/evals/reports \
+                       | grep -E '\.json$' | sort | tail -1 || true)
+            if [ -n "$latest" ]; then
+              echo "baseline_path=/tmp/eval-baseline/baseline.json" >> "$GITHUB_OUTPUT"
+              git show "origin/main:${latest}" > /tmp/eval-baseline/baseline.json
+              echo "Found baseline: ${latest}"
+            else
+              echo "No baseline reports on main yet — will run without diff."
+              echo "baseline_path=" >> "$GITHUB_OUTPUT"
+            fi
+          else
+            echo "baseline_path=" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Run prompt eval harness
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          set -e
+          if [ -z "$ANTHROPIC_API_KEY" ]; then
+            echo "::error::ANTHROPIC_API_KEY is not set in repo secrets. See CLAUDE.md → 'Prompt-touching PRs' for setup."
+            exit 1
+          fi
+          mkdir -p /tmp/eval-out
+          BASELINE_FLAG=""
+          if [ -n "${{ steps.baseline.outputs.baseline_path }}" ]; then
+            BASELINE_FLAG="--baseline ${{ steps.baseline.outputs.baseline_path }}"
+          fi
+          set +e
+          pnpm --filter @learnpro/agent eval -- \
+            --markdown-out /tmp/eval-out/summary.md \
+            $BASELINE_FLAG
+          eval_exit=$?
+          set -e
+          echo "EVAL_EXIT=$eval_exit" >> "$GITHUB_ENV"
+          # Don't fail the step here — we still want to post the summary as a PR comment.
+          # The final 'Fail on regressions' step gates the workflow.
+
+      - name: Post PR comment with eval summary
+        if: always() && hashFiles('/tmp/eval-out/summary.md') != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          gh pr comment "${{ github.event.pull_request.number }}" \
+            --repo "${{ github.repository }}" \
+            --body-file /tmp/eval-out/summary.md
+
+      - name: Fail on regressions
+        if: env.EVAL_EXIT != '0'
+        run: |
+          echo "::error::Prompt eval reported regressions or failed to run. See the PR comment for details."
+          exit 1

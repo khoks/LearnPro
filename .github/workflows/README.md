@@ -1,12 +1,15 @@
 # `.github/workflows/`
 
-GitHub Actions workflow definitions. **Empty for now** — CI is set up during the MVP build, not at scaffolding time.
+GitHub Actions workflow definitions.
 
-**Planned workflows (added in EPIC-002 / EPIC-003):**
+**Workflows:**
 
-- `ci.yaml` — on every PR: lint, typecheck, unit tests, build.
+- [`ci.yml`](./ci.yml) — on every PR + push to `main`: lint, typecheck, unit tests, build, format check.
+- [`prompt-eval.yml`](./prompt-eval.yml) — on PRs that touch `packages/prompts/src/**` or `packages/agent/evals/**`: runs the [STORY-035](../../project/stories/STORY-035-prompt-eval-harness.md) harness, posts a markdown summary as a PR comment, fails on regressions vs. the most-recent committed report on `main`. Requires the `ANTHROPIC_API_KEY` secret.
+
+**Planned workflows:**
+
 - `sandbox-breakout.yaml` — runs the [STORY-010](../../project/stories/STORY-010-sandbox-hardening.md) breakout suite against the runner image. Must pass on every PR that touches `packages/sandbox/` or `infra/docker/`.
-- `prompt-eval.yaml` — runs the prompt-eval harness on every PR that touches `packages/agent/prompts/` (v1).
 - `release.yaml` — builds and tags release images (v3+ SaaS).
 
 **Hard rule:** never use `--privileged` Docker flags in CI either. The CI environment is a target for the same hardening rules as production.
