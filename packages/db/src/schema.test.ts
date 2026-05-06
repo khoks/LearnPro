@@ -430,6 +430,17 @@ describe("schema: quiet hours + deferred_notifications (STORY-024)", () => {
   });
 });
 
+describe("schema: confidence_signal (STORY-054)", () => {
+  it("profiles carries a nullable confidence_signal jsonb column", () => {
+    const cols = getTableColumns(profiles);
+    expect(cols.confidence_signal).toBeDefined();
+    expect(cols.confidence_signal?.getSQLType()).toBe("jsonb");
+    // Nullable until the first episode-close lands — the EwmaBanded policy reads this and treats
+    // a null as the cold-start case (band: low).
+    expect(cols.confidence_signal?.notNull).toBe(false);
+  });
+});
+
 describe("schema: session_plans (STORY-015)", () => {
   it("declares id / org_id / user_id / created_at / time_budget_min / items / expires_at", () => {
     const cols = getTableColumns(session_plans);

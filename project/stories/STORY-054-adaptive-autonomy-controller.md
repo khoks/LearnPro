@@ -2,14 +2,14 @@
 id: STORY-054
 title: Adaptive autonomy controller (tutor decides when to ask vs. act)
 type: story
-status: backlog
+status: in-progress
 priority: P1
 estimate: M
 parent: EPIC-004
 phase: mvp
 tags: [tutor-agent, autonomy, policy, novel]
 created: 2026-04-25
-updated: 2026-04-25
+updated: 2026-05-01
 ---
 
 ## Description
@@ -55,3 +55,4 @@ Implements **Q1C** from the MVP scope discussion. NOVEL_IDEAS candidate (#2 in t
 ## Activity log
 
 - 2026-04-25 — created (Path A scope confirmation)
+- 2026-05-01 — picked up

@@ -69,6 +69,10 @@ export const HintReceivedPayloadSchema = z.object({ rung: HintRungSchema });
 export const AutonomyDecisionPayloadSchema = z.object({
   decision: z.string().min(1),
   confidence: z.number().min(0).max(1),
+  // STORY-054 — band the EwmaBanded policy assigned this decision to. Optional for
+  // backwards-compatibility with rows written before the policy landed (the AlwaysConfirm baseline
+  // didn't write this field).
+  band: z.enum(["low", "medium", "high"]).optional(),
 });
 
 const baseEvent = z.object({

@@ -71,6 +71,13 @@
       "when": 1777890109678,
       "tag": "0009_quiet_hours",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1778100000000,
+      "tag": "0010_autonomy_signal",
+      "breakpoints": true
     }
   ]
 }
