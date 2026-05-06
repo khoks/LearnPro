@@ -55,9 +55,7 @@ export function registerSandboxStreamRoute(
       } catch (err) {
         if (err instanceof SandboxRequestError) {
           req.log.warn({ err }, "sandbox provider error mid-stream");
-          stream.push(
-            formatSseError({ error: "sandbox_unavailable", message: err.message }),
-          );
+          stream.push(formatSseError({ error: "sandbox_unavailable", message: err.message }));
         } else {
           req.log.error({ err }, "sandbox stream failed");
           stream.push(formatSseError({ error: "stream_failed" }));

@@ -287,7 +287,11 @@ function ResultPanel({
     // STORY-059 — streaming mode in flight. Show the partial output as it arrives so the
     // user gets immediate feedback instead of waiting for the full request/response.
     return (
-      <section aria-live="polite" style={{ display: "grid", gap: "0.5rem" }} data-testid="stream-panel">
+      <section
+        aria-live="polite"
+        style={{ display: "grid", gap: "0.5rem" }}
+        data-testid="stream-panel"
+      >
         <div style={{ color: "#666", fontSize: 13 }}>Streaming output…</div>
         <Block
           label="stdout"

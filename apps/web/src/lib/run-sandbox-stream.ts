@@ -45,9 +45,7 @@ export async function* runSandboxStream(
   }
 
   if (!res.ok) {
-    const body = (await res.json().catch(() => null)) as
-      | { error: string; message?: string }
-      | null;
+    const body = (await res.json().catch(() => null)) as { error: string; message?: string } | null;
     yield {
       ok: false,
       error: body?.error ?? "request_failed",

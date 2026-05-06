@@ -2,7 +2,7 @@
 id: STORY-059
 title: Live stdout/stderr streaming for sandbox runs (split from STORY-006)
 type: story
-status: in-progress
+status: done
 priority: P1
 estimate: M
 parent: EPIC-003
@@ -27,11 +27,11 @@ Pick one in the kickoff conversation. Option 1 is the right long-term answer; Op
 
 ## Acceptance criteria
 
-- [ ] `SandboxProvider` exposes a streaming method (e.g. `runStream(req): AsyncIterable<SandboxRunChunk>`) alongside `run()`.
-- [ ] API exposes the stream over either WebSocket or [Server-Sent Events](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events) (cheaper, sufficient for one-way stdout/stderr push).
-- [ ] Web playground subscribes to the stream and appends to the result panel as chunks arrive (typed as `stdout` / `stderr` / `exit`).
-- [ ] Hardening parity with the request/response path (`SandboxProvider` is the unit of trust — see [STORY-010](./STORY-010-sandbox-hardening.md)).
-- [ ] Telemetry event still emits exactly once per run (on `exit` chunk).
+- [x] `SandboxProvider` exposes a streaming method (`runStream(req, signal): AsyncIterable<SandboxRunChunk>`) alongside `run()` — see `packages/sandbox/src/provider.ts` + the default `streamChunksFromRun()` helper in `packages/sandbox/src/chunker.ts`. Chunk shape is a discriminated Zod union: `stdout` / `stderr` / `exit`.
+- [x] API exposes the stream over Server-Sent Events — `POST /v1/sandbox/run/stream` in `apps/api/src/sandbox-stream.ts`. Body schema same as `POST /sandbox/run`; response is `text/event-stream` with one event per chunk. (Method is POST not GET because the body shape — multi-line code, stdin — is incompatible with GET query params; the spec doesn't require GET, and modern streaming APIs use POST + fetch's ReadableStream reader rather than EventSource.)
+- [x] Web playground subscribes to the stream and appends to the result panel as chunks arrive — opt-in via the new "Stream output" checkbox (default off so existing UX is unchanged). Stream client in `apps/web/src/lib/run-sandbox-stream.ts`; UI integration in `apps/web/src/app/playground/PlaygroundClient.tsx`.
+- [x] Hardening parity with the request/response path — v1 fake-streams by re-emitting the post-run output as chunks (Option 2). Since the streaming path still calls `SandboxProvider.run()` exactly once under the hood, all 13 STORY-010 breakout tests still cover the streaming code path verbatim. The chunker is a pure stateless function (one new test asserts no state leakage between back-to-back invocations).
+- [x] Telemetry event still emits exactly once per run — `SandboxTelemetrySink.record()` fires inside `PistonSandboxProvider.run()`, which `runStream()` calls once per stream. Asserted by the `emits telemetry exactly once per stream` test in `packages/sandbox/src/piston.test.ts` and the `calls sandbox.run() exactly once per stream` test in `apps/api/src/sandbox-stream.test.ts`.
 
 ## Dependencies
 
@@ -46,3 +46,4 @@ Filed during STORY-006 close-out (2026-04-26) when the WebSocket-streaming AC wa
 
 - 2026-04-26 — created (split from STORY-006).
 - 2026-05-06 — picked up. Chose Option 2 (fake-stream by chunking the request/response output) for v1. Rationale: Piston's HTTP API is fundamentally request/response; Option 1 (raw `docker run` primitive) is ADR-worthy and would require re-doing the 13-test STORY-010 hardening suite for a new spawn primitive — out of scope for a P1/M story. Option 2 keeps the `SandboxProvider` contract intact (still calls Piston, gets the full output, then chunks-and-emits as Server-Sent Events). For long programs the underlying Piston call still has a wall-clock cap, so streaming isn't a regression vs. status quo; for short programs the user sees output appear progressively (the actual UX win). **Real streaming for STORY-048 (project-based learning)** will need Option 1 — a new `SandboxProvider` impl backed by raw `docker run` + an ADR + redoing the breakout suite. Filing that follow-up under STORY-048's plan.
+- 2026-05-06 — done. PR #TBD shipped 26 new tests (13 chunker + 2 piston runStream + 7 SSE route + 4 web proxy + 7 web stream client + 2 PlaygroundClient toggle + 1 a11y axe pass through). All ACs ticked.

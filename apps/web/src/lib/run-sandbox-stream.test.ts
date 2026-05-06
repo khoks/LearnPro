@@ -76,9 +76,10 @@ describe("runSandboxStream", () => {
         headers: { "content-type": "application/json" },
       }),
     );
-    const body = JSON.parse(
-      (fakeFetch.mock.calls[0]?.[1] as RequestInit).body as string,
-    ) as Record<string, unknown>;
+    const body = JSON.parse((fakeFetch.mock.calls[0]?.[1] as RequestInit).body as string) as Record<
+      string,
+      unknown
+    >;
     expect(body["language"]).toBe("python");
   });
 
@@ -131,14 +132,16 @@ describe("runSandboxStream", () => {
   });
 
   it("handles SSE blocks split across multiple network frames", async () => {
-    const fakeFetch = vi.fn().mockResolvedValue(
-      chunked(
-        'event: stdout\ndata: {"type":"stdou',
-        't","line":"x"}\n\nevent: ',
-        "exit\ndata: ",
-        '{"type":"exit","exit_code":0,"duration_ms":1,"killed_by":null,"language":"python"}\n\n',
-      ),
-    );
+    const fakeFetch = vi
+      .fn()
+      .mockResolvedValue(
+        chunked(
+          'event: stdout\ndata: {"type":"stdou',
+          't","line":"x"}\n\nevent: ',
+          "exit\ndata: ",
+          '{"type":"exit","exit_code":0,"duration_ms":1,"killed_by":null,"language":"python"}\n\n',
+        ),
+      );
     const events = await collect(
       runSandboxStream(
         { language: "python", code: "print('x')" },

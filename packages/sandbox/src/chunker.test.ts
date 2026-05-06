@@ -26,10 +26,7 @@ describe("chunksFromResponse", () => {
 
   it("preserves a trailing line that has no newline", () => {
     const chunks = chunksFromResponse(baseResponse({ stdout: "first\nlast" }));
-    expect(chunks.filter((c) => c.type === "stdout").map((c) => c.line)).toEqual([
-      "first",
-      "last",
-    ]);
+    expect(chunks.filter((c) => c.type === "stdout").map((c) => c.line)).toEqual(["first", "last"]);
   });
 
   it("preserves blank intermediate lines", () => {
