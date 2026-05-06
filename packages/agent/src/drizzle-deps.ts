@@ -18,6 +18,7 @@ import {
   updateConfidenceSignalRow,
   type LearnProDb,
 } from "@learnpro/db";
+import { gradeAgent } from "./grade.js";
 import {
   ProblemDefSchema,
   buildHarnessForProblem,
@@ -319,6 +320,30 @@ export function buildGradeDrizzleDeps(opts: BuildDrizzleAgentDepsOptions): Grade
         .set({ attempts: sql`${episodes.attempts} + 1` })
         .where(eq(episodes.id, input.episode_id));
       return { submission_id: row.id };
+    },
+    async runGraderAgent(input) {
+      // STORY-034 — split critique/grader. Wraps the pure `gradeAgent` so it sees the same LLM
+      // provider as the rest of the wiring (telemetry sink + budget gate apply uniformly).
+      return gradeAgent({
+        llm: opts.llm,
+        episode: { episode_id: input.episode_id, user_id: input.user_id },
+        code: input.user_code,
+        problem: input.problem,
+        test_results: input.test_results,
+      });
+    },
+    async persistGraderRubric(input) {
+      // STORY-034 — persist the rubric to the episode row. Idempotent per submit (re-grading the
+      // same episode just overwrites the four columns with fresh values).
+      await opts.db
+        .update(episodes)
+        .set({
+          rubric_idiomatic: input.rubric.rubric.idiomatic,
+          rubric_efficiency: input.rubric.rubric.efficiency,
+          rubric_test_coverage: input.rubric.rubric.test_coverage_thinking,
+          rubric_reasoning: input.rubric.reasoning,
+        })
+        .where(eq(episodes.id, input.episode_id));
     },
   };
 }

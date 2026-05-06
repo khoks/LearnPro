@@ -21,6 +21,7 @@ export type {
   GiveHintDeps,
   GradeDeps,
   GradeRubric,
+  GraderAgentRubric,
   HiddenTestResult,
   HintEpisodeContext,
   GradeEpisodeContext,
@@ -64,6 +65,7 @@ export {
   GradeInputSchema,
   GradeOutputSchema,
   GradeRubricSchema,
+  GraderAgentRubricSchema,
   aggregatePassed,
   clampRubric,
   createGradeTool,
@@ -89,9 +91,12 @@ export {
 } from "./grade.js";
 
 export {
+  GRADER_BONUS_CLAMP,
+  GRADER_BONUS_PER_DIMENSION,
   UpdateProfileEpisodeMissingError,
   UpdateProfileInputSchema,
   UpdateProfileOutputSchema,
+  applyGraderBonus,
   coldStartSkill,
   createUpdateProfileTool,
   deriveFinalOutcome,

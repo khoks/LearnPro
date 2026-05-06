@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { GradeDeps, GradeRubric, HiddenTestResult } from "../ports.js";
+import type { GradeDeps, GradeRubric, GraderAgentRubric, HiddenTestResult } from "../ports.js";
 import { EpisodeNotFoundError } from "./give-hint.js";
 
 export const GradeInputSchema = z.object({
@@ -12,6 +12,25 @@ export const GradeRubricSchema = z.object({
   correctness: z.number().min(0).max(1),
   idiomatic: z.number().min(0).max(1),
   edge_case_coverage: z.number().min(0).max(1),
+});
+
+// STORY-034 — split critique/grader agent rubric. Surfaced on GradeOutput when the grader is
+// wired so the tutor's commentary phase + the persisted episode row can both reference it.
+export const GraderAgentRubricSchema = z.object({
+  pass: z.boolean(),
+  rubric: z.object({
+    idiomatic: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4), z.literal(5)]),
+    efficiency: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4), z.literal(5)]),
+    test_coverage_thinking: z.union([
+      z.literal(1),
+      z.literal(2),
+      z.literal(3),
+      z.literal(4),
+      z.literal(5),
+    ]),
+  }),
+  reasoning: z.string().min(1),
+  fallback_used: z.boolean(),
 });
 
 export const GradeOutputSchema = z.object({
@@ -29,6 +48,10 @@ export const GradeOutputSchema = z.object({
   prose_explanation: z.string().min(1),
   submission_id: z.string().uuid(),
   runtime_ms: z.number().int().min(0),
+  // STORY-034 — null when the grader isn't wired (e.g. unit tests, the unified-tutor fallback,
+  // or operator opt-out). Optional on construction so legacy fixtures don't need updating; the
+  // tool always sets it (null or rubric) on the runtime path.
+  grader: GraderAgentRubricSchema.nullable().optional(),
 });
 export type GradeOutput = z.infer<typeof GradeOutputSchema>;
 
@@ -89,6 +112,36 @@ export function createGradeTool(opts: CreateGradeToolOptions): GradeTool {
         test_results,
       });
 
+      // STORY-034 — split critique/grader agent. Runs AFTER tests-as-floor + AFTER the legacy
+      // unified rubric (so an A/B comparison stays tractable: both rubrics persist for the same
+      // submission). Best-effort: a grader hiccup falls through to `grader = null` and the
+      // submission still records — never block the user on the grader.
+      let grader: GraderAgentRubric | null = null;
+      if (opts.deps.runGraderAgent) {
+        try {
+          grader = await opts.deps.runGraderAgent({
+            episode_id: input.episode_id,
+            user_id: ctx.user_id,
+            org_id: ctx.org_id,
+            problem: ctx.problem,
+            user_code: input.code,
+            test_results,
+          });
+        } catch {
+          grader = null;
+        }
+      }
+      if (grader && opts.deps.persistGraderRubric) {
+        try {
+          await opts.deps.persistGraderRubric({
+            episode_id: input.episode_id,
+            rubric: grader,
+          });
+        } catch {
+          // intentional: rubric persistence is best-effort; never fail the close.
+        }
+      }
+
       const submission = await opts.deps.recordSubmission({
         episode_id: input.episode_id,
         user_id: ctx.user_id,
@@ -105,6 +158,7 @@ export function createGradeTool(opts: CreateGradeToolOptions): GradeTool {
         prose_explanation,
         submission_id: submission.submission_id,
         runtime_ms,
+        grader,
       };
     },
   };
