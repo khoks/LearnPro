@@ -75,6 +75,20 @@ export {
 } from "./tools/grade.js";
 
 export {
+  GradeAgentResultSchema,
+  GraderRubricSchema,
+  RubricScoreSchema,
+  gradeAgent,
+  parseGraderResponse,
+  summarizeFailing as summarizeFailingForGrader,
+  type GradeAgentEpisode,
+  type GradeAgentInput,
+  type GradeAgentResult,
+  type GraderRubric,
+  type RubricScore,
+} from "./grade.js";
+
+export {
   UpdateProfileEpisodeMissingError,
   UpdateProfileInputSchema,
   UpdateProfileOutputSchema,
