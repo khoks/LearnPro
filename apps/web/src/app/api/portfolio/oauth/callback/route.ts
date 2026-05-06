@@ -8,7 +8,6 @@ import {
   exchangeCodeForToken,
   fetchGithubUser,
   PORTFOLIO_OAUTH_SCOPE,
-  PORTFOLIO_PROVIDER_ID,
   readEnvOrThrow,
   readStateCookie,
   verifyState,
@@ -87,10 +86,15 @@ export async function GET(request: Request): Promise<Response> {
     return redirectTo("/settings/portfolio?status=user_lookup_failed", buildClearStateCookie());
   }
 
+  // We store `providerAccountId = login` (rather than the numeric id) on this row so the API's
+  // portfolio push routes can use it directly as the GitHub `:owner` URL segment without a
+  // second user-lookup. Distinct from NextAuth's auth-only `github` provider which keeps the
+  // numeric id — different provider, different conventions, no conflict on the (provider,
+  // providerAccountId) PK.
   await upsertPortfolioAccount({
     db: getAuthDb(),
     user_id: session.user.id,
-    providerAccountId: String(ghUser.id),
+    providerAccountId: ghUser.login,
     access_token: token.access_token,
     scope: token.scope,
     token_type: token.token_type,
@@ -110,6 +114,3 @@ function redirectTo(path: string, clearCookie: string | null): Response {
   return new NextResponse(null, { status: 302, headers: responseHeaders });
 }
 
-// Re-export the provider id so the route handler stays import-light. (Currently unused; kept
-// to make the linkage between oauth.ts and the route discoverable.)
-export const _PROVIDER_ID = PORTFOLIO_PROVIDER_ID;

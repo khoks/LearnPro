@@ -50,6 +50,9 @@ importers:
       '@learnpro/notifications':
         specifier: workspace:*
         version: link:../../packages/notifications
+      '@learnpro/portfolio':
+        specifier: workspace:*
+        version: link:../../packages/portfolio
       '@learnpro/problems':
         specifier: workspace:*
         version: link:../../packages/problems

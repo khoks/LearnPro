@@ -19,6 +19,7 @@
     "@learnpro/db": "workspace:^",
     "@learnpro/llm": "workspace:*",
     "@learnpro/notifications": "workspace:*",
+    "@learnpro/portfolio": "workspace:*",
     "@learnpro/problems": "workspace:*",
     "@learnpro/profile": "workspace:*",
     "@learnpro/prompts": "workspace:*",
