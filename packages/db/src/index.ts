@@ -46,6 +46,13 @@ export {
   type ExportUserDataOptions,
 } from "./data-export.js";
 export {
+  DumpEnvelopeSchema,
+  importDump,
+  type DumpEnvelope,
+  type ImportDumpOptions,
+  type ImportDumpResult,
+} from "./data-import.js";
+export {
   deleteUserAccount,
   deleteUserVoiceTranscripts,
   getUserDataSummary,
