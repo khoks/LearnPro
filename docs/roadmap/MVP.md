@@ -4,26 +4,26 @@
 
 ---
 
-## Status: substantially complete (2026-05-05)
+## Status: demoable (2026-05-05)
 
-The MVP single learning loop runs end-to-end at both the API and UI layers:
+**All 6 done criteria below are satisfied.** The MVP single learning loop runs end-to-end at both the API and UI layers, and is exercised by an automated test (STORY-063).
 
 - Auth (STORY-005), conversational onboarding (STORY-053), career-aware recommendation (STORY-021).
 - Tutor agent + 4 tools + 4 routes (STORY-011), session UI (STORY-062), 3-rung hint ladder (STORY-017).
 - Sandbox runners (STORY-007 / STORY-008) + hardened (STORY-010); Python (STORY-019) + TypeScript (STORY-020) tracks; 60+ curated problems with hidden tests (STORY-016).
 - Heuristic difficulty (STORY-018); XP / streak / per-track progress (STORY-022); session plan agent (STORY-015).
+- Adaptive autonomy controller (STORY-054).
 - Notifications (STORY-023) + quiet hours (STORY-024); responsive web (STORY-025); a11y baseline (STORY-027); GDPR export (STORY-026); data retention + PII redaction (STORY-056).
 - Cost telemetry + budget (STORY-012 / STORY-060); rich interaction telemetry (STORY-055).
-
-**Remaining MVP P0 work**:
-
-- STORY-054 (adaptive autonomy controller) — in flight.
+- **End-to-end test of the loop (STORY-063)** — `apps/api/src/e2e/mvp-loop.e2e.test.ts`, gated on `LEARNPRO_E2E=1`, runs via `pnpm e2e`.
 
 **Demo path (operator)**:
 
 1. `docker compose -f infra/docker/docker-compose.dev.yaml up -d` (Postgres + Piston + Redis + MinIO)
 2. `pnpm install && pnpm --filter @learnpro/db db:migrate && pnpm --filter @learnpro/db db:seed`
 3. `pnpm dev` — visit <http://localhost:3000>, sign in via magic link (link logs to API stdout when `EMAIL_SERVER` is unset), complete onboarding, accept a recommended track, do a session.
+
+**Verify the loop programmatically**: `pnpm e2e` (boots a dedicated Postgres container on port 5433, applies migrations, runs the gated end-to-end test, reports pass/fail).
 
 The remainder of this file is the original MVP scope contract — kept verbatim as a check against scope creep. Section 5's "Definition of MVP done" remains the gate.
 
