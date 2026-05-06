@@ -4,6 +4,7 @@ import * as React from "react";
 import { useCallback, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import type { SandboxLanguage, SandboxRunResponse } from "@learnpro/sandbox";
+import { OfflineBanner } from "../../components/pwa/OfflineBanner";
 import { StatusBadge } from "../../components/status-badge";
 import { runSandbox, type RunSandboxResult } from "../../lib/run-sandbox";
 import { useInteractionCapture, type MonacoLikeEditor } from "../../lib/use-interaction-capture";
@@ -89,6 +90,7 @@ export function PlaygroundClient() {
 
   return (
     <div style={{ display: "grid", gap: "1rem" }}>
+      <OfflineBanner />
       <div
         data-testid="playground-controls"
         data-breakpoint={breakpoint}

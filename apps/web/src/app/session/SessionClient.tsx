@@ -4,6 +4,7 @@ import * as React from "react";
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import type { HintRung } from "@learnpro/agent";
+import { OfflineBanner } from "../../components/pwa/OfflineBanner";
 import { runSandbox, type RunSandboxResult } from "../../lib/run-sandbox";
 import { useInteractionCapture, type MonacoLikeEditor } from "../../lib/use-interaction-capture";
 import { useViewportSize } from "../../lib/use-viewport-size";
@@ -236,30 +237,33 @@ export function SessionClient({ trackId }: SessionClientProps) {
   }, []);
 
   return (
-    <SessionLayout
-      planSidebar={
-        <SessionPlanSidebar
-          state={planState}
-          onSkip={() => planDispatch({ type: "skip" })}
-          onRetry={loadOrCreatePlan}
+    <>
+      <OfflineBanner />
+      <SessionLayout
+        planSidebar={
+          <SessionPlanSidebar
+            state={planState}
+            onSkip={() => planDispatch({ type: "skip" })}
+            onRetry={loadOrCreatePlan}
+          />
+        }
+      >
+        <SessionView
+          state={state}
+          code={code}
+          onCodeChange={setCode}
+          onEditorMount={onEditorMount}
+          runResult={runResult}
+          running={running}
+          onRun={onRun}
+          onSubmit={onSubmit}
+          onRequestHint={onRequestHint}
+          onFinish={onFinish}
+          onNext={onNext}
+          onDismissError={() => dispatch({ type: "dismiss_error" })}
         />
-      }
-    >
-      <SessionView
-        state={state}
-        code={code}
-        onCodeChange={setCode}
-        onEditorMount={onEditorMount}
-        runResult={runResult}
-        running={running}
-        onRun={onRun}
-        onSubmit={onSubmit}
-        onRequestHint={onRequestHint}
-        onFinish={onFinish}
-        onNext={onNext}
-        onDismissError={() => dispatch({ type: "dismiss_error" })}
-      />
-    </SessionLayout>
+      </SessionLayout>
+    </>
   );
 }
 
