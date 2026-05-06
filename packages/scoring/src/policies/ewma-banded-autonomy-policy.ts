@@ -50,9 +50,24 @@ export interface AutonomyDecisionInput {
   action: { consequence: ActionConsequence; kind?: string };
   user_id: string;
   episode_count: number;
+  // Optional episode_id propagated to the telemetry hook. When the autonomy decision happens
+  // mid-episode (proactive-hint / auto-set-final-outcome), the consumer passes it; the harness's
+  // session has the episode_id stored so this lookup is free.
+  episode_id?: string;
 }
 
 export type GetConfidenceSignalFn = (user_id: string) => Promise<ConfidenceSignal | null>;
+
+// Optional hook for downstream telemetry — the API layer wires this to write an
+// `autonomy_decision` row to the `interactions` table (STORY-055's existing event type). The
+// hook's failure shouldn't fail the decision; consumers wrap in try/catch.
+export type AutonomyDecisionTelemetryHook = (record: {
+  user_id: string;
+  episode_id: string | null;
+  decision: AutonomyBandedDecision;
+  action: { consequence: ActionConsequence; kind?: string };
+  decided_at: Date;
+}) => Promise<void> | void;
 
 // Async variant of `AutonomyPolicy` — the EWMA implementation has to load the per-user signal
 // from the DB. We don't extend AutonomyPolicy directly because that interface (from STORY-057) is
@@ -67,21 +82,28 @@ export class EwmaBandedAutonomyPolicy implements AsyncAutonomyPolicy {
   private readonly config: EwmaBandedAutonomyConfig;
   private readonly telemetry: PolicyTelemetrySink;
   private readonly getSignal: GetConfidenceSignalFn;
+  private readonly onDecision: AutonomyDecisionTelemetryHook | undefined;
 
   constructor(opts: {
     config?: EwmaBandedAutonomyConfig;
     telemetry?: PolicyTelemetrySink;
     getSignal: GetConfidenceSignalFn;
+    // STORY-054 — optional sink that writes an `autonomy_decision` row to the `interactions`
+    // table. When unwired, decisions still emit through the in-memory `PolicyTelemetrySink` for
+    // local audit but are not persisted.
+    onDecision?: AutonomyDecisionTelemetryHook;
   }) {
     this.config = opts.config ?? DEFAULT_EWMA_BANDED_AUTONOMY_CONFIG;
     this.telemetry = opts.telemetry ?? new NullPolicyTelemetrySink();
     this.getSignal = opts.getSignal;
+    this.onDecision = opts.onDecision;
   }
 
   async decide(input: AutonomyDecisionInput): Promise<AutonomyBandedDecision> {
     const signal = await this.getSignal(input.user_id);
     const decision = this.computeDecision(signal, input);
 
+    const decided_at = new Date();
     this.telemetry.record({
       policy: "autonomy",
       implementation: this.name,
@@ -92,8 +114,22 @@ export class EwmaBandedAutonomyPolicy implements AsyncAutonomyPolicy {
         signal_present: signal !== null,
       }),
       output_digest: digest(decision),
-      decided_at: new Date().toISOString(),
+      decided_at: decided_at.toISOString(),
     });
+
+    if (this.onDecision) {
+      try {
+        await this.onDecision({
+          user_id: input.user_id,
+          episode_id: input.episode_id ?? null,
+          decision,
+          action: input.action,
+          decided_at,
+        });
+      } catch {
+        // intentional swallow: telemetry is fire-and-forget; never fail the decision on a sink hiccup.
+      }
+    }
 
     return decision;
   }

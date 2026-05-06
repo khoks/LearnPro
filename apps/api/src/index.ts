@@ -58,6 +58,7 @@ import { registerDataControlsRoutes, type DataControlsAdapters } from "./data-co
 import { buildWebPushSender, configureVapid, type WebPushConfig } from "./notifications-vapid.js";
 import { registerNotificationsRoutes } from "./notifications.js";
 import { registerQuietHoursRoutes } from "./quiet-hours.js";
+import { registerAutonomyRoutes } from "./autonomy.js";
 import { registerOnboardingRoute, type OnboardingProfileWriter } from "./onboarding.js";
 import { MemoryRateLimiter, type RateLimiter } from "./rate-limiter.js";
 import { buildSessionResolver, type SessionResolver } from "./session.js";
@@ -120,6 +121,10 @@ export interface BuildServerOptions {
   // /v1/settings/quiet-hours; tests inject a fake DB. Production wiring shares the same `db`
   // instance the dispatcher uses (via `defaultsFromEnv()`).
   quietHoursDb?: import("@learnpro/db").LearnProDb;
+  // STORY-054 — DB handle for the `GET /v1/autonomy/state` route. When supplied, registers the
+  // route; tests inject a fake DB. Production wiring shares the same `db` instance the rest of
+  // the API uses (via `defaultsFromEnv()`).
+  autonomyDb?: import("@learnpro/db").LearnProDb;
   // STORY-056 — PII redactor. Wired into every free-text ingestion path: voice transcripts on
   // POST /v1/interactions, user + LLM messages on POST /v1/onboarding/turn, code submissions on
   // POST /v1/tutor/episodes/:id/submit. Tests inject `inertRedactor`; production wires
@@ -347,6 +352,11 @@ export function buildServer(opts: BuildServerOptions = {}) {
     registerQuietHoursRoutes(app, { db: opts.quietHoursDb, sessionResolver });
   }
 
+  // STORY-054 — autonomy state route. Same wiring pattern as quiet-hours.
+  if (opts.autonomyDb) {
+    registerAutonomyRoutes(app, { db: opts.autonomyDb, sessionResolver });
+  }
+
   // STORY-060 deferred AC — friendly 429 mapping for the per-user daily token budget. Any handler
   // that calls into the LLM provider can throw `TokenBudgetExceededError`; this hook catches it
   // before Fastify's default 500 path so the playground can render the friendly message AC from
@@ -381,6 +391,7 @@ function defaultsFromEnv(): {
   notifications?: BuildServerOptions["notifications"];
   sessionPlanFactory?: SessionPlanFactory;
   quietHoursDb?: import("@learnpro/db").LearnProDb;
+  autonomyDb?: import("@learnpro/db").LearnProDb;
   redactor?: PiiRedactor;
   dataControls?: DataControlsAdapters;
 } {
@@ -443,6 +454,7 @@ function defaultsFromEnv(): {
     },
     sessionPlanFactory: buildDefaultSessionPlanFactory({ db, llm }),
     quietHoursDb: db,
+    autonomyDb: db,
     redactor: buildDefaultRedactor({ llm }),
     dataControls: {
       summary: (user_id) => getUserDataSummary(db, user_id),

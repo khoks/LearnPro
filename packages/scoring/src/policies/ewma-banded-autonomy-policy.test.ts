@@ -546,6 +546,62 @@ describe("EwmaBandedAutonomyPolicy", () => {
     expect(d.rationale.toLowerCase()).toContain("cold-start");
   });
 
+  it("calls the onDecision telemetry hook on every decision", async () => {
+    const calls: Array<{ user_id: string; band: string; decision: string }> = [];
+    const policy = new EwmaBandedAutonomyPolicy({
+      getSignal: constSignalGetter(null),
+      onDecision: ({ user_id, decision }) => {
+        calls.push({ user_id, band: decision.band, decision: decision.decision });
+      },
+    });
+    await policy.decide({
+      action: { consequence: "trivial" },
+      user_id: "u1",
+      episode_count: 0,
+    });
+    await policy.decide({
+      action: { consequence: "disruptive" },
+      user_id: "u2",
+      episode_count: 0,
+    });
+    expect(calls).toEqual([
+      { user_id: "u1", band: "low", decision: "ask" },
+      { user_id: "u2", band: "low", decision: "ask_freeform" },
+    ]);
+  });
+
+  it("a throwing onDecision hook is swallowed (decision still returns)", async () => {
+    const policy = new EwmaBandedAutonomyPolicy({
+      getSignal: constSignalGetter(null),
+      onDecision: () => {
+        throw new Error("simulated sink outage");
+      },
+    });
+    const d = await policy.decide({
+      action: { consequence: "trivial" },
+      user_id: "u1",
+      episode_count: 0,
+    });
+    expect(d.band).toBe("low");
+  });
+
+  it("propagates episode_id from the input to the telemetry hook", async () => {
+    const calls: Array<{ episode_id: string | null }> = [];
+    const policy = new EwmaBandedAutonomyPolicy({
+      getSignal: constSignalGetter(null),
+      onDecision: ({ episode_id }) => {
+        calls.push({ episode_id });
+      },
+    });
+    await policy.decide({
+      action: { consequence: "trivial" },
+      user_id: "u1",
+      episode_count: 0,
+      episode_id: "33333333-3333-4333-8333-333333333333",
+    });
+    expect(calls[0]?.episode_id).toBe("33333333-3333-4333-8333-333333333333");
+  });
+
   it("rationale includes the score for non-cold-start decisions", async () => {
     const signal: ConfidenceSignal = {
       agreement_rate: 0.4,
