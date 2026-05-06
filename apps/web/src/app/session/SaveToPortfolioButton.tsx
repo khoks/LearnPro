@@ -167,8 +167,8 @@ export function SaveToPortfolioButton(
               Save to portfolio
             </h2>
             <p style={{ margin: 0, fontSize: "0.9rem", color: "#555" }}>
-              We&apos;ll commit a README plus your solution to your portfolio repo. Edit the
-              README below, or leave it blank to use the default template.
+              We&apos;ll commit a README plus your solution to your portfolio repo. Edit the README
+              below, or leave it blank to use the default template.
             </p>
             <textarea
               data-testid="save-to-portfolio-readme"

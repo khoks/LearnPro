@@ -190,9 +190,9 @@ describe("state cookie helpers", () => {
   });
 
   it("readStateCookie pulls the state value out of a multi-cookie header", () => {
-    expect(
-      readStateCookie(`other=x; ${PORTFOLIO_STATE_COOKIE}=abc.def; another=y`),
-    ).toBe("abc.def");
+    expect(readStateCookie(`other=x; ${PORTFOLIO_STATE_COOKIE}=abc.def; another=y`)).toBe(
+      "abc.def",
+    );
   });
 });
 
@@ -224,11 +224,12 @@ describe("exchangeCodeForToken", () => {
   });
 
   it("throws when GitHub returns an error JSON shape", async () => {
-    const fetchImpl = vi.fn(async () =>
-      new Response(JSON.stringify({ error: "bad_verification_code" }), {
-        status: 200,
-        headers: { "content-type": "application/json" },
-      }),
+    const fetchImpl = vi.fn(
+      async () =>
+        new Response(JSON.stringify({ error: "bad_verification_code" }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        }),
     );
     await expect(
       exchangeCodeForToken({
@@ -245,9 +246,7 @@ describe("exchangeCodeForToken", () => {
   });
 
   it("throws on a non-2xx HTTP response", async () => {
-    const fetchImpl = vi.fn(async () =>
-      new Response("Server error", { status: 500 }),
-    );
+    const fetchImpl = vi.fn(async () => new Response("Server error", { status: 500 }));
     await expect(
       exchangeCodeForToken({
         code: "abc",
@@ -265,32 +264,34 @@ describe("exchangeCodeForToken", () => {
 
 describe("fetchGithubUser", () => {
   it("returns id + login on success", async () => {
-    const fetchImpl = vi.fn(async () =>
-      new Response(JSON.stringify({ id: 42, login: "octocat" }), {
-        status: 200,
-        headers: { "content-type": "application/json" },
-      }),
+    const fetchImpl = vi.fn(
+      async () =>
+        new Response(JSON.stringify({ id: 42, login: "octocat" }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        }),
     );
     const out = await fetchGithubUser("ghu_xxx", fetchImpl as unknown as typeof fetch);
     expect(out).toEqual({ id: 42, login: "octocat" });
   });
 
   it("throws when the response shape is invalid", async () => {
-    const fetchImpl = vi.fn(async () =>
-      new Response(JSON.stringify({ id: "not-a-number" }), {
-        status: 200,
-        headers: { "content-type": "application/json" },
-      }),
+    const fetchImpl = vi.fn(
+      async () =>
+        new Response(JSON.stringify({ id: "not-a-number" }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        }),
     );
-    await expect(
-      fetchGithubUser("t", fetchImpl as unknown as typeof fetch),
-    ).rejects.toThrow(/oauth_user_lookup_invalid_shape/);
+    await expect(fetchGithubUser("t", fetchImpl as unknown as typeof fetch)).rejects.toThrow(
+      /oauth_user_lookup_invalid_shape/,
+    );
   });
 
   it("throws on non-2xx HTTP", async () => {
     const fetchImpl = vi.fn(async () => new Response("Bad creds", { status: 401 }));
-    await expect(
-      fetchGithubUser("t", fetchImpl as unknown as typeof fetch),
-    ).rejects.toThrow(/oauth_user_lookup_failed_401/);
+    await expect(fetchGithubUser("t", fetchImpl as unknown as typeof fetch)).rejects.toThrow(
+      /oauth_user_lookup_failed_401/,
+    );
   });
 });

@@ -1,9 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import {
-  GitHubPortfolioClient,
-  GitHubPortfolioError,
-  type FetchLike,
-} from "./github-client.js";
+import { GitHubPortfolioClient, GitHubPortfolioError, type FetchLike } from "./github-client.js";
 
 // STORY-040 — `vi.fn()`-driven tests for the hand-rolled GitHub REST client. We mock `fetch`
 // directly so no network ever fires and we can assert exact request shapes.
@@ -201,9 +197,7 @@ describe("pushFile", () => {
   });
 
   it("URL-encodes path segments but preserves slashes (so 'a b/c' becomes 'a%20b/c')", async () => {
-    const fetchImpl = vi.fn<FetchLike>(async () =>
-      fakeJsonResponse(201, { commit: { sha: "x" } }),
-    );
+    const fetchImpl = vi.fn<FetchLike>(async () => fakeJsonResponse(201, { commit: { sha: "x" } }));
     const client = new GitHubPortfolioClient({ token: TOKEN, fetch: fetchImpl });
     await client.pushFile("octocat", "p", "a b/c d.txt", "hi", "Msg");
     const call = fetchImpl.mock.calls[0];

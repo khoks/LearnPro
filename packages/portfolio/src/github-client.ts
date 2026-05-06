@@ -184,9 +184,7 @@ interface PutContentsBody {
 }
 
 async function readCommitSha(res: Response): Promise<string> {
-  const json = (await res.json().catch(() => null)) as
-    | { commit?: { sha?: unknown } }
-    | null;
+  const json = (await res.json().catch(() => null)) as { commit?: { sha?: unknown } } | null;
   const sha = json?.commit?.sha;
   if (typeof sha !== "string" || sha.length === 0) {
     throw new GitHubPortfolioError(
@@ -201,11 +199,7 @@ async function readCommitSha(res: Response): Promise<string> {
 async function toError(label: string, res: Response): Promise<GitHubPortfolioError> {
   const body = await res.text().catch(() => "");
   const trimmed = body.length > 500 ? `${body.slice(0, 500)}…` : body;
-  return new GitHubPortfolioError(
-    `${label} failed (HTTP ${res.status})`,
-    res.status,
-    trimmed,
-  );
+  return new GitHubPortfolioError(`${label} failed (HTTP ${res.status})`, res.status, trimmed);
 }
 
 function requireSegment(value: string, label: string): void {

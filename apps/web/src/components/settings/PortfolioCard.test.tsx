@@ -93,9 +93,7 @@ describe("PortfolioCard — connected state", () => {
     const out = renderConnected();
     expect(out).toContain('data-testid="portfolio-auto-push-toggle"');
     // Unchecked checkbox — no `checked` attribute on the input.
-    expect(out).not.toMatch(
-      /<input[^>]*data-testid="portfolio-auto-push-toggle"[^>]*checked/,
-    );
+    expect(out).not.toMatch(/<input[^>]*data-testid="portfolio-auto-push-toggle"[^>]*checked/);
   });
 
   it("renders the auto-push toggle as checked when the state has auto_push: true", () => {
@@ -143,9 +141,7 @@ describe("PortfolioCard — OAuth status banner", () => {
   });
 
   it("shows a coach-voice 'no worries' banner when the user denies on GitHub", () => {
-    const out = renderToStaticMarkup(
-      <PortfolioCard loadOnMount={false} oauthStatus="denied" />,
-    );
+    const out = renderToStaticMarkup(<PortfolioCard loadOnMount={false} oauthStatus="denied" />);
     expect(out).toContain('data-testid="portfolio-oauth-banner"');
     expect(out).toContain('data-status="denied"');
     expect(out).toContain("No worries");

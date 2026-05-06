@@ -506,9 +506,7 @@ describe("schema: github portfolio (STORY-040)", () => {
 
   it("portfolio_pushes declares (user_id, episode_id) unique index for idempotent re-push", () => {
     const config = getTableConfig(portfolio_pushes);
-    const uniq = config.indexes.find(
-      (i) => i.config.name === "portfolio_pushes_user_episode_uniq",
-    );
+    const uniq = config.indexes.find((i) => i.config.name === "portfolio_pushes_user_episode_uniq");
     expect(uniq, "portfolio_pushes (user_id, episode_id) unique index missing").toBeDefined();
     expect(uniq?.config.unique).toBe(true);
   });

@@ -113,4 +113,3 @@ function redirectTo(path: string, clearCookie: string | null): Response {
   if (clearCookie) responseHeaders.append("set-cookie", clearCookie);
   return new NextResponse(null, { status: 302, headers: responseHeaders });
 }
-

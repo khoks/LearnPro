@@ -33,8 +33,8 @@ export default async function SettingsPortfolioPage(
       <header style={{ marginBottom: "1.5rem" }}>
         <h1 style={{ margin: 0 }}>Portfolio</h1>
         <p style={{ margin: "0.5rem 0 0", color: "#555" }}>
-          Save your passing solutions to a public GitHub repo. The work is yours, hosted on
-          your account.
+          Save your passing solutions to a public GitHub repo. The work is yours, hosted on your
+          account.
         </p>
       </header>
       <PortfolioCard

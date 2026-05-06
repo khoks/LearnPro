@@ -50,10 +50,11 @@ export async function deletePortfolioAccount(opts: {
   return { deleted: rows.length };
 }
 
-export async function getPortfolioAccount(opts: {
-  db: LearnProDb;
-  user_id: string;
-}): Promise<{ providerAccountId: string; access_token: string | null; scope: string | null } | null> {
+export async function getPortfolioAccount(opts: { db: LearnProDb; user_id: string }): Promise<{
+  providerAccountId: string;
+  access_token: string | null;
+  scope: string | null;
+} | null> {
   const rows = await opts.db
     .select({
       providerAccountId: accounts.providerAccountId,

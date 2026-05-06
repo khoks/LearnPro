@@ -223,10 +223,7 @@ export function PortfolioCard(props: PortfolioCardProps = {}): React.ReactElemen
           style={{
             padding: "0.5rem 0.75rem",
             background: props.oauthStatus === "connected" ? "#e7f5ed" : "#fff7ed",
-            border:
-              props.oauthStatus === "connected"
-                ? "1px solid #a3d8b6"
-                : "1px solid #f4cba1",
+            border: props.oauthStatus === "connected" ? "1px solid #a3d8b6" : "1px solid #f4cba1",
             borderRadius: 6,
             fontSize: "0.9rem",
           }}
@@ -277,9 +274,9 @@ function DisconnectedView({
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
       <p style={HELP_STYLE} data-testid="portfolio-scope-disclosure">
-        This grants the <code>repo</code> scope so we can create a repository on your account
-        and commit your solutions. We push only to the <code>learnpro-portfolio</code> repo
-        unless you change the name in settings. You can revoke access on GitHub any time.
+        This grants the <code>repo</code> scope so we can create a repository on your account and
+        commit your solutions. We push only to the <code>learnpro-portfolio</code> repo unless you
+        change the name in settings. You can revoke access on GitHub any time.
       </p>
       <div style={ROW_STYLE}>
         <button

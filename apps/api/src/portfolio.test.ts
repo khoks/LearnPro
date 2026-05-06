@@ -27,8 +27,7 @@ vi.mock("@learnpro/db", async (importOriginal) => {
       getEpisodeForPush(...a),
     getPortfolioSettings: (...a: Parameters<typeof actual.getPortfolioSettings>) =>
       getPortfolioSettings(...a),
-    listRecentPushes: (...a: Parameters<typeof actual.listRecentPushes>) =>
-      listRecentPushes(...a),
+    listRecentPushes: (...a: Parameters<typeof actual.listRecentPushes>) => listRecentPushes(...a),
     recordPush: (...a: Parameters<typeof actual.recordPush>) => recordPush(...a),
     updatePortfolioSettings: (...a: Parameters<typeof actual.updatePortfolioSettings>) =>
       updatePortfolioSettings(...a),
@@ -65,10 +64,7 @@ interface FakeClient {
   pushFile: ReturnType<typeof vi.fn>;
 }
 
-function buildApp(opts: {
-  sessionResolver?: SessionResolver;
-  buildClient?: () => FakeClient;
-}) {
+function buildApp(opts: { sessionResolver?: SessionResolver; buildClient?: () => FakeClient }) {
   const builder = opts.buildClient ?? (() => fakeClient());
   return buildServer({
     sessionResolver: opts.sessionResolver ?? NULL_SESSION,

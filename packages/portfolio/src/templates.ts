@@ -5,8 +5,7 @@ export const DEFAULT_REPO_NAME = "learnpro-portfolio";
 
 // Optional footer line — gated on the include_back_link flag (AC #3 says off by default).
 // We never auto-link from the user's portfolio back into LearnPro. Their repo is theirs.
-export const README_FOOTER_BACKLINK =
-  "Worked through this on [LearnPro](https://learnpro.dev).";
+export const README_FOOTER_BACKLINK = "Worked through this on [LearnPro](https://learnpro.dev).";
 
 const LANGUAGE_LABELS: Record<"python" | "typescript", string> = {
   python: "Python",

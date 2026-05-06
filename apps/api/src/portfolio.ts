@@ -58,23 +58,17 @@ export interface PortfolioRouteOptions {
   // returned by connect-init. Defaults to NEXTAUTH_URL or http://localhost:3000.
   webBaseUrl?: string;
   // Inject a fake GitHub client constructor in tests so no network ever fires.
-  buildClient?: (token: string) => Pick<
-    GitHubPortfolioClient,
-    "ensureRepoExists" | "pushFile"
-  >;
+  buildClient?: (token: string) => Pick<GitHubPortfolioClient, "ensureRepoExists" | "pushFile">;
 }
 
-export function registerPortfolioRoutes(
-  app: FastifyInstance,
-  opts: PortfolioRouteOptions,
-): void {
+export function registerPortfolioRoutes(app: FastifyInstance, opts: PortfolioRouteOptions): void {
   const { db, sessionResolver } = opts;
   const webBaseUrl = (
-    opts.webBaseUrl ?? process.env["NEXTAUTH_URL"] ?? "http://localhost:3000"
+    opts.webBaseUrl ??
+    process.env["NEXTAUTH_URL"] ??
+    "http://localhost:3000"
   ).replace(/\/+$/, "");
-  const buildClient =
-    opts.buildClient ??
-    ((token: string) => new GitHubPortfolioClient({ token }));
+  const buildClient = opts.buildClient ?? ((token: string) => new GitHubPortfolioClient({ token }));
 
   app.get("/v1/portfolio/state", async (req, reply) => {
     const session = await sessionResolver(req);
@@ -105,9 +99,7 @@ export function registerPortfolioRoutes(
   app.post("/v1/portfolio/connect-init", async (req, reply) => {
     const session = await sessionResolver(req);
     if (!session) return reply.code(401).send({ error: "unauthorized" });
-    return reply
-      .code(200)
-      .send({ start_url: `${webBaseUrl}/api/portfolio/oauth/start` });
+    return reply.code(200).send({ start_url: `${webBaseUrl}/api/portfolio/oauth/start` });
   });
 
   app.post("/v1/portfolio/disconnect", async (req, reply) => {
@@ -116,10 +108,7 @@ export function registerPortfolioRoutes(
     const deleted = await db
       .delete(accounts)
       .where(
-        and(
-          eq(accounts.userId, session.user_id),
-          eq(accounts.provider, PORTFOLIO_PROVIDER_ID),
-        ),
+        and(eq(accounts.userId, session.user_id), eq(accounts.provider, PORTFOLIO_PROVIDER_ID)),
       )
       .returning({ id: accounts.providerAccountId });
     return reply.code(200).send({ ok: true, deleted: deleted.length });
@@ -130,9 +119,7 @@ export function registerPortfolioRoutes(
     if (!session) return reply.code(401).send({ error: "unauthorized" });
     const parsed = SettingsBodySchema.safeParse(req.body);
     if (!parsed.success) {
-      return reply
-        .code(400)
-        .send({ error: "invalid_request", issues: parsed.error.issues });
+      return reply.code(400).send({ error: "invalid_request", issues: parsed.error.issues });
     }
     if (parsed.data.repo === undefined && parsed.data.auto_push === undefined) {
       return reply
@@ -158,9 +145,7 @@ export function registerPortfolioRoutes(
 
     const parsed = PushBodySchema.safeParse(req.body);
     if (!parsed.success) {
-      return reply
-        .code(400)
-        .send({ error: "invalid_request", issues: parsed.error.issues });
+      return reply.code(400).send({ error: "invalid_request", issues: parsed.error.issues });
     }
 
     const tokenRow = await lookupPortfolioToken(db, session.user_id);
@@ -183,8 +168,7 @@ export function registerPortfolioRoutes(
     }
 
     const settings = await getPortfolioSettings(db, session.user_id);
-    const repoName =
-      sanitizeRepoName(settings.github_portfolio_repo) ?? DEFAULT_REPO_NAME;
+    const repoName = sanitizeRepoName(settings.github_portfolio_repo) ?? DEFAULT_REPO_NAME;
     // The OAuth callback stores GitHub `login` (username) as providerAccountId for this
     // provider, so we can use it directly as the `:owner` URL segment.
     const owner = tokenRow.providerAccountId;
@@ -275,11 +259,7 @@ function sanitizeRepoName(value: string | null): string | null {
   return trimmed;
 }
 
-function mapPushError(
-  err: unknown,
-  reply: FastifyReply,
-  stage: "ensure_repo" | "push_file",
-) {
+function mapPushError(err: unknown, reply: FastifyReply, stage: "ensure_repo" | "push_file") {
   if (err instanceof GitHubPortfolioError) {
     if (err.status === 401 || err.status === 403) {
       return reply.code(403).send({
@@ -293,9 +273,7 @@ function mapPushError(
         message: "GitHub couldn't find the resource. Try again, or re-connect.",
       });
     }
-    return reply
-      .code(502)
-      .send({ error: `github_${stage}_failed`, message: err.message });
+    return reply.code(502).send({ error: `github_${stage}_failed`, message: err.message });
   }
   throw err;
 }
@@ -317,9 +295,7 @@ async function lookupPortfolioToken(
       providerAccountId: accounts.providerAccountId,
     })
     .from(accounts)
-    .where(
-      and(eq(accounts.userId, user_id), eq(accounts.provider, PORTFOLIO_PROVIDER_ID)),
-    )
+    .where(and(eq(accounts.userId, user_id), eq(accounts.provider, PORTFOLIO_PROVIDER_ID)))
     .limit(1);
   const row = rows[0];
   if (!row || !row.access_token) return null;

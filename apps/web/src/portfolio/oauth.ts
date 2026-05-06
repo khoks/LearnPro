@@ -60,8 +60,7 @@ export function readEnvOrThrow(env: NodeJS.ProcessEnv = process.env): PortfolioO
 // Derives the absolute redirect_uri the OAuth flow uses. Matches what's registered on the
 // GitHub OAuth app side; mismatches are why GitHub returns "redirect_uri mismatch".
 export function buildRedirectUri(env: PortfolioOAuthEnv): string {
-  const base =
-    env.PORTFOLIO_OAUTH_REDIRECT_BASE ?? env.NEXTAUTH_URL ?? "http://localhost:3000";
+  const base = env.PORTFOLIO_OAUTH_REDIRECT_BASE ?? env.NEXTAUTH_URL ?? "http://localhost:3000";
   return `${base.replace(/\/+$/, "")}/api/portfolio/oauth/callback`;
 }
 

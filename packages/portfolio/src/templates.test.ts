@@ -58,9 +58,7 @@ describe("problemDirectorySlug", () => {
   });
 
   it("throws on a whitespace-only problem slug", () => {
-    expect(() => problemDirectorySlug({ slug: "   " })).toThrow(
-      /problem\.slug must be non-empty/,
-    );
+    expect(() => problemDirectorySlug({ slug: "   " })).toThrow(/problem\.slug must be non-empty/);
   });
 
   it("never returns a leading or trailing slash", () => {
