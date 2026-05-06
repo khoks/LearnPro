@@ -4,12 +4,14 @@ import {
   awardXp,
   concepts,
   episodes,
+  getConfidenceSignal,
   getLatestActivePlan,
   markItemCompleted,
   problems,
   skill_scores,
   submissions,
   tracks,
+  updateConfidenceSignalRow,
   type LearnProDb,
 } from "@learnpro/db";
 import {
@@ -20,7 +22,7 @@ import {
 } from "@learnpro/problems";
 import type { LLMProvider } from "@learnpro/llm";
 import type { SandboxProvider } from "@learnpro/sandbox";
-import type { ConceptSkill } from "@learnpro/scoring";
+import { updateConfidenceSignal, type ConceptSkill } from "@learnpro/scoring";
 import { ANTHROPIC_HAIKU, ANTHROPIC_OPUS } from "@learnpro/llm";
 import {
   GRADE_PROMPT_VERSION_TAG,
@@ -418,6 +420,27 @@ export function buildUpdateProfileDrizzleDeps(
       if (!plan) return { updated: false };
       const r = await markItemCompleted(opts.db, plan.id, input.problem_slug, input.episode_id);
       return { updated: r.updated };
+    },
+    async refreshConfidenceSignal(input) {
+      // Two EWMA events per close — engagement (time-on-task vs. expected) + outcome score.
+      // Agreement-rate updates would land here from accept/reject actions in the autonomy
+      // controller; on plain episode close we only refresh engagement + success.
+      const prev = await getConfidenceSignal(opts.db, input.user_id);
+      const afterEngagement = updateConfidenceSignal(prev, {
+        kind: "engagement",
+        time_on_task_ms: input.time_to_solve_ms,
+        target_ms: input.expected_time_ms,
+      });
+      const afterOutcome = updateConfidenceSignal(afterEngagement, {
+        kind: "outcome",
+        outcome: input.final_outcome,
+      });
+      await updateConfidenceSignalRow({
+        db: opts.db,
+        user_id: input.user_id,
+        org_id: input.org_id,
+        signal: afterOutcome,
+      });
     },
   };
 }

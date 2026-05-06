@@ -89,6 +89,12 @@ export {
   type UpdateQuietHoursConfigOptions,
 } from "./quiet-hours.js";
 export {
+  countClosedEpisodes,
+  getConfidenceSignal,
+  updateConfidenceSignalRow,
+  type UpdateConfidenceSignalRowOptions,
+} from "./autonomy-signal.js";
+export {
   DeferredPayloadSchema,
   deleteDeferredNotification,
   insertDeferredNotification,

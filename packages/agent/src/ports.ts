@@ -172,6 +172,20 @@ export interface UpdateProfileDeps {
     problem_slug: string;
     episode_id: string;
   }): Promise<{ updated: boolean }>;
+
+  // STORY-054 — refresh the user's confidence_signal EWMA after an episode closes. Optional:
+  // when the autonomy controller isn't wired the deps adapter omits this and updateProfile skips
+  // the signal update. Idempotency is best-effort: re-grading the same episode is rare on the
+  // request path; if it ever happens, the signal absorbs a slight drift, which the next legitimate
+  // close will dampen out (alpha=0.2).
+  refreshConfidenceSignal?(input: {
+    user_id: string;
+    org_id: string;
+    episode_id: string;
+    final_outcome: FinalOutcome;
+    time_to_solve_ms: number;
+    expected_time_ms: number;
+  }): Promise<void>;
 }
 
 export interface AwardXpForEpisodeInput {
