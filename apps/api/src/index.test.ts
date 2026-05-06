@@ -2,7 +2,8 @@ import { describe, it, expect } from "vitest";
 import type { InteractionStore, StoredInteraction } from "@learnpro/shared";
 import { InMemoryUsageStore, TokenBudgetExceededError, type LLMProvider } from "@learnpro/llm";
 import type { SandboxProvider, SandboxRunRequest, SandboxRunResponse } from "@learnpro/sandbox";
-import { buildServer } from "./index.js";
+import { buildServer, buildExportRateLimiterFromEnv } from "./index.js";
+import { MemoryRateLimiter, RedisRateLimiter } from "./rate-limiter.js";
 import { regexOnlyRedactor } from "./redactor.js";
 import type { SessionResolver } from "./session.js";
 
@@ -426,6 +427,25 @@ describe("apps/api", () => {
       expect(body.error).toBe("daily_budget_exceeded");
       expect(body.message).toContain("1200/1000");
       await app.close();
+    });
+  });
+
+  describe("buildExportRateLimiterFromEnv (STORY-062)", () => {
+    it("returns undefined when REDIS_URL is unset (caller falls back to MemoryRateLimiter)", () => {
+      const env: NodeJS.ProcessEnv = { LEARNPRO_EXPORT_RATE_LIMIT_HOURS: "1" };
+      expect(buildExportRateLimiterFromEnv(env)).toBeUndefined();
+    });
+
+    it("returns a RedisRateLimiter when REDIS_URL is set", () => {
+      // Pass a syntactically valid URL — ioredis won't actually connect until the first
+      // command, and we only inspect the returned class here. No live Redis is required.
+      const env: NodeJS.ProcessEnv = {
+        REDIS_URL: "redis://localhost:6379/0",
+        LEARNPRO_EXPORT_RATE_LIMIT_HOURS: "1",
+      };
+      const limiter = buildExportRateLimiterFromEnv(env);
+      expect(limiter).toBeInstanceOf(RedisRateLimiter);
+      expect(limiter).not.toBeInstanceOf(MemoryRateLimiter);
     });
   });
 });

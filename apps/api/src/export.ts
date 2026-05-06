@@ -24,7 +24,7 @@ export function registerExportRoute(app: FastifyInstance, opts: ExportRouteOptio
       return reply.code(401).send({ error: "unauthorized" });
     }
 
-    const gate = opts.rateLimiter.tryAcquire(session.user_id);
+    const gate = await opts.rateLimiter.tryAcquire(session.user_id);
     if (!gate.allowed) {
       return reply
         .code(429)

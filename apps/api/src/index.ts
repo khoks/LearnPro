@@ -64,7 +64,13 @@ import { registerInstallEligibleRoutes } from "./install-eligible.js";
 import { registerPortfolioRoutes } from "./portfolio.js";
 import { registerOnboardingRoute, type OnboardingProfileWriter } from "./onboarding.js";
 import { registerRecommendationRoute } from "./recommendation.js";
-import { MemoryRateLimiter, type RateLimiter } from "./rate-limiter.js";
+import {
+  MemoryRateLimiter,
+  RedisRateLimiter,
+  redisClientAdapter,
+  type RateLimiter,
+} from "./rate-limiter.js";
+import { Redis } from "ioredis";
 import { buildSessionResolver, type SessionResolver } from "./session.js";
 import {
   buildDbSessionPlanAdapters,
@@ -453,6 +459,10 @@ export function buildServer(opts: BuildServerOptions = {}) {
 // Wires the production-default session resolver + profile writer + data exporter when
 // DATABASE_URL is set. All stay undefined in dev-without-DB mode (and in tests, which inject
 // their own).
+//
+// STORY-062 — `exportRateLimiter` is wired independently of DATABASE_URL: when REDIS_URL is
+// set, we return a `RedisRateLimiter` so multiple replicas share state. Otherwise we leave it
+// undefined and `buildServer` falls back to the in-memory limiter (single-process default).
 function defaultsFromEnv(): {
   sessionResolver?: SessionResolver;
   onboardingProfileWriter?: OnboardingProfileWriter;
@@ -469,9 +479,13 @@ function defaultsFromEnv(): {
   installEligibleDb?: import("@learnpro/db").LearnProDb;
   todayPlanDeps?: TodayPlanDeps;
   portfolio?: BuildServerOptions["portfolio"];
+  exportRateLimiter?: RateLimiter;
 } {
+  const exportRateLimiter = buildExportRateLimiterFromEnv(process.env);
   const url = process.env["DATABASE_URL"];
-  if (!url) return {};
+  if (!url) {
+    return exportRateLimiter ? { exportRateLimiter } : {};
+  }
   const { db } = createDb({ connectionString: url });
   const fetcher = drizzleExportFetcher(db);
   const llm = defaultLLM();
@@ -541,7 +555,27 @@ function defaultsFromEnv(): {
       deleteVoice: (user_id) => deleteUserVoiceTranscripts(db, user_id),
       deleteAccount: (user_id) => deleteUserAccount(db, user_id),
     },
+    ...(exportRateLimiter ? { exportRateLimiter } : {}),
   };
+}
+
+// STORY-062 — pick the right rate limiter based on env. When REDIS_URL is set, build a
+// RedisRateLimiter against an ioredis client so multi-replica deployments share state.
+// Otherwise return undefined and let buildServer fall back to the in-memory limiter.
+//
+// We use `lazyConnect: true` so constructing the limiter doesn't open a TCP connection — the
+// connection happens on the first command (i.e. the first export call). This keeps boot
+// resilient when Redis is briefly unavailable and lets the limiter be safely constructed in
+// unit tests without spinning up a real Redis. `maxRetriesPerRequest: 1` prevents a stuck
+// command from hanging the export endpoint indefinitely.
+export function buildExportRateLimiterFromEnv(env: NodeJS.ProcessEnv): RateLimiter | undefined {
+  const redisUrl = env["REDIS_URL"];
+  if (!redisUrl) return undefined;
+  const client = new Redis(redisUrl, { maxRetriesPerRequest: 1, lazyConnect: true });
+  return new RedisRateLimiter({
+    client: redisClientAdapter(client),
+    windowMs: loadExportWindowMs(env),
+  });
 }
 
 // Builds the production session-plan factory: planSession agent tool wired to Haiku +
