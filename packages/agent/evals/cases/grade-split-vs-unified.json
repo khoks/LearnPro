@@ -1,0 +1,137 @@
+{
+  "id": "grade-split-vs-unified",
+  "story": "STORY-034",
+  "description": "10 canned grader-LLM responses, half from the legacy unified-tutor 0-1 rubric and half from the split-grader 1-5 rubric. The deterministic test parses each, asserts the split-grader rubric validates, and checks the split scoring is more discriminating (higher variance on idiomatic) than the unified rubric over the same submissions. NOT consumed by the live LLM eval pipeline — purely used by packages/agent/evals/grade-split.test.ts.",
+  "samples": [
+    {
+      "label": "perfect-hash-map-passes",
+      "submission_summary": "Two-sum: O(n) hash-map solve. 5/5 hidden tests pass.",
+      "unified": {
+        "rubric": { "correctness": 1.0, "idiomatic": 0.9, "edge_case_coverage": 0.85 },
+        "prose_explanation": "Solid solve. Hash-map approach is idiomatic and the empty-list path is implicit."
+      },
+      "split": {
+        "pass": true,
+        "rubric": { "idiomatic": 5, "efficiency": 5, "test_coverage_thinking": 4 },
+        "reasoning": "Single-pass dictionary lookup is the idiomatic Python pattern; complement key avoids the second loop."
+      }
+    },
+    {
+      "label": "brute-force-nested-loop-passes",
+      "submission_summary": "Two-sum: O(n^2) nested loop. 5/5 hidden tests pass.",
+      "unified": {
+        "rubric": { "correctness": 1.0, "idiomatic": 0.7, "edge_case_coverage": 0.8 },
+        "prose_explanation": "Tests pass but a hash-map would be O(n)."
+      },
+      "split": {
+        "pass": true,
+        "rubric": { "idiomatic": 2, "efficiency": 1, "test_coverage_thinking": 3 },
+        "reasoning": "Nested loop where a single-pass set lookup would be O(n); idiomatic Python typically uses a dict for index lookups."
+      }
+    },
+    {
+      "label": "list-comprehension-clean",
+      "submission_summary": "Filter even numbers: list comprehension, fully passes.",
+      "unified": {
+        "rubric": { "correctness": 1.0, "idiomatic": 0.95, "edge_case_coverage": 0.9 },
+        "prose_explanation": "Clean comprehension; edge cases like empty lists fall through naturally."
+      },
+      "split": {
+        "pass": true,
+        "rubric": { "idiomatic": 5, "efficiency": 4, "test_coverage_thinking": 4 },
+        "reasoning": "List comprehension is the go-to Python idiom for this transform; empty input returns [] naturally."
+      }
+    },
+    {
+      "label": "imperative-for-loop-instead-of-comprehension",
+      "submission_summary": "Filter even numbers: imperative for-append loop. 4/4 hidden tests pass.",
+      "unified": {
+        "rubric": { "correctness": 1.0, "idiomatic": 0.6, "edge_case_coverage": 0.85 },
+        "prose_explanation": "Works, but more idiomatic with a list comprehension."
+      },
+      "split": {
+        "pass": true,
+        "rubric": { "idiomatic": 2, "efficiency": 3, "test_coverage_thinking": 4 },
+        "reasoning": "Functional Python prefers comprehensions over append-in-loop; result is correct but verbose."
+      }
+    },
+    {
+      "label": "off-by-one-failure",
+      "submission_summary": "Range sum: off-by-one boundary. 3/5 tests pass.",
+      "unified": {
+        "rubric": { "correctness": 0.6, "idiomatic": 0.7, "edge_case_coverage": 0.3 },
+        "prose_explanation": "Boundary condition is wrong; range(start, end) excludes end."
+      },
+      "split": {
+        "pass": false,
+        "rubric": { "idiomatic": 3, "efficiency": 4, "test_coverage_thinking": 1 },
+        "reasoning": "Range bounds are off by one; edge cases at the upper boundary fail."
+      }
+    },
+    {
+      "label": "duplicate-handling-bug",
+      "submission_summary": "Two-sum with duplicates: returns first dup index instead of pair. 3/5 tests pass.",
+      "unified": {
+        "rubric": { "correctness": 0.6, "idiomatic": 0.7, "edge_case_coverage": 0.4 },
+        "prose_explanation": "Single-pass logic fine on unique inputs, fails on duplicates."
+      },
+      "split": {
+        "pass": false,
+        "rubric": { "idiomatic": 3, "efficiency": 4, "test_coverage_thinking": 1 },
+        "reasoning": "Inner check returns the first duplicate's index instead of pairing two values; duplicate case unanticipated."
+      }
+    },
+    {
+      "label": "expert-recursion-clean",
+      "submission_summary": "Tree traversal: idiomatic recursion. All tests pass.",
+      "unified": {
+        "rubric": { "correctness": 1.0, "idiomatic": 0.95, "edge_case_coverage": 0.9 },
+        "prose_explanation": "Clean recursive solve."
+      },
+      "split": {
+        "pass": true,
+        "rubric": { "idiomatic": 5, "efficiency": 5, "test_coverage_thinking": 5 },
+        "reasoning": "Tail-recursive structure with explicit base case; null-node guard handles the empty subtree edge."
+      }
+    },
+    {
+      "label": "stack-iterative-tree-traversal",
+      "submission_summary": "Tree traversal: explicit stack iteration. All tests pass.",
+      "unified": {
+        "rubric": { "correctness": 1.0, "idiomatic": 0.8, "edge_case_coverage": 0.85 },
+        "prose_explanation": "Iterative is fine but recursion is more natural here."
+      },
+      "split": {
+        "pass": true,
+        "rubric": { "idiomatic": 3, "efficiency": 4, "test_coverage_thinking": 4 },
+        "reasoning": "Explicit-stack iteration is correct and avoids stack-depth issues, but recursion is more idiomatic for trees of moderate depth."
+      }
+    },
+    {
+      "label": "type-coercion-bug",
+      "submission_summary": "TypeScript: numeric string compared to number. 2/4 tests pass.",
+      "unified": {
+        "rubric": { "correctness": 0.5, "idiomatic": 0.6, "edge_case_coverage": 0.3 },
+        "prose_explanation": "Compare strings to numbers — implicit coercion bites."
+      },
+      "split": {
+        "pass": false,
+        "rubric": { "idiomatic": 1, "efficiency": 3, "test_coverage_thinking": 1 },
+        "reasoning": "Implicit coercion in == comparisons; idiomatic TS uses === plus explicit Number() conversion."
+      }
+    },
+    {
+      "label": "memoized-fib-strong",
+      "submission_summary": "Fibonacci with memoization. All tests pass under tight time budget.",
+      "unified": {
+        "rubric": { "correctness": 1.0, "idiomatic": 0.85, "edge_case_coverage": 0.9 },
+        "prose_explanation": "Memoization closes the door on the recurrence cost."
+      },
+      "split": {
+        "pass": true,
+        "rubric": { "idiomatic": 4, "efficiency": 5, "test_coverage_thinking": 4 },
+        "reasoning": "Functools cache or hand-rolled memo dict is idiomatic Python; n=0 and n=1 base cases handled explicitly."
+      }
+    }
+  ]
+}
