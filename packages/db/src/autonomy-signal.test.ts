@@ -3,6 +3,7 @@ import type { Pool } from "pg";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import {
   countClosedEpisodes,
+  countSuccessfulEpisodes,
   getConfidenceSignal,
   updateConfidenceSignalRow,
 } from "./autonomy-signal.js";
@@ -181,6 +182,58 @@ describe.skipIf(!DATABASE_URL)("autonomy-signal DB helpers (integration)", () =>
       });
       const c = await countClosedEpisodes(db, testUserId);
       expect(c).toBe(2);
+    });
+  });
+
+  // STORY-044 — successful episodes drive the install-prompt eligibility check.
+  describe("countSuccessfulEpisodes", () => {
+    it("returns 0 when no episodes exist", async () => {
+      const c = await countSuccessfulEpisodes(db, testUserId);
+      expect(c).toBe(0);
+    });
+
+    it("counts passed + passed_with_hints, excludes failed/abandoned/revealed", async () => {
+      await db.insert(episodes).values({
+        user_id: testUserId,
+        problem_id: problemId,
+        final_outcome: "passed",
+      });
+      await db.insert(episodes).values({
+        user_id: testUserId,
+        problem_id: problemId,
+        final_outcome: "passed_with_hints",
+      });
+      await db.insert(episodes).values({
+        user_id: testUserId,
+        problem_id: problemId,
+        final_outcome: "failed",
+      });
+      await db.insert(episodes).values({
+        user_id: testUserId,
+        problem_id: problemId,
+        final_outcome: "abandoned",
+      });
+      await db.insert(episodes).values({
+        user_id: testUserId,
+        problem_id: problemId,
+        final_outcome: "revealed",
+      });
+      const c = await countSuccessfulEpisodes(db, testUserId);
+      expect(c).toBe(2);
+    });
+
+    it("excludes open episodes (final_outcome IS NULL)", async () => {
+      await db.insert(episodes).values({
+        user_id: testUserId,
+        problem_id: problemId,
+        final_outcome: "passed",
+      });
+      await db.insert(episodes).values({
+        user_id: testUserId,
+        problem_id: problemId,
+      });
+      const c = await countSuccessfulEpisodes(db, testUserId);
+      expect(c).toBe(1);
     });
   });
 });

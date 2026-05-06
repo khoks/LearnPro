@@ -11,6 +11,7 @@ import { auth, signOut } from "../../auth/auth.js";
 import { getAuthDb } from "../../auth/db.js";
 import { destinationForUser } from "../../auth/post-signin.js";
 import { AutonomyBandIndicator } from "../../components/autonomy/AutonomyBandIndicator.js";
+import { InstallPrompt } from "../../components/pwa/InstallPrompt.js";
 import { QuietHoursCard } from "../../components/settings/QuietHoursCard.js";
 import { DueReviewsCard, TrackProgressBar } from "./dashboard-components.js";
 import { DashboardCardsRow } from "./DashboardCardsRow.js";
@@ -62,6 +63,8 @@ export default async function DashboardPage() {
       }}
     >
       <DashboardHeader email={session.user.email} sessionHref={sessionHref} />
+
+      <InstallPrompt />
 
       <DashboardCardsRow
         xp={xp}

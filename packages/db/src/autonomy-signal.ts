@@ -76,3 +76,17 @@ export async function countClosedEpisodes(db: LearnProDb, user_id: string): Prom
     .where(sql`${episodes.user_id} = ${user_id} AND ${episodes.final_outcome} IS NOT NULL`);
   return rows[0]?.count ?? 0;
 }
+
+// STORY-044 — Count "successful" episodes for a user. A successful episode is one whose
+// final_outcome is `passed` or `passed_with_hints`. Used by the PWA install-prompt eligibility
+// check: don't ask the user to install until they've actually completed a few sessions, so the
+// install prompt arrives at a moment of demonstrated investment, not on first-visit cold-start.
+export async function countSuccessfulEpisodes(db: LearnProDb, user_id: string): Promise<number> {
+  const rows = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(episodes)
+    .where(
+      sql`${episodes.user_id} = ${user_id} AND ${episodes.final_outcome} IN ('passed', 'passed_with_hints')`,
+    );
+  return rows[0]?.count ?? 0;
+}

@@ -60,6 +60,7 @@ import { registerNotificationsRoutes } from "./notifications.js";
 import { registerQuietHoursRoutes } from "./quiet-hours.js";
 import { registerAutonomyRoutes } from "./autonomy.js";
 import { registerSpacedRepetitionRoutes } from "./spaced-repetition.js";
+import { registerInstallEligibleRoutes } from "./install-eligible.js";
 import { registerOnboardingRoute, type OnboardingProfileWriter } from "./onboarding.js";
 import { registerRecommendationRoute } from "./recommendation.js";
 import { MemoryRateLimiter, type RateLimiter } from "./rate-limiter.js";
@@ -142,6 +143,9 @@ export interface BuildServerOptions {
   // STORY-031 — DB handle for the `GET /v1/spaced-repetition/due` route. Same wiring pattern as
   // quiet-hours / autonomy: tests inject a fake DB; production wires the same `db` instance.
   spacedRepetitionDb?: import("@learnpro/db").LearnProDb;
+  // STORY-044 — DB handle for the `GET /v1/dashboard/install-eligible` route. Same wiring
+  // pattern as the others; production shares the single `db` instance via defaultsFromEnv().
+  installEligibleDb?: import("@learnpro/db").LearnProDb;
 }
 
 // Default impl when no store is provided — drops events on the floor. Useful for tests and
@@ -378,6 +382,12 @@ export function buildServer(opts: BuildServerOptions = {}) {
     registerSpacedRepetitionRoutes(app, { db: opts.spacedRepetitionDb, sessionResolver });
   }
 
+  // STORY-044 — `GET /v1/dashboard/install-eligible`. Auth-gated; counts successful episodes to
+  // decide whether the dashboard's install prompt should appear (≥3 = eligible).
+  if (opts.installEligibleDb) {
+    registerInstallEligibleRoutes(app, { db: opts.installEligibleDb, sessionResolver });
+  }
+
   // STORY-060 deferred AC — friendly 429 mapping for the per-user daily token budget. Any handler
   // that calls into the LLM provider can throw `TokenBudgetExceededError`; this hook catches it
   // before Fastify's default 500 path so the playground can render the friendly message AC from
@@ -417,6 +427,7 @@ function defaultsFromEnv(): {
   dataControls?: DataControlsAdapters;
   recommendationDb?: import("@learnpro/db").LearnProDb;
   spacedRepetitionDb?: import("@learnpro/db").LearnProDb;
+  installEligibleDb?: import("@learnpro/db").LearnProDb;
 } {
   const url = process.env["DATABASE_URL"];
   if (!url) return {};
@@ -480,6 +491,7 @@ function defaultsFromEnv(): {
     autonomyDb: db,
     recommendationDb: db,
     spacedRepetitionDb: db,
+    installEligibleDb: db,
     redactor: buildDefaultRedactor({ llm }),
     dataControls: {
       summary: (user_id) => getUserDataSummary(db, user_id),
