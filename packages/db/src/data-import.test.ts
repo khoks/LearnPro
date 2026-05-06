@@ -461,7 +461,12 @@ describe.skipIf(!DATABASE_URL)("importDump (integration)", () => {
     const tgtSubs = await db
       .select()
       .from(submissions)
-      .where(inArray(submissions.episode_id, tgtEps.map((e) => e.id)));
+      .where(
+        inArray(
+          submissions.episode_id,
+          tgtEps.map((e) => e.id),
+        ),
+      );
     expect(tgtSubs).toHaveLength(2);
   });
 
