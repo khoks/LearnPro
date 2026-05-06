@@ -92,6 +92,13 @@
       "when": 1778900000000,
       "tag": "0012_github_portfolio",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1779100000000,
+      "tag": "0014_email_digests",
+      "breakpoints": true
     }
   ]
 }

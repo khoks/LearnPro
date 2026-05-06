@@ -154,3 +154,22 @@ export {
   type RecordPushInput,
   type UpdatePortfolioSettingsOptions,
 } from "./portfolio-store.js";
+export {
+  DEFAULT_EMAIL_DIGEST_PREFS,
+  EmailDigestPrefsSchema,
+  getEmailDigestPrefs,
+  listDigestRecipients,
+  unsubscribeByToken,
+  updateEmailDigestPrefs,
+  type DigestRecipient,
+  type EmailDigestPrefs,
+  type EmailDigestPrefsWithToken,
+  type UnsubscribeUserResult,
+  type UpdateEmailDigestPrefsOptions,
+} from "./email-digest-prefs.js";
+export {
+  listFinishedEpisodesInWindow,
+  listSkillSnapshot,
+  type DigestEpisodeRow,
+  type DigestSkillSnapshotRow,
+} from "./email-digest-data.js";

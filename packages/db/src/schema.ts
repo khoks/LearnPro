@@ -180,6 +180,14 @@ export const profiles = pgTable("profiles", {
   // OFF by default (AC #5 — opt-in only after the first manual push). The settings UI flips
   // this; the API gates auto-push checks against it.
   github_auto_push_enabled: boolean("github_auto_push_enabled").notNull().default(false),
+  // STORY-045 — Email digest opt-ins. Both off by default; the user flips them on per-channel
+  // from /settings/notifications. `email_weekly_day_of_week` is 1=Monday … 7=Sunday (ISO 8601).
+  // `email_unsubscribe_token` is null until the first opt-in lands; populated then with a
+  // random 32-byte hex string that powers the one-click unsubscribe link + RFC 8058 header.
+  email_daily_opt_in: boolean("email_daily_opt_in").notNull().default(false),
+  email_weekly_opt_in: boolean("email_weekly_opt_in").notNull().default(false),
+  email_weekly_day_of_week: integer("email_weekly_day_of_week").notNull().default(1),
+  email_unsubscribe_token: text("email_unsubscribe_token"),
   updated_at: updatedAt(),
 });
 
