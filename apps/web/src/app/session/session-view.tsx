@@ -12,6 +12,7 @@ import {
   skillDeltaArrow,
   skillDeltaSymbol,
 } from "./session-view-helpers";
+import { SaveToPortfolioButton } from "./SaveToPortfolioButton";
 
 // Pure visual components reused by SessionClient. They are framework-aware (return JSX) but
 // have no fetch / state of their own — every input flows through props.
@@ -188,22 +189,28 @@ export function SkillUpdateSummary({
       ) : (
         <div style={{ fontSize: 13, color: "#666" }}>No tracked concepts updated.</div>
       )}
-      <button
-        type="button"
-        onClick={onNext}
-        style={{
-          padding: "0.55rem 0.9rem",
-          background: "#0a7",
-          color: "white",
-          border: "none",
-          borderRadius: 4,
-          fontWeight: 600,
-          cursor: "pointer",
-          alignSelf: "flex-start",
-        }}
-      >
-        Next problem
-      </button>
+      <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+        <button
+          type="button"
+          onClick={onNext}
+          style={{
+            padding: "0.55rem 0.9rem",
+            background: "#0a7",
+            color: "white",
+            border: "none",
+            borderRadius: 4,
+            fontWeight: 600,
+            cursor: "pointer",
+            alignSelf: "flex-start",
+          }}
+        >
+          Next problem
+        </button>
+        <SaveToPortfolioButton
+          episodeId={profile.episode_id}
+          finalOutcome={profile.final_outcome}
+        />
+      </div>
     </section>
   );
 }
