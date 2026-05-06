@@ -2,14 +2,14 @@
 id: STORY-061
 title: importDump() helper to reconstruct a user from a STORY-026 export
 type: story
-status: backlog
+status: in-progress
 priority: P2
 estimate: M
 parent: EPIC-002
 phase: v1
 tags: [gdpr, export, privacy, saas-readiness]
 created: 2026-05-03
-updated: 2026-05-03
+updated: 2026-05-06
 ---
 
 ## Description
@@ -38,3 +38,4 @@ This Story ships `importDump(db, dump)` — the inverse helper that takes a pars
 ## Activity log
 
 - 2026-05-03 — created (filed during STORY-026 close-out)
+- 2026-05-06 — picked up
