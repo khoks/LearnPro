@@ -91,6 +91,7 @@ export {
 } from "./quiet-hours.js";
 export {
   countClosedEpisodes,
+  countSuccessfulEpisodes,
   getConfidenceSignal,
   updateConfidenceSignalRow,
   type UpdateConfidenceSignalRowOptions,

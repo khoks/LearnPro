@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Maskable icons require content within the inner 80% safe zone (i.e. roughly the central
+       410x410 region). The wordmark is sized so it stays inside that zone after a 20% mask
+       crop on any edge. -->
+  <rect width="512" height="512" fill="#0a7" />
+  <text x="256" y="320" text-anchor="middle" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-weight="700" font-size="200" fill="#ffffff">LP</text>
+</svg>

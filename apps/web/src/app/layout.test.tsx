@@ -50,3 +50,37 @@ describe("RootLayout — STORY-027 a11y baseline", () => {
     expect(out).toContain('lang="en"');
   });
 });
+
+// STORY-044 — PWA baseline. The Next.js Metadata API adds the `<link rel="manifest">` and
+// theme-color into the <head> at request time, so it doesn't appear in the static markup the
+// other tests inspect. Instead we assert against the exported `metadata` object directly — that's
+// the contract Next.js consumes.
+import { metadata } from "./layout";
+
+describe("RootLayout metadata — STORY-044 PWA baseline", () => {
+  it("declares the web manifest path", () => {
+    expect(metadata.manifest).toBe("/manifest.webmanifest");
+  });
+
+  it("declares the brand theme-color so installed-window chrome blends with the brand", () => {
+    expect(metadata.themeColor).toBe("#0a7");
+  });
+
+  it("declares both 192 and 512 SVG icons (manifest-required sizes)", () => {
+    const icon = metadata.icons;
+    expect(icon).toBeDefined();
+    if (typeof icon !== "object" || icon === null || Array.isArray(icon)) {
+      throw new Error("metadata.icons must be an object");
+    }
+    const iconList = "icon" in icon && Array.isArray(icon.icon) ? icon.icon : [];
+    // Each entry is an `IconDescriptor` (object with `url`/`sizes`/`type`) or a bare string/URL.
+    // We only care about descriptor entries here — the bare-URL form has no size hint to assert.
+    const sizes = iconList
+      .map((i) =>
+        typeof i === "object" && i !== null && "sizes" in i ? (i.sizes ?? undefined) : undefined,
+      )
+      .filter((s): s is string => typeof s === "string");
+    expect(sizes).toContain("192x192");
+    expect(sizes).toContain("512x512");
+  });
+});
