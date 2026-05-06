@@ -71,9 +71,7 @@ describe.skipIf(!REQUIRE_REDIS)("RedisRateLimiter (live)", () => {
     });
 
     const N = 16;
-    const results = await Promise.all(
-      Array.from({ length: N }, () => rl.tryAcquire("u-fanout")),
-    );
+    const results = await Promise.all(Array.from({ length: N }, () => rl.tryAcquire("u-fanout")));
     const winners = results.filter((r) => r.allowed === true);
     expect(winners).toHaveLength(1);
     expect(results).toHaveLength(N);

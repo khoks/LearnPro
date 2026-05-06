@@ -1,9 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  MemoryRateLimiter,
-  RedisRateLimiter,
-  type RedisLikeClient,
-} from "./rate-limiter.js";
+import { MemoryRateLimiter, RedisRateLimiter, type RedisLikeClient } from "./rate-limiter.js";
 
 describe("MemoryRateLimiter", () => {
   it("first acquire for a user is always allowed", () => {
