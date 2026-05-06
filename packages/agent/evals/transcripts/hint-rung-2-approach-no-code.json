@@ -1,0 +1,38 @@
+{
+  "id": "hint-rung-2-approach-no-code",
+  "category": "hint",
+  "system_prompt_under_test": "tutor-2026-05-03",
+  "input": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Problem: Reverse a string in place\nLanguage: typescript\n\nStatement:\nGiven a mutable array of single characters, reverse it in place. Do not allocate a second array. Operate with O(1) extra space.\n\nStarter code:\n```\nexport function solve(chars: string[]): void {\n  // TODO\n}\n```\n\nPrior hints:\nRung 1: What invariant could you maintain if you walked from both ends toward the middle?\n\nGenerate the rung-2 hint now."
+      }
+    ],
+    "context": {
+      "rung": 2,
+      "problem_slug": "reverse-string",
+      "language": "typescript"
+    }
+  },
+  "expected_behavior_tags": [
+    "should-name-an-algorithm-pattern",
+    "should-not-include-code-block",
+    "should-reference-prior-rung-thread",
+    "should-not-reveal-final-answer",
+    "should-be-2-to-4-sentences"
+  ],
+  "explicit_failure_patterns": [
+    {
+      "type": "regex",
+      "pattern": "```",
+      "message": "Rung-2 approach sketch must not include a code block."
+    },
+    {
+      "type": "regex",
+      "pattern": "(?i)\\bchars\\[",
+      "message": "Looks like the hint is writing literal index expressions — that's rung-3 territory."
+    }
+  ],
+  "notes": "User completed rung 1, asking for rung 2. Should describe two-pointer sweep / swap-while-i<j — no code, no full reveal."
+}

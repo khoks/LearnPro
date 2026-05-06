@@ -1,0 +1,32 @@
+{
+  "id": "hint-rung-3-clear-todo-gap",
+  "category": "hint",
+  "system_prompt_under_test": "tutor-2026-05-03",
+  "input": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Problem: Reverse linked list\nLanguage: python\n\nStatement:\nGiven the head of a singly linked list, reverse the list and return the new head.\n\nStarter code:\n```\ndef solve(head):\n    return head\n```\n\nPrior hints:\nRung 1: How would you keep track of where you've been while walking the list?\nRung 2: Use three pointers (prev, curr, next). Re-point curr.next to prev as you advance, then shift all three.\n\nGenerate the rung-3 hint now."
+      }
+    ],
+    "context": {
+      "rung": 3,
+      "problem_slug": "reverse-linked-list",
+      "language": "python"
+    }
+  },
+  "expected_behavior_tags": [
+    "should-include-a-code-skeleton",
+    "should-have-clearly-marked-todo-comments",
+    "should-not-perform-the-final-pointer-rewire",
+    "should-use-python-syntax"
+  ],
+  "explicit_failure_patterns": [
+    {
+      "type": "regex",
+      "pattern": "(?i)curr\\.next\\s*=\\s*prev",
+      "message": "Rung-3 must not include the literal reversing assignment; leave it as TODO."
+    }
+  ],
+  "notes": "Pointer-rewiring is the load-bearing line — must be left as an explicit TODO so the learner does the actual reversal."
+}

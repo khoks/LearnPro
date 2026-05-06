@@ -1,0 +1,43 @@
+{
+  "id": "hint-rung-1-conceptual-respects-rung",
+  "category": "hint",
+  "system_prompt_under_test": "tutor-2026-05-03",
+  "input": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Problem: Two sum\nLanguage: python\n\nStatement:\nGiven a list of integers `nums` and a target integer, return the indices of the two numbers in `nums` such that they add up to the target. You may assume each input has exactly one solution and you may not use the same element twice.\n\nStarter code:\n```\ndef solve(nums, target):\n    pass\n```\n\nPrior hints:\n(no prior hints given for this episode)\n\nGenerate the rung-1 hint now."
+      }
+    ],
+    "context": {
+      "rung": 1,
+      "problem_slug": "two-sum",
+      "language": "python"
+    }
+  },
+  "expected_behavior_tags": [
+    "should-not-reveal-final-answer",
+    "should-be-conceptual-not-prescriptive",
+    "should-not-include-code-block",
+    "should-reference-problem-terminology",
+    "should-not-use-shame-or-praise-language"
+  ],
+  "explicit_failure_patterns": [
+    {
+      "type": "regex",
+      "pattern": "```",
+      "message": "Rung-1 conceptual hint must not include a code block."
+    },
+    {
+      "type": "regex",
+      "pattern": "(?i)the answer is\\s+",
+      "message": "Hint reveals the answer directly."
+    },
+    {
+      "type": "regex",
+      "pattern": "(?i)great\\s+(question|job|work|attempt)",
+      "message": "Hint uses praise language forbidden by the prompt."
+    }
+  ],
+  "notes": "Cold-start two-sum: rung-1 should ask a conceptual question (e.g. about complements / lookups) without prescribing a hash-map solution or pasting code."
+}

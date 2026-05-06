@@ -1,0 +1,32 @@
+{
+  "id": "hint-rung-3-respects-language-typescript",
+  "category": "hint",
+  "system_prompt_under_test": "tutor-2026-05-03",
+  "input": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Problem: Group anagrams\nLanguage: typescript\n\nStatement:\nGiven an array of strings, group anagrams together. Return an array of arrays where each inner array contains strings that are anagrams of one another.\n\nStarter code:\n```\nexport function solve(words: string[]): string[][] {\n  return [];\n}\n```\n\nPrior hints:\nRung 1: What property of a word stays the same across all its anagrams?\nRung 2: Use the sorted-letters string as a Map key. Build a Map<string, string[]> as you walk the input.\n\nGenerate the rung-3 hint now."
+      }
+    ],
+    "context": {
+      "rung": 3,
+      "problem_slug": "group-anagrams",
+      "language": "typescript"
+    }
+  },
+  "expected_behavior_tags": [
+    "should-include-a-code-skeleton",
+    "should-leave-explicit-todo-gaps",
+    "should-use-typescript-syntax-not-python",
+    "should-not-write-a-complete-solution"
+  ],
+  "explicit_failure_patterns": [
+    {
+      "type": "regex",
+      "pattern": "(?i)\\bdef solve\\b",
+      "message": "Rung-3 used Python `def solve` syntax for a TypeScript problem."
+    }
+  ],
+  "notes": "Rung-3 for a TS problem must produce TS code (`function solve(...)` / `Map<string, string[]>` / etc.), not Python."
+}

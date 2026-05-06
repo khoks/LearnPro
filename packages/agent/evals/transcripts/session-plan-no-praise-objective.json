@@ -1,0 +1,38 @@
+{
+  "id": "session-plan-no-praise-objective",
+  "category": "session-plan",
+  "system_prompt_under_test": "session-plan-2026-05-03",
+  "input": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Time budget for this session (minutes): 25\nTarget role: ml_engineer\nPrimary goal: comfortable with numpy basics\nCurrent track: python-fundamentals\n\nRecent episodes (newest first):\n- list-slicing — outcome: passed, difficulty: easy\n- comprehensions — outcome: passed_with_hints, difficulty: easy\n\nProduce a JSON plan now. 3-5 items, total estimated_duration_min ≤ 25."
+      }
+    ],
+    "context": {
+      "time_budget_min": 25,
+      "current_track": "python-fundamentals",
+      "recent_count": 2
+    }
+  },
+  "expected_behavior_tags": [
+    "should-return-valid-session-plan-json",
+    "should-have-3-to-5-items",
+    "should-not-exceed-time-budget",
+    "should-not-include-praise-in-objectives",
+    "should-keep-each-objective-short-and-action-oriented"
+  ],
+  "explicit_failure_patterns": [
+    {
+      "type": "regex",
+      "pattern": "(?i)great\\s+(work|job|attempt|so far)",
+      "message": "Plan included praise-language in objectives."
+    },
+    {
+      "type": "regex",
+      "pattern": "(?i)you'?ve been doing",
+      "message": "Plan included motivational filler in objectives."
+    }
+  ],
+  "notes": "Plan should be neutral / action-oriented; objectives describe WHAT to do, not motivational fluff."
+}

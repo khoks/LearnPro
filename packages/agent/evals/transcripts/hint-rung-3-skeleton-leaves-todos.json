@@ -1,0 +1,33 @@
+{
+  "id": "hint-rung-3-skeleton-leaves-todos",
+  "category": "hint",
+  "system_prompt_under_test": "tutor-2026-05-03",
+  "input": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Problem: FizzBuzz\nLanguage: python\n\nStatement:\nReturn a list of strings of length n. Index i (1-based) is 'FizzBuzz' if i is divisible by both 3 and 5, 'Fizz' if only by 3, 'Buzz' if only by 5, otherwise the string form of i.\n\nStarter code:\n```\ndef solve(n):\n    pass\n```\n\nPrior hints:\nRung 1: What's the test that decides between Fizz, Buzz, and a number?\nRung 2: Loop 1..n, check divisibility-by-15 first (it implies both), then 3, then 5, else str(i). Build a list as you go.\n\nGenerate the rung-3 hint now."
+      }
+    ],
+    "context": {
+      "rung": 3,
+      "problem_slug": "fizzbuzz",
+      "language": "python"
+    }
+  },
+  "expected_behavior_tags": [
+    "should-include-a-code-skeleton",
+    "should-leave-explicit-todo-gaps",
+    "should-not-write-a-complete-solution",
+    "should-use-the-problem-language",
+    "should-not-use-shame-or-praise-language"
+  ],
+  "explicit_failure_patterns": [
+    {
+      "type": "regex",
+      "pattern": "(?i)great\\s+(question|job|work|attempt)",
+      "message": "Hint uses praise language forbidden by the prompt."
+    }
+  ],
+  "notes": "Rung-3 should produce a Python skeleton with at least one explicit TODO line (typically the divisibility branch ordering or the append) — never a full reveal."
+}

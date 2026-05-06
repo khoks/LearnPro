@@ -1,0 +1,43 @@
+{
+  "id": "session-plan-slug-kebab-case",
+  "category": "session-plan",
+  "system_prompt_under_test": "session-plan-2026-05-03",
+  "input": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Time budget for this session (minutes): 25\nTarget role: data_scientist\nPrimary goal: feel solid on iteration patterns\nCurrent track: python-fundamentals\n\nRecent episodes (newest first):\n- string-formatting — outcome: passed, difficulty: easy\n- dict-iteration — outcome: passed_with_hints, difficulty: easy\n\nProduce a JSON plan now. 3-5 items, total estimated_duration_min ≤ 25."
+      }
+    ],
+    "context": {
+      "time_budget_min": 25,
+      "current_track": "python-fundamentals",
+      "recent_count": 2
+    }
+  },
+  "expected_behavior_tags": [
+    "should-return-valid-session-plan-json",
+    "should-have-3-to-5-items",
+    "should-not-exceed-time-budget",
+    "should-have-kebab-case-slugs",
+    "should-have-each-objective-as-one-short-sentence"
+  ],
+  "explicit_failure_patterns": [
+    {
+      "type": "regex",
+      "pattern": "\"slug\"\\s*:\\s*\"[^\"]*[A-Z]",
+      "message": "Slug contains uppercase — must be kebab-case."
+    },
+    {
+      "type": "regex",
+      "pattern": "\"slug\"\\s*:\\s*\"[^\"]*\\s",
+      "message": "Slug contains whitespace — must be kebab-case."
+    },
+    {
+      "type": "regex",
+      "pattern": "\"slug\"\\s*:\\s*\"[^\"]*_",
+      "message": "Slug uses underscores — must be kebab-case."
+    }
+  ],
+  "notes": "Schema-shape check on slugs: lowercase + digits + hyphens only."
+}

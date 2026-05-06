@@ -1,0 +1,41 @@
+{
+  "id": "onboarding-strict-json-only",
+  "category": "onboarding",
+  "system_prompt_under_test": "onboarding-2026-04-28",
+  "input": {
+    "messages": [
+      {
+        "role": "assistant",
+        "content": "What role are you preparing for?"
+      },
+      {
+        "role": "user",
+        "content": "frontend SWE roles, mid-level"
+      }
+    ],
+    "context": {
+      "turn_index": 1,
+      "captured_so_far": {}
+    }
+  },
+  "expected_behavior_tags": [
+    "should-return-valid-onboarding-json",
+    "should-not-include-prose-before-or-after-json",
+    "should-not-wrap-in-markdown-fences",
+    "should-capture-target-role-frontend",
+    "should-keep-assistant-message-1-to-3-sentences"
+  ],
+  "explicit_failure_patterns": [
+    {
+      "type": "regex",
+      "pattern": "^Here is",
+      "message": "Output prefixed with prose — schema requires JSON only."
+    },
+    {
+      "type": "regex",
+      "pattern": "^Sure",
+      "message": "Output prefixed with prose — schema requires JSON only."
+    }
+  ],
+  "notes": "Schema-compliance: response must be JSON only, no preamble, no fences."
+}

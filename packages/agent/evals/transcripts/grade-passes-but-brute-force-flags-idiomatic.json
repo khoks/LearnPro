@@ -1,0 +1,34 @@
+{
+  "id": "grade-passes-but-brute-force-flags-idiomatic",
+  "category": "grade",
+  "system_prompt_under_test": "tutor-2026-05-03",
+  "input": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Problem: Contains duplicate\nLanguage: python\n\nStatement:\nGiven an integer array `nums`, return True if any value appears at least twice and False otherwise.\n\nSubmission:\n```\ndef solve(nums):\n    for i in range(len(nums)):\n        for j in range(i+1, len(nums)):\n            if nums[i] == nums[j]:\n                return True\n    return False\n```\n\nTest result: 6/6 hidden tests passed.\n\n(all hidden tests passed)\n\nProduce the rubric JSON now."
+      }
+    ],
+    "context": {
+      "problem_slug": "contains-duplicate",
+      "passed_tests": 6,
+      "total_tests": 6,
+      "language": "python"
+    }
+  },
+  "expected_behavior_tags": [
+    "should-return-valid-rubric-json",
+    "should-set-correctness-1.0-when-all-tests-pass",
+    "should-flag-idiomatic-below-0.7-for-O-n-squared",
+    "should-mention-set-or-hash-as-the-idiomatic-fix",
+    "should-not-use-effusive-praise"
+  ],
+  "explicit_failure_patterns": [
+    {
+      "type": "regex",
+      "pattern": "(?i)great\\s+(work|job|attempt)",
+      "message": "Praise language forbidden — grader is anti-praise."
+    }
+  ],
+  "notes": "Tests pass but the solution is O(n^2) where O(n) using a set is the idiomatic answer. Rubric should reward correctness, dock idiomatic."
+}

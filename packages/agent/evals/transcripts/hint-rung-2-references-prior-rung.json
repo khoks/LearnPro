@@ -1,0 +1,37 @@
+{
+  "id": "hint-rung-2-references-prior-rung",
+  "category": "hint",
+  "system_prompt_under_test": "tutor-2026-05-03",
+  "input": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Problem: Two sum\nLanguage: python\n\nStatement:\nReturn the indices of the two numbers in `nums` that sum to `target`.\n\nStarter code:\n```\ndef solve(nums, target):\n    pass\n```\n\nPrior hints:\nRung 1: As you scan the list, what value would you need to find later to complete a pair summing to target?\n\nGenerate the rung-2 hint now."
+      }
+    ],
+    "context": {
+      "rung": 2,
+      "problem_slug": "two-sum",
+      "language": "python"
+    }
+  },
+  "expected_behavior_tags": [
+    "should-name-an-algorithm-pattern",
+    "should-not-include-code-block",
+    "should-build-on-rung-1-thread",
+    "should-not-reveal-full-solution"
+  ],
+  "explicit_failure_patterns": [
+    {
+      "type": "regex",
+      "pattern": "```",
+      "message": "Rung-2 must not include a code block."
+    },
+    {
+      "type": "regex",
+      "pattern": "seen\\[",
+      "message": "Rung-2 must not write literal `seen[...]` index expressions — that's code."
+    }
+  ],
+  "notes": "Rung-2 should pivot from rung-1's 'complement' question into naming the hash-map / dictionary lookup pattern."
+}

@@ -1,0 +1,37 @@
+{
+  "id": "onboarding-warm-not-effusive",
+  "category": "onboarding",
+  "system_prompt_under_test": "onboarding-2026-04-28",
+  "input": {
+    "messages": [
+      {
+        "role": "assistant",
+        "content": "Hi — what role are you preparing for, or what brought you to LearnPro today?"
+      },
+      {
+        "role": "user",
+        "content": "career switcher — coming from product management, learning to code so I can build my own ideas"
+      }
+    ],
+    "context": {
+      "turn_index": 1,
+      "captured_so_far": {}
+    }
+  },
+  "expected_behavior_tags": [
+    "should-return-valid-onboarding-json",
+    "should-be-warm-not-effusive",
+    "should-not-use-flattery-words-like-amazing-or-incredible",
+    "should-capture-target-role-career-switcher",
+    "should-ask-one-followup-question",
+    "should-reference-what-the-user-said"
+  ],
+  "explicit_failure_patterns": [
+    {
+      "type": "regex",
+      "pattern": "(?i)\\b(amazing|incredible|wonderful|awesome|fantastic|love that|love it)\\b",
+      "message": "Flattery / effusive language forbidden."
+    }
+  ],
+  "notes": "Warm-coach voice check: response should reference 'career switcher' and 'PM background' specifically without effusive flattery."
+}

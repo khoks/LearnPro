@@ -1,0 +1,33 @@
+{
+  "id": "grade-mostly-pass-name-edge-case",
+  "category": "grade",
+  "system_prompt_under_test": "tutor-2026-05-03",
+  "input": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Problem: Single number\nLanguage: python\n\nStatement:\nGiven a non-empty array of integers `nums`, every element appears twice except for one. Return the unique element.\n\nSubmission:\n```\ndef solve(nums):\n    counts = {}\n    for n in nums:\n        counts[n] = counts.get(n, 0) + 1\n    for n, c in counts.items():\n        if c == 1:\n            return n\n```\n\nTest result: 4/5 hidden tests passed.\n\nFailing test 1: input=[1], expected=1, got=None\n\nProduce the rubric JSON now."
+      }
+    ],
+    "context": {
+      "problem_slug": "single-number",
+      "passed_tests": 4,
+      "total_tests": 5,
+      "language": "python"
+    }
+  },
+  "expected_behavior_tags": [
+    "should-return-valid-rubric-json",
+    "should-have-correctness-between-0.6-and-0.9",
+    "should-name-the-single-element-edge-case",
+    "should-not-fully-discount-the-attempt"
+  ],
+  "explicit_failure_patterns": [
+    {
+      "type": "regex",
+      "pattern": "(?i)great\\s+(work|job)",
+      "message": "Praise forbidden."
+    }
+  ],
+  "notes": "Almost-correct hash-based solve. Edge case [1] returns None because dict.items iteration order isn't the issue — actually the missing return at end. Grader should highlight this."
+}

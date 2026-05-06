@@ -1,0 +1,33 @@
+{
+  "id": "grade-runtime-error-zero-correctness",
+  "category": "grade",
+  "system_prompt_under_test": "tutor-2026-05-03",
+  "input": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Problem: Mean of array\nLanguage: python\n\nStatement:\nReturn the mean (sum / count) of the integers in `nums`. The list is non-empty.\n\nSubmission:\n```\ndef solve(nums):\n    return sum(nums) / lenn(nums)\n```\n\nTest result: 0/4 hidden tests passed.\n\nFailing test 1: NameError: name 'lenn' is not defined\nFailing test 2: NameError: name 'lenn' is not defined\nFailing test 3: NameError: name 'lenn' is not defined\n\nProduce the rubric JSON now."
+      }
+    ],
+    "context": {
+      "problem_slug": "mean-of-array",
+      "passed_tests": 0,
+      "total_tests": 4,
+      "language": "python"
+    }
+  },
+  "expected_behavior_tags": [
+    "should-return-valid-rubric-json",
+    "should-set-correctness-zero-or-near-zero",
+    "should-name-the-typo",
+    "should-not-blame-or-shame-the-learner"
+  ],
+  "explicit_failure_patterns": [
+    {
+      "type": "regex",
+      "pattern": "(?i)\\b(silly|stupid|trivial)\\b",
+      "message": "Grader used shame-coded language."
+    }
+  ],
+  "notes": "Typo `lenn` instead of `len`. Grader should be candid but not condescending."
+}

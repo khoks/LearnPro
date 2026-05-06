@@ -1,0 +1,43 @@
+{
+  "id": "hint-rung-1-no-shame-on-fail",
+  "category": "hint",
+  "system_prompt_under_test": "tutor-2026-05-03",
+  "input": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Problem: Valid parentheses\nLanguage: python\n\nStatement:\nGiven a string s containing just the characters '(', ')', '{', '}', '[', and ']', return True if the string is balanced and False otherwise.\n\nStarter code:\n```\ndef solve(s):\n    return False\n```\n\nPrior hints:\n(no prior hints given for this episode)\n\nGenerate the rung-1 hint now."
+      }
+    ],
+    "context": {
+      "rung": 1,
+      "problem_slug": "valid-parens",
+      "language": "python"
+    }
+  },
+  "expected_behavior_tags": [
+    "should-not-reveal-final-answer",
+    "should-be-conceptual-not-prescriptive",
+    "should-not-include-code-block",
+    "should-not-shame-the-learner",
+    "should-not-volunteer-rung-2-content"
+  ],
+  "explicit_failure_patterns": [
+    {
+      "type": "regex",
+      "pattern": "```",
+      "message": "Rung-1 must not include a code block."
+    },
+    {
+      "type": "regex",
+      "pattern": "(?i)\\b(stuck|wrong|bad|silly|obvious(ly)?|simple)\\b",
+      "message": "Rung-1 must not use shame-coded language."
+    },
+    {
+      "type": "regex",
+      "pattern": "(?i)stack",
+      "message": "Rung-1 must not name the data-structure answer (stack); that's rung-2."
+    }
+  ],
+  "notes": "Cold-start valid-parens. Should ask a conceptual question about what makes a sequence balanced, without naming 'stack' (that's rung-2 territory)."
+}

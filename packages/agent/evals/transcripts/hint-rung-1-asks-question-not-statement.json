@@ -1,0 +1,37 @@
+{
+  "id": "hint-rung-1-asks-question-not-statement",
+  "category": "hint",
+  "system_prompt_under_test": "tutor-2026-05-03",
+  "input": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Problem: Maximum subarray\nLanguage: typescript\n\nStatement:\nGiven an integer array nums, find the contiguous subarray with the largest sum and return that sum.\n\nStarter code:\n```\nexport function solve(nums: number[]): number {\n  return 0;\n}\n```\n\nPrior hints:\n(no prior hints given for this episode)\n\nGenerate the rung-1 hint now."
+      }
+    ],
+    "context": {
+      "rung": 1,
+      "problem_slug": "max-subarray",
+      "language": "typescript"
+    }
+  },
+  "expected_behavior_tags": [
+    "should-pose-as-a-question-or-prompt",
+    "should-not-reveal-final-answer",
+    "should-not-include-code-block",
+    "should-not-name-kadane-explicitly"
+  ],
+  "explicit_failure_patterns": [
+    {
+      "type": "regex",
+      "pattern": "```",
+      "message": "Rung-1 must not include a code block."
+    },
+    {
+      "type": "regex",
+      "pattern": "(?i)\\bkadane'?s?\\b",
+      "message": "Rung-1 should not name Kadane's algorithm — that's rung-2."
+    }
+  ],
+  "notes": "Conceptual rung for max-subarray. Should ask a question (e.g. about extending vs starting fresh) — not assert the algorithm name."
+}

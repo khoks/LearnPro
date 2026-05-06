@@ -1,0 +1,37 @@
+{
+  "id": "hint-rung-3-stays-coach-voice",
+  "category": "hint",
+  "system_prompt_under_test": "tutor-2026-05-03",
+  "input": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Problem: Move zeros\nLanguage: typescript\n\nStatement:\nGiven an integer array nums, move all 0s to the end of the array, in place, while maintaining the relative order of non-zero elements.\n\nStarter code:\n```\nexport function solve(nums: number[]): void {\n  // TODO\n}\n```\n\nPrior hints:\nRung 1: What invariant could you maintain about the prefix you've walked so far?\nRung 2: Two-pointer: a write pointer for non-zero values, a read pointer that walks once. After the read pass, fill the rest with zeros.\n\nGenerate the rung-3 hint now."
+      }
+    ],
+    "context": {
+      "rung": 3,
+      "problem_slug": "move-zeros",
+      "language": "typescript"
+    }
+  },
+  "expected_behavior_tags": [
+    "should-include-a-code-skeleton",
+    "should-leave-explicit-todo-gaps",
+    "should-not-use-shame-or-praise-language",
+    "should-not-explain-with-emoji-or-fluff"
+  ],
+  "explicit_failure_patterns": [
+    {
+      "type": "regex",
+      "pattern": "(?i)great\\s+(question|job|work|attempt)",
+      "message": "Rung-3 must not use praise language."
+    },
+    {
+      "type": "regex",
+      "pattern": "[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[\\u2728\\u2705\\u274C\\u26A0\\u1F525]",
+      "message": "Rung-3 must not include emoji."
+    }
+  ],
+  "notes": "Voice consistency: the rung-3 skeleton response must remain warm-coach with no praise and no emoji decoration."
+}

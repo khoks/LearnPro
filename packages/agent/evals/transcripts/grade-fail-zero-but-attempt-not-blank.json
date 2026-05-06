@@ -1,0 +1,33 @@
+{
+  "id": "grade-fail-zero-but-attempt-not-blank",
+  "category": "grade",
+  "system_prompt_under_test": "tutor-2026-05-03",
+  "input": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Problem: Count vowels\nLanguage: python\n\nStatement:\nReturn the number of vowels (a, e, i, o, u, case-insensitive) in `s`.\n\nSubmission:\n```\ndef solve(s):\n    vowels = 'aeiou'\n    return sum(1 for ch in s if ch in vowels)\n```\n\nTest result: 0/3 hidden tests passed.\n\nFailing test 1: input='Hello', expected=2, got=1\nFailing test 2: input='AEIOU', expected=5, got=0\nFailing test 3: input='Python', expected=1, got=1\n\nProduce the rubric JSON now."
+      }
+    ],
+    "context": {
+      "problem_slug": "count-vowels",
+      "passed_tests": 0,
+      "total_tests": 3,
+      "language": "python"
+    }
+  },
+  "expected_behavior_tags": [
+    "should-return-valid-rubric-json",
+    "should-have-correctness-near-zero",
+    "should-name-the-case-insensitivity-bug",
+    "should-recognize-the-overall-shape-was-correct"
+  ],
+  "explicit_failure_patterns": [
+    {
+      "type": "regex",
+      "pattern": "(?i)great\\s+(work|job)",
+      "message": "Praise forbidden."
+    }
+  ],
+  "notes": "Approach is right; missing s.lower() is the only bug. Grader should be candid about correctness=0 while noting the structure was sound."
+}

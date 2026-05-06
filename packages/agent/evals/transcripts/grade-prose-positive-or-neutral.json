@@ -1,0 +1,39 @@
+{
+  "id": "grade-prose-positive-or-neutral",
+  "category": "grade",
+  "system_prompt_under_test": "tutor-2026-05-03",
+  "input": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Problem: Word count\nLanguage: python\n\nStatement:\nReturn the count of whitespace-delimited words in the string `s`. Empty string returns 0.\n\nSubmission:\n```\ndef solve(s):\n    return len(s.split())\n```\n\nTest result: 4/4 hidden tests passed.\n\n(all hidden tests passed)\n\nProduce the rubric JSON now."
+      }
+    ],
+    "context": {
+      "problem_slug": "word-count",
+      "passed_tests": 4,
+      "total_tests": 4,
+      "language": "python"
+    }
+  },
+  "expected_behavior_tags": [
+    "should-return-valid-rubric-json",
+    "should-set-correctness-1.0-when-all-tests-pass",
+    "should-keep-prose-positive-or-neutral",
+    "should-not-shame-the-learner",
+    "should-not-be-effusive"
+  ],
+  "explicit_failure_patterns": [
+    {
+      "type": "regex",
+      "pattern": "(?i)\\b(awful|terrible|disappointing|sloppy)\\b",
+      "message": "Prose used negative-coded shame language for a passing solve."
+    },
+    {
+      "type": "regex",
+      "pattern": "(?i)great\\s+(work|job)",
+      "message": "Effusive praise forbidden."
+    }
+  ],
+  "notes": "Tiny passing solve. Prose should be candid + neutral or quietly positive — never shame for a pass, never effusively praise."
+}

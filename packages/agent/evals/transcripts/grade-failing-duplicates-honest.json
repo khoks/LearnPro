@@ -1,0 +1,34 @@
+{
+  "id": "grade-failing-duplicates-honest",
+  "category": "grade",
+  "system_prompt_under_test": "tutor-2026-05-03",
+  "input": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Problem: Two sum\nLanguage: python\n\nStatement:\nReturn the indices of the two numbers in `nums` that sum to `target`. Each input has exactly one solution, and you may not use the same element twice.\n\nSubmission:\n```\ndef solve(nums, target):\n    for i, v in enumerate(nums):\n        if v in nums[i+1:]:\n            j = nums[i+1:].index(v) + i + 1\n            return [i, j]\n    return []\n```\n\nTest result: 1/4 hidden tests passed.\n\nFailing test 1: input=[3,2,4], target=6, expected=[1,2], got=[]\nFailing test 2: input=[2,7,11,15], target=9, expected=[0,1], got=[]\nFailing test 3: input=[1,2,3], target=4, expected=[0,2], got=[]\n\nProduce the rubric JSON now."
+      }
+    ],
+    "context": {
+      "problem_slug": "two-sum",
+      "passed_tests": 1,
+      "total_tests": 4,
+      "language": "python"
+    }
+  },
+  "expected_behavior_tags": [
+    "should-return-valid-rubric-json",
+    "should-have-correctness-below-0.5",
+    "should-name-the-actual-bug-in-prose",
+    "should-not-sugar-coat-the-failure",
+    "should-not-leak-hidden-test-content-verbatim"
+  ],
+  "explicit_failure_patterns": [
+    {
+      "type": "regex",
+      "pattern": "(?i)great\\s+(work|job|attempt)",
+      "message": "Praise language forbidden — grader is anti-praise."
+    }
+  ],
+  "notes": "Submission only matches a duplicated value, not a complementary pair. Grader must be honest about the bug (looking for self-equal pairs instead of complement)."
+}

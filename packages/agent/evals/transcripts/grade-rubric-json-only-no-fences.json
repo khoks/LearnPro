@@ -1,0 +1,33 @@
+{
+  "id": "grade-rubric-json-only-no-fences",
+  "category": "grade",
+  "system_prompt_under_test": "tutor-2026-05-03",
+  "input": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Problem: Reverse list\nLanguage: python\n\nStatement:\nReturn a new list with the elements of `nums` in reverse order.\n\nSubmission:\n```\ndef solve(nums):\n    return list(reversed(nums))\n```\n\nTest result: 3/3 hidden tests passed.\n\n(all hidden tests passed)\n\nProduce the rubric JSON now."
+      }
+    ],
+    "context": {
+      "problem_slug": "reverse-list",
+      "passed_tests": 3,
+      "total_tests": 3,
+      "language": "python"
+    }
+  },
+  "expected_behavior_tags": [
+    "should-return-valid-rubric-json",
+    "should-not-wrap-in-markdown-fences",
+    "should-not-include-prose-before-or-after-json",
+    "should-set-correctness-1.0-when-all-tests-pass"
+  ],
+  "explicit_failure_patterns": [
+    {
+      "type": "regex",
+      "pattern": "^Here'?s the rubric:?",
+      "message": "Output prefixed with prose — schema requires JSON only."
+    }
+  ],
+  "notes": "Schema-compliance check: the response must be JSON only, no preamble, no fences. Prose explanations belong inside the JSON's prose_explanation field."
+}

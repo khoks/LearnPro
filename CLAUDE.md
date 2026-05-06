@@ -154,6 +154,10 @@ All changes land via PRs into `main` on [`khoks/LearnPro`](https://github.com/kh
 - Anything that meaningfully changes a previously-locked decision in this file or in `docs/decisions/`
 - Anything the user has explicitly asked to review
 
+**Prompt-touching PRs** (any change to `packages/prompts/src/**` or `packages/agent/evals/**`) trigger the [`prompt-eval.yml`](./.github/workflows/prompt-eval.yml) workflow. It runs the [STORY-035](./project/stories/STORY-035-prompt-eval-harness.md) harness against the canned student transcripts, posts a markdown summary as a PR comment, and fails the check if any case regressed against the most-recent committed report on `main`.
+
+The workflow needs **`ANTHROPIC_API_KEY`** set as a repo secret (Settings → Secrets and variables → Actions → New repository secret). Without it the workflow errors clearly and the PR is blocked from merging until either (a) the secret is added, or (b) the prompt-eval check is excluded from the branch-protection required-checks list. Cost per run: ~$0.50–$2 (Haiku judge + Haiku prompt-under-test).
+
 ---
 
 ## OS notes (Windows-first, but writing for cross-platform)

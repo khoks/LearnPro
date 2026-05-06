@@ -1,0 +1,27 @@
+{
+  "id": "session-plan-tight-budget-10",
+  "category": "session-plan",
+  "system_prompt_under_test": "session-plan-2026-05-03",
+  "input": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Time budget for this session (minutes): 10\nTarget role: career_switcher\nPrimary goal: stay consistent\nCurrent track: python-fundamentals\n\nRecent episodes (newest first):\n- two-sum — outcome: passed_with_hints, difficulty: easy\n- string-formatting — outcome: passed, difficulty: easy\n\nProduce a JSON plan now. 3-5 items, total estimated_duration_min ≤ 10."
+      }
+    ],
+    "context": {
+      "time_budget_min": 10,
+      "current_track": "python-fundamentals",
+      "recent_count": 2
+    }
+  },
+  "expected_behavior_tags": [
+    "should-return-valid-session-plan-json",
+    "should-have-3-to-5-items",
+    "should-not-exceed-time-budget",
+    "should-have-each-item-fit-in-tight-budget",
+    "should-not-fabricate-fields"
+  ],
+  "explicit_failure_patterns": [],
+  "notes": "Tight 10-min budget. Items must fit (small chunks like 3-4 min each)."
+}

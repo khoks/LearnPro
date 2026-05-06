@@ -1,0 +1,33 @@
+{
+  "id": "grade-empty-input-edge-case",
+  "category": "grade",
+  "system_prompt_under_test": "tutor-2026-05-03",
+  "input": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Problem: Maximum element\nLanguage: python\n\nStatement:\nReturn the maximum integer in the list `nums`. The list is non-empty.\n\nSubmission:\n```\ndef solve(nums):\n    m = nums[0]\n    for n in nums[1:]:\n        if n > m:\n            m = n\n    return m\n```\n\nTest result: 7/7 hidden tests passed.\n\n(all hidden tests passed)\n\nProduce the rubric JSON now."
+      }
+    ],
+    "context": {
+      "problem_slug": "max-element",
+      "passed_tests": 7,
+      "total_tests": 7,
+      "language": "python"
+    }
+  },
+  "expected_behavior_tags": [
+    "should-return-valid-rubric-json",
+    "should-set-correctness-1.0-when-all-tests-pass",
+    "should-have-edge-case-coverage-bar-acknowledge-spec-says-non-empty",
+    "should-not-fault-the-code-for-not-handling-empty"
+  ],
+  "explicit_failure_patterns": [
+    {
+      "type": "regex",
+      "pattern": "(?i)great\\s+(work|job|attempt)",
+      "message": "Praise language forbidden."
+    }
+  ],
+  "notes": "Spec says input is non-empty. Grader should not penalize the code for not handling [] (since the spec excluded it)."
+}

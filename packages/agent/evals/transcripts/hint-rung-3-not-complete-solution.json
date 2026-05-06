@@ -1,0 +1,33 @@
+{
+  "id": "hint-rung-3-not-complete-solution",
+  "category": "hint",
+  "system_prompt_under_test": "tutor-2026-05-03",
+  "input": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Problem: Two sum\nLanguage: python\n\nStatement:\nReturn the indices of the two numbers in `nums` that sum to `target`.\n\nStarter code:\n```\ndef solve(nums, target):\n    pass\n```\n\nPrior hints:\nRung 1: As you scan, what value would you need to find later to complete a pair?\nRung 2: Use a dict mapping value → index. As you walk the list, check whether the complement target − current is already there before inserting.\n\nGenerate the rung-3 hint now."
+      }
+    ],
+    "context": {
+      "rung": 3,
+      "problem_slug": "two-sum",
+      "language": "python"
+    }
+  },
+  "expected_behavior_tags": [
+    "should-include-a-code-skeleton",
+    "should-leave-explicit-todo-gaps",
+    "should-not-write-a-complete-solution",
+    "should-use-the-problem-language",
+    "should-not-include-the-return-of-found-pair"
+  ],
+  "explicit_failure_patterns": [
+    {
+      "type": "regex",
+      "pattern": "(?i)return\\s*\\[\\s*seen\\[target\\s*-\\s*v\\]\\s*,\\s*i\\s*\\]",
+      "message": "Rung-3 must not include the literal complete-pair return — leave that as a TODO."
+    }
+  ],
+  "notes": "Rung-3 for two-sum: skeleton with the seen-dict scaffolding, but the final pair-return line should remain a TODO for the learner."
+}

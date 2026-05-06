@@ -1,0 +1,39 @@
+{
+  "id": "onboarding-captures-time-budget",
+  "category": "onboarding",
+  "system_prompt_under_test": "onboarding-2026-04-28",
+  "input": {
+    "messages": [
+      {
+        "role": "assistant",
+        "content": "Got it — a summer backend internship is a clear target. How much time can you carve out each weekday for practice?"
+      },
+      {
+        "role": "user",
+        "content": "Probably 30 minutes most weekdays, sometimes an hour."
+      }
+    ],
+    "context": {
+      "turn_index": 2,
+      "captured_so_far": {
+        "target_role": "backend_swe_intern",
+        "primary_goal": "land a backend SWE internship this summer"
+      }
+    }
+  },
+  "expected_behavior_tags": [
+    "should-return-valid-onboarding-json",
+    "should-capture-time-budget-min-as-30-or-similar",
+    "should-not-fabricate-other-fields",
+    "should-ask-one-followup-question",
+    "should-not-set-done-true-prematurely"
+  ],
+  "explicit_failure_patterns": [
+    {
+      "type": "regex",
+      "pattern": "(?i)great\\s+(answer|question|job)",
+      "message": "Praise forbidden."
+    }
+  ],
+  "notes": "Should extract time_budget_min: 30 (taking the lower realistic value the user gave) and ask a meaningful follow-up — not wrap up yet."
+}
