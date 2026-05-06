@@ -37,6 +37,11 @@ export const AssignProblemOutputSchema = z.object({
   difficulty_tier: z.enum(["easy", "medium", "hard", "expert"]),
   why_this_difficulty: z.string(),
   started_at: z.number().int().nonnegative(),
+  // STORY-031 — count of the user's currently-due concept cards (null when spaced-repetition
+  // isn't wired). The session UI surfaces a "review session" CTA when this is >= 3.
+  due_concepts_count: z.number().int().min(0).nullable(),
+  // STORY-031 — derived: true when due_concepts_count >= 3.
+  review_session_suggested: z.boolean(),
 });
 export type AssignProblemOutput = z.infer<typeof AssignProblemOutputSchema>;
 
@@ -89,7 +94,19 @@ export function createAssignProblemTool(opts: CreateAssignProblemToolOptions): A
         config,
         cold_start: coldStart,
       });
-      const candidate = pickCandidate({ tier, recent, catalog });
+
+      // STORY-031 — pull the user's due concept slugs (best-effort). When the deps adapter
+      // doesn't wire spaced-repetition, the assigner skips the tie-break entirely and
+      // `due_concepts_count` reports null in the response.
+      const due = opts.deps.loadDueConceptSlugs
+        ? await opts.deps.loadDueConceptSlugs({ user_id: input.user_id })
+        : null;
+      const candidate = pickCandidate({
+        tier,
+        recent,
+        catalog,
+        due_concept_slugs: due ?? [],
+      });
       if (!candidate) {
         throw new NoEligibleProblemError(tier, input.track_id);
       }
@@ -100,6 +117,9 @@ export function createAssignProblemTool(opts: CreateAssignProblemToolOptions): A
         problem_id: candidate.problem_id,
       });
 
+      const dueCount = due === null ? null : due.length;
+      const reviewSuggested = dueCount !== null && dueCount >= 3;
+
       return {
         episode_id: created.episode_id,
         problem_id: candidate.problem_id,
@@ -108,6 +128,8 @@ export function createAssignProblemTool(opts: CreateAssignProblemToolOptions): A
         difficulty_tier: tier,
         why_this_difficulty: rationale,
         started_at: created.started_at,
+        due_concepts_count: dueCount,
+        review_session_suggested: reviewSuggested,
       };
     },
   };
@@ -161,11 +183,18 @@ export function pickDifficultyTier(opts: {
 // Filter the catalog to the chosen tier and skip problems the user solved in the recent window.
 // Falls back to picking from the entire tier (ignoring recency) if recency would empty the bucket
 // — better to repeat than to fail the assign.
+//
+// STORY-031: when `due_concept_slugs` is non-empty, ties (same recency band, same tier) are
+// broken in favor of problems whose `concept_tags` overlap with the user's due concept slugs.
+// Spaced-repetition is *secondary* — it never overrides difficulty or recency, only re-orders
+// the equally-eligible final-stage candidates.
 export function pickCandidate(opts: {
   tier: DifficultyTier;
   recent: RecentEpisode[];
   catalog: ProblemCatalogEntry[];
+  due_concept_slugs?: ReadonlyArray<string>;
 }): ProblemCatalogEntry | null {
+  const due = new Set(opts.due_concept_slugs ?? []);
   const inTier = opts.catalog.filter((c) => difficultyToTier(c.def.difficulty) === opts.tier);
   if (inTier.length === 0) {
     // Tier empty — try adjacent tiers within the same difficulty ladder before giving up.
@@ -176,35 +205,56 @@ export function pickCandidate(opts: {
       if (!probe) continue;
       const fallback = opts.catalog.filter((c) => difficultyToTier(c.def.difficulty) === probe);
       if (fallback.length > 0) {
-        return chooseOldest(fallback, opts.recent);
+        return chooseOldest(fallback, opts.recent, due);
       }
     }
     return null;
   }
-  return chooseOldest(inTier, opts.recent);
+  return chooseOldest(inTier, opts.recent, due);
 }
 
 // "Oldest" = the candidate the user has not seen in their recent window, or — if all candidates
-// were recent — the one whose last started_at is furthest back.
+// were recent — the one whose last started_at is furthest back. STORY-031 spaced-repetition
+// tie-break: when two candidates share the same primary key, prefer the one whose concept_tags
+// overlap with the due-set; otherwise fall back to slug alphabetic order (deterministic).
 function chooseOldest(
   candidates: ProblemCatalogEntry[],
   recent: RecentEpisode[],
+  due: ReadonlySet<string>,
 ): ProblemCatalogEntry {
   const recentSet = new Set(recent.map((r) => r.problem_id));
   const fresh = candidates.filter((c) => !recentSet.has(c.problem_id));
   if (fresh.length > 0) {
-    // Stable: deterministic on slug ordering so tests pass without a tie-breaker dance.
-    return fresh.sort((a, b) => a.problem_slug.localeCompare(b.problem_slug))[0]!;
+    return fresh.sort((a, b) => compareWithDue(a, b, due))[0]!;
   }
-  // All seen recently — pick the one furthest in the past.
+  // All seen recently — pick the one furthest in the past, breaking ties on overlap then slug.
   const lastSeenAt = new Map<string, number>();
   for (const r of recent) lastSeenAt.set(r.problem_id, r.started_at);
   return candidates.sort((a, b) => {
     const aSeen = lastSeenAt.get(a.problem_id) ?? 0;
     const bSeen = lastSeenAt.get(b.problem_id) ?? 0;
     if (aSeen !== bSeen) return aSeen - bSeen;
-    return a.problem_slug.localeCompare(b.problem_slug);
+    return compareWithDue(a, b, due);
   })[0]!;
+}
+
+function compareWithDue(
+  a: ProblemCatalogEntry,
+  b: ProblemCatalogEntry,
+  due: ReadonlySet<string>,
+): number {
+  if (due.size > 0) {
+    const aOverlap = countOverlap(a.def.concept_tags, due);
+    const bOverlap = countOverlap(b.def.concept_tags, due);
+    if (aOverlap !== bOverlap) return bOverlap - aOverlap;
+  }
+  return a.problem_slug.localeCompare(b.problem_slug);
+}
+
+function countOverlap(tags: ReadonlyArray<string>, due: ReadonlySet<string>): number {
+  let n = 0;
+  for (const t of tags) if (due.has(t)) n += 1;
+  return n;
 }
 
 function projectProblem(def: ProblemDef): AssignProblemOutput["problem"] {

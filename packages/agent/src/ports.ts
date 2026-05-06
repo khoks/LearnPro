@@ -29,6 +29,12 @@ export interface AssignProblemDeps {
     org_id: string;
     problem_id: string;
   }): Promise<{ episode_id: string; started_at: number }>;
+
+  // STORY-031 — returns the kebab-case concept slugs the user is due to review (FSRS state.due
+  // <= now). Optional: when omitted, the assigner skips the spaced-repetition tie-break and
+  // behaves identically to its pre-STORY-031 self. The deps adapter in apps/api wires this
+  // through `getDueConcepts` + a concept-id -> slug mapping.
+  loadDueConceptSlugs?(input: { user_id: string }): Promise<string[]>;
 }
 
 // Minimal projection of `episodes` rows the assigner needs.
@@ -186,6 +192,42 @@ export interface UpdateProfileDeps {
     time_to_solve_ms: number;
     expected_time_ms: number;
   }): Promise<void>;
+
+  // STORY-031 — load the FSRS card state for one (user, concept). Optional: when unwired,
+  // updateProfile skips the spaced-repetition write. Returns null on cold-start (the tool seeds
+  // an `initialCardState()` from @learnpro/scoring before recomputing).
+  loadConceptCardState?(input: {
+    user_id: string;
+    concept_id: string;
+  }): Promise<FsrsCardStateLike | null>;
+
+  // STORY-031 — persist the recomputed FSRS card state. Idempotency: the underlying DB helper
+  // UPSERTs on (user_id, concept_id), so re-grading the same episode just refreshes the row
+  // (total_reviews advances by 1 each call — accepted as best-effort approximation per
+  // STORY-031). The deps adapter in apps/api wires this through `recordReview`.
+  recordConceptReview?(input: {
+    user_id: string;
+    org_id: string;
+    concept_id: string;
+    next_state: FsrsCardStateLike;
+  }): Promise<void>;
+
+  // STORY-031 — count how many of the user's concept cards are due `now`. Optional. Used to
+  // surface the "N more due" delta in the tool's output. Cheap call (capped at 50 in DB
+  // helper). When unwired, the tool returns null for due_reviews_count.
+  countDueConcepts?(input: { user_id: string }): Promise<number>;
+}
+
+// Structural shape of the persisted FSRS card state. Lives here (not imported from
+// @learnpro/scoring) so this `ports.ts` stays a leaf — the agent package depends on @learnpro/db
+// indirectly through the deps adapters in apps/api. The tool implementation imports the real
+// `FsrsCardState` type from @learnpro/scoring.
+export interface FsrsCardStateLike {
+  stability: number;
+  difficulty: number;
+  due: string;
+  lapses: number;
+  last_reviewed: string | null;
 }
 
 export interface AwardXpForEpisodeInput {

@@ -55,6 +55,13 @@ interface FakeDepsOpts {
   // is also set, the dep throws — tests assert the close still completes.
   wireSignal?: boolean;
   wireSignalThrows?: boolean;
+  // STORY-031 — when true, wire the spaced-repetition deps. `priorCardState` lets a test seed an
+  // existing FSRS state (default cold-start). `recordReviewThrows` makes recordConceptReview
+  // raise — used to assert best-effort swallow. `dueCount` is what `countDueConcepts` returns.
+  wireFsrs?: boolean;
+  recordReviewThrows?: boolean;
+  priorCardState?: import("@learnpro/scoring").FsrsCardState | null;
+  dueCount?: number;
 }
 
 interface MarkPlanCall {
@@ -72,6 +79,13 @@ interface RefreshSignalCall {
   expected_time_ms: number;
 }
 
+interface RecordReviewCall {
+  user_id: string;
+  org_id: string;
+  concept_id: string;
+  next_state: import("@learnpro/scoring").FsrsCardState;
+}
+
 function fakeDeps(opts: FakeDepsOpts): UpdateProfileDeps & {
   closed: number;
   upserts: Array<{ concept_id: string; skill: ConceptSkill }>;
@@ -79,17 +93,22 @@ function fakeDeps(opts: FakeDepsOpts): UpdateProfileDeps & {
   closeMock: ReturnType<typeof vi.fn>;
   markPlanCalls: MarkPlanCall[];
   refreshSignalCalls: RefreshSignalCall[];
+  reviewCalls: RecordReviewCall[];
+  loadStateCalls: number;
 } {
   let closed = 0;
   const upserts: Array<{ concept_id: string; skill: ConceptSkill }> = [];
   const xpCalls: AwardXpForEpisodeInput[] = [];
   const markPlanCalls: MarkPlanCall[] = [];
   const refreshSignalCalls: RefreshSignalCall[] = [];
+  const reviewCalls: RecordReviewCall[] = [];
+  let loadStateCalls = 0;
   const closeMock = vi.fn(async () => {
     closed += 1;
   });
   const wirePlan = opts.markPlanResult !== undefined || opts.markPlanThrows === true;
   const wireSignal = opts.wireSignal === true || opts.wireSignalThrows === true;
+  const wireFsrs = opts.wireFsrs === true || opts.recordReviewThrows === true;
   return {
     closeMock,
     get closed() {
@@ -106,6 +125,12 @@ function fakeDeps(opts: FakeDepsOpts): UpdateProfileDeps & {
     },
     get refreshSignalCalls() {
       return refreshSignalCalls;
+    },
+    get reviewCalls() {
+      return reviewCalls;
+    },
+    get loadStateCalls() {
+      return loadStateCalls;
     },
     async loadEpisodeForClose() {
       return opts.ctx === undefined
@@ -159,6 +184,19 @@ function fakeDeps(opts: FakeDepsOpts): UpdateProfileDeps & {
           throw new Error("simulated confidence_signal outage");
         }
       },
+    }),
+    ...(wireFsrs && {
+      loadConceptCardState: async () => {
+        loadStateCalls += 1;
+        return opts.priorCardState ?? null;
+      },
+      recordConceptReview: async (input: RecordReviewCall) => {
+        if (opts.recordReviewThrows) {
+          throw new Error("simulated FSRS write outage");
+        }
+        reviewCalls.push(input);
+      },
+      countDueConcepts: async () => opts.dueCount ?? 0,
     }),
   };
 }
@@ -588,5 +626,180 @@ describe("createUpdateProfileTool: confidence signal refresh (STORY-054)", () =>
     expect(out.xp_award.awarded).toBe(true);
     // The dep was attempted (and threw); we record the call so we can assert the swallow happened.
     expect(deps.refreshSignalCalls).toHaveLength(1);
+  });
+});
+
+describe("createUpdateProfileTool: spaced-repetition (STORY-031)", () => {
+  it("when unwired, reviews_written is empty + due_concepts_count is null", async () => {
+    const deps = fakeDeps({});
+    const tool = createUpdateProfileTool({ deps });
+    const out = await tool.run({
+      episode_id: EPISODE_ID,
+      outcome: "passed",
+      passed: true,
+      submit_count: 1,
+      hints_used: 0,
+      finished_at_ms: 1700000060000,
+    });
+    expect(out.reviews_written).toEqual([]);
+    expect(out.due_concepts_count).toBeNull();
+  });
+
+  it("writes one review per resolved concept tag with the correct grade", async () => {
+    const deps = fakeDeps({ wireFsrs: true });
+    const tool = createUpdateProfileTool({ deps });
+    const out = await tool.run({
+      episode_id: EPISODE_ID,
+      outcome: "passed",
+      passed: true,
+      submit_count: 1,
+      hints_used: 0,
+      finished_at_ms: 1700000060000,
+    });
+    expect(deps.reviewCalls).toHaveLength(2); // arrays + hash-map (missing-tag filtered)
+    expect(out.reviews_written).toHaveLength(2);
+    for (const r of out.reviews_written) {
+      // 0 hints + finished at 60s vs expected 60s -> not under-target -> good (not easy).
+      expect(r.grade).toBe("good");
+      expect(typeof r.next_due).toBe("string");
+    }
+  });
+
+  it("revealed → grade=again", async () => {
+    const deps = fakeDeps({ wireFsrs: true });
+    const tool = createUpdateProfileTool({ deps });
+    const out = await tool.run({
+      episode_id: EPISODE_ID,
+      outcome: "revealed",
+      passed: true,
+      reveal_clicked: true,
+      submit_count: 1,
+      hints_used: 0,
+      finished_at_ms: 1700000060000,
+    });
+    for (const r of out.reviews_written) expect(r.grade).toBe("again");
+  });
+
+  it("failed → grade=again", async () => {
+    const deps = fakeDeps({ wireFsrs: true });
+    const tool = createUpdateProfileTool({ deps });
+    const out = await tool.run({
+      episode_id: EPISODE_ID,
+      outcome: "failed",
+      passed: false,
+      submit_count: 3,
+      hints_used: 0,
+      finished_at_ms: 1700000180000,
+    });
+    for (const r of out.reviews_written) expect(r.grade).toBe("again");
+  });
+
+  it("abandoned → grade=again", async () => {
+    const deps = fakeDeps({ wireFsrs: true });
+    const tool = createUpdateProfileTool({ deps });
+    const out = await tool.run({
+      episode_id: EPISODE_ID,
+      outcome: "abandoned",
+      passed: false,
+      submit_count: 1,
+      hints_used: 0,
+      finished_at_ms: 1700000060000,
+    });
+    for (const r of out.reviews_written) expect(r.grade).toBe("again");
+  });
+
+  it("passed_with_hints (1 hint) → grade=good", async () => {
+    const deps = fakeDeps({ wireFsrs: true });
+    const tool = createUpdateProfileTool({ deps });
+    const out = await tool.run({
+      episode_id: EPISODE_ID,
+      outcome: "passed_with_hints",
+      passed: true,
+      submit_count: 1,
+      hints_used: 1,
+      finished_at_ms: 1700000060000,
+    });
+    for (const r of out.reviews_written) expect(r.grade).toBe("good");
+  });
+
+  it("passed_with_hints (2 hints) → grade=hard", async () => {
+    const deps = fakeDeps({ wireFsrs: true });
+    const tool = createUpdateProfileTool({ deps });
+    const out = await tool.run({
+      episode_id: EPISODE_ID,
+      outcome: "passed_with_hints",
+      passed: true,
+      submit_count: 1,
+      hints_used: 2,
+      finished_at_ms: 1700000120000,
+    });
+    for (const r of out.reviews_written) expect(r.grade).toBe("hard");
+  });
+
+  it("passed (0 hints, under-target time) → grade=easy", async () => {
+    const deps = fakeDeps({ wireFsrs: true });
+    const tool = createUpdateProfileTool({ deps });
+    const out = await tool.run({
+      episode_id: EPISODE_ID,
+      outcome: "passed",
+      passed: true,
+      submit_count: 1,
+      hints_used: 0,
+      // 30s of 60s expected (multiplier 0.6 → 36s threshold) → easy.
+      finished_at_ms: 1700000030000,
+    });
+    for (const r of out.reviews_written) expect(r.grade).toBe("easy");
+  });
+
+  it("FSRS write failure is swallowed: close still succeeds", async () => {
+    const deps = fakeDeps({ wireFsrs: true, recordReviewThrows: true });
+    const tool = createUpdateProfileTool({ deps });
+    const out = await tool.run({
+      episode_id: EPISODE_ID,
+      outcome: "passed",
+      passed: true,
+      submit_count: 1,
+      hints_used: 0,
+      finished_at_ms: 1700000060000,
+    });
+    expect(deps.closed).toBe(1);
+    expect(out.xp_award.awarded).toBe(true);
+    expect(out.reviews_written).toEqual([]);
+  });
+
+  it("due_concepts_count surfaces the dep's count when wired", async () => {
+    const deps = fakeDeps({ wireFsrs: true, dueCount: 7 });
+    const tool = createUpdateProfileTool({ deps });
+    const out = await tool.run({
+      episode_id: EPISODE_ID,
+      outcome: "passed",
+      passed: true,
+      submit_count: 1,
+      hints_used: 0,
+      finished_at_ms: 1700000060000,
+    });
+    expect(out.due_concepts_count).toBe(7);
+  });
+
+  it("idempotency: re-grading the same episode produces deterministic next_due", async () => {
+    const deps = fakeDeps({ wireFsrs: true });
+    const tool = createUpdateProfileTool({ deps });
+    const a = await tool.run({
+      episode_id: EPISODE_ID,
+      outcome: "passed",
+      passed: true,
+      submit_count: 1,
+      hints_used: 0,
+      finished_at_ms: 1700000060000,
+    });
+    const b = await tool.run({
+      episode_id: EPISODE_ID,
+      outcome: "passed",
+      passed: true,
+      submit_count: 1,
+      hints_used: 0,
+      finished_at_ms: 1700000060000,
+    });
+    expect(a.reviews_written).toEqual(b.reviews_written);
   });
 });

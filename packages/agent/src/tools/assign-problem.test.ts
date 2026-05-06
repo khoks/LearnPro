@@ -238,6 +238,9 @@ describe("createAssignProblemTool", () => {
     expect(out.problem.concept_tags).toEqual(["fundamentals"]);
     expect(deps.calls.createEpisode).toBe(1);
     expect(out.why_this_difficulty.toLowerCase()).toContain("cold-start");
+    // STORY-031: deps without spaced-repetition wiring report null + no review suggestion.
+    expect(out.due_concepts_count).toBeNull();
+    expect(out.review_session_suggested).toBe(false);
   });
 
   it("steps up to medium after a clean easy solve and picks a medium problem", async () => {
@@ -274,5 +277,154 @@ describe("createAssignProblemTool", () => {
     await expect(
       tool.run({ user_id: USER_ID, org_id: ORG_ID, track_id: TRACK_ID }),
     ).rejects.toBeInstanceOf(NoEligibleProblemError);
+  });
+});
+
+describe("createAssignProblemTool: STORY-031 spaced-repetition tie-break", () => {
+  function pdefWithTags(slug: string, difficulty: number, tags: string[]): ProblemDef {
+    return { ...pdef({ slug, difficulty }), concept_tags: tags };
+  }
+  function entryWithTags(slug: string, difficulty: number, tags: string[]): ProblemCatalogEntry {
+    return {
+      problem_id: `00000000-0000-4000-8000-${slug.padStart(12, "0").slice(0, 12)}`,
+      problem_slug: slug,
+      def: pdefWithTags(slug, difficulty, tags),
+    };
+  }
+
+  it("breaks ties toward problems whose concept_tags overlap with the due set", async () => {
+    // Two equally-eligible (same tier, both fresh) candidates. Default tie-break is alphabetic
+    // (alpha wins). With spaced-repetition wired and `recursion` due, beta should win.
+    const catalog = [
+      entryWithTags("alpha", 1, ["arrays"]),
+      entryWithTags("beta", 1, ["recursion"]),
+    ];
+    const deps: AssignProblemDeps & { calls: { createEpisode: number } } = {
+      calls: { createEpisode: 0 },
+      async loadRecentEpisodes() {
+        return [];
+      },
+      async loadProblemCatalog() {
+        return catalog;
+      },
+      async createEpisode() {
+        return {
+          episode_id: "99999999-9999-4999-8999-000000000001",
+          started_at: 1700000000000,
+        };
+      },
+      async loadDueConceptSlugs() {
+        return ["recursion"];
+      },
+    };
+    const tool = createAssignProblemTool({ deps });
+    const out = await tool.run({ user_id: USER_ID, org_id: ORG_ID, track_id: TRACK_ID });
+    expect(out.problem_slug).toBe("beta");
+    expect(out.due_concepts_count).toBe(1);
+    expect(out.review_session_suggested).toBe(false);
+  });
+
+  it("does not override the difficulty heuristic — still picks from the chosen tier", async () => {
+    // The user is past cold-start with a clean easy solve → should step up to medium. Even
+    // though `expert` problems carry the `recursion` due tag, the assigner stays at medium.
+    const catalog = [
+      entryWithTags("medium-no-tag", 3, ["arrays"]),
+      entryWithTags("expert-with-tag", 5, ["recursion"]),
+    ];
+    const recent: RecentEpisode[] = [
+      {
+        problem_id: "00000000-0000-4000-8000-aaaa00000000",
+        problem_slug: "previous",
+        started_at: 1700000000000,
+        difficulty: "easy",
+        signal: {
+          passed: true,
+          reveal_clicked: false,
+          hints_used: 0,
+          submit_count: 1,
+          time_to_solve_ms: 20000,
+          expected_time_ms: 60000,
+        },
+        final_outcome: "passed",
+      },
+    ];
+    const deps: AssignProblemDeps & { calls: { createEpisode: number } } = {
+      calls: { createEpisode: 0 },
+      async loadRecentEpisodes() {
+        return recent;
+      },
+      async loadProblemCatalog() {
+        return catalog;
+      },
+      async createEpisode() {
+        return {
+          episode_id: "99999999-9999-4999-8999-000000000002",
+          started_at: 1700000060000,
+        };
+      },
+      async loadDueConceptSlugs() {
+        return ["recursion"];
+      },
+    };
+    const tool = createAssignProblemTool({ deps });
+    const out = await tool.run({ user_id: USER_ID, org_id: ORG_ID, track_id: TRACK_ID });
+    expect(out.difficulty_tier).toBe("medium");
+    expect(out.problem_slug).toBe("medium-no-tag");
+  });
+
+  it("review_session_suggested=true when due_concepts_count >= 3", async () => {
+    const catalog = [entryWithTags("alpha", 1, ["fundamentals"])];
+    const deps: AssignProblemDeps & { calls: { createEpisode: number } } = {
+      calls: { createEpisode: 0 },
+      async loadRecentEpisodes() {
+        return [];
+      },
+      async loadProblemCatalog() {
+        return catalog;
+      },
+      async createEpisode() {
+        return {
+          episode_id: "99999999-9999-4999-8999-000000000003",
+          started_at: 1700000060000,
+        };
+      },
+      async loadDueConceptSlugs() {
+        return ["a", "b", "c", "d"];
+      },
+    };
+    const tool = createAssignProblemTool({ deps });
+    const out = await tool.run({ user_id: USER_ID, org_id: ORG_ID, track_id: TRACK_ID });
+    expect(out.due_concepts_count).toBe(4);
+    expect(out.review_session_suggested).toBe(true);
+  });
+
+  it("empty due-list keeps deterministic alphabetic tie-break", async () => {
+    const catalog = [
+      entryWithTags("alpha", 1, ["arrays"]),
+      entryWithTags("beta", 1, ["recursion"]),
+    ];
+    const deps: AssignProblemDeps & { calls: { createEpisode: number } } = {
+      calls: { createEpisode: 0 },
+      async loadRecentEpisodes() {
+        return [];
+      },
+      async loadProblemCatalog() {
+        return catalog;
+      },
+      async createEpisode() {
+        return {
+          episode_id: "99999999-9999-4999-8999-000000000004",
+          started_at: 1700000060000,
+        };
+      },
+      async loadDueConceptSlugs() {
+        return [];
+      },
+    };
+    const tool = createAssignProblemTool({ deps });
+    const out = await tool.run({ user_id: USER_ID, org_id: ORG_ID, track_id: TRACK_ID });
+    expect(out.problem_slug).toBe("alpha");
+    expect(out.due_concepts_count).toBe(0);
+    expect(out.review_session_suggested).toBe(false);
   });
 });
