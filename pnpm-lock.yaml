@@ -123,6 +123,9 @@ importers:
       '@monaco-editor/react':
         specifier: ^4.6.0
         version: 4.7.0(monaco-editor@0.52.2)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
+      drizzle-orm:
+        specifier: ^0.36.4
+        version: 0.36.4(@types/pg@8.20.0)(@types/react@19.2.14)(pg@8.20.0)(react@19.2.5)
       monaco-editor:
         specifier: ^0.52.2
         version: 0.52.2
