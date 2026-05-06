@@ -17,7 +17,8 @@
     "db:migrate": "tsx src/migrate.ts",
     "db:seed": "tsx src/seed.ts",
     "db:gc": "tsx src/notifications-gc.ts",
-    "db:retention": "tsx src/retention-sweep.ts"
+    "db:retention": "tsx src/retention-sweep.ts",
+    "db:import": "tsx bin/import.ts"
   },
   "dependencies": {
     "@learnpro/llm": "workspace:*",
