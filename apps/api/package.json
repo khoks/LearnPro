@@ -11,7 +11,8 @@
     "lint": "eslint src",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --passWithNoTests",
-    "daily-reminder": "tsx src/daily-reminder.ts"
+    "daily-reminder": "tsx src/daily-reminder.ts",
+    "weekly-digest": "tsx src/weekly-digest.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^11.0.1",

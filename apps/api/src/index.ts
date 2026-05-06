@@ -48,6 +48,13 @@ import {
   type NotificationChannel,
 } from "@learnpro/notifications";
 import {
+  EmailChannel,
+  NoopEmailTransport,
+  ResendTransport,
+  type EmailTransport,
+} from "@learnpro/notifications/email";
+import { registerEmailDigestRoutes } from "./email-digest.js";
+import {
   loadExportWindowMs,
   noDbExporter,
   registerExportRoute,
@@ -167,6 +174,10 @@ export interface BuildServerOptions {
     webBaseUrl?: string;
     buildClient?: import("./portfolio.js").PortfolioRouteOptions["buildClient"];
   };
+  // STORY-045 — DB handle for the email-digest settings + unsubscribe routes. Same wiring
+  // pattern as quiet-hours / autonomy: tests inject a fake DB; production wires the same `db`
+  // instance the rest of the API uses (via `defaultsFromEnv()`).
+  emailDigestDb?: import("@learnpro/db").LearnProDb;
 }
 
 // Default impl when no store is provided — drops events on the floor. Useful for tests and
@@ -440,6 +451,12 @@ export function buildServer(opts: BuildServerOptions = {}) {
     });
   }
 
+  // STORY-045 — email-digest settings + public unsubscribe routes. Same injection pattern as
+  // quiet-hours; defaultsFromEnv forwards the same `db` instance.
+  if (opts.emailDigestDb) {
+    registerEmailDigestRoutes(app, { db: opts.emailDigestDb, sessionResolver });
+  }
+
   // STORY-060 deferred AC — friendly 429 mapping for the per-user daily token budget. Any handler
   // that calls into the LLM provider can throw `TokenBudgetExceededError`; this hook catches it
   // before Fastify's default 500 path so the playground can render the friendly message AC from
@@ -487,6 +504,7 @@ function defaultsFromEnv(): {
   todayPlanDeps?: TodayPlanDeps;
   portfolio?: BuildServerOptions["portfolio"];
   exportRateLimiter?: RateLimiter;
+  emailDigestDb?: import("@learnpro/db").LearnProDb;
 } {
   const exportRateLimiter = buildExportRateLimiterFromEnv(process.env);
   const url = process.env["DATABASE_URL"];
@@ -515,6 +533,11 @@ function defaultsFromEnv(): {
   if (webPushSender) {
     channels.push(new WebPushChannel({ db, sender: webPushSender }));
   }
+  // STORY-045 — Wire the EmailChannel into the dispatcher chain. The transport falls back to
+  // NoopEmailTransport when no provider is configured (the channel still exists in the chain
+  // so the digest cron can dispatch through it; sends just no-op until LEARNPRO_EMAIL_PROVIDER
+  // and the matching API key are set).
+  channels.push(new EmailChannel({ transport: buildEmailTransportFromEnv() }));
   // STORY-024 — wrap the dispatcher with quiet-hours filtering. In-window dispatches are written
   // to `deferred_notifications` instead of being sent; the cron flusher drains the table when the
   // window opens. Notifications are deferred, never dropped (AC #4).
@@ -562,6 +585,7 @@ function defaultsFromEnv(): {
       deleteVoice: (user_id) => deleteUserVoiceTranscripts(db, user_id),
       deleteAccount: (user_id) => deleteUserAccount(db, user_id),
     },
+    emailDigestDb: db,
     ...(exportRateLimiter ? { exportRateLimiter } : {}),
   };
 }
@@ -583,6 +607,23 @@ export function buildExportRateLimiterFromEnv(env: NodeJS.ProcessEnv): RateLimit
     client: redisClientAdapter(client),
     windowMs: loadExportWindowMs(env),
   });
+}
+
+// STORY-045 — picks the email transport based on LEARNPRO_EMAIL_PROVIDER. `resend` requires
+// RESEND_API_KEY + LEARNPRO_EMAIL_FROM; missing config falls back to `NoopEmailTransport` so
+// the dispatcher chain is stable across "email not configured" deploys (e.g. self-hosters who
+// haven't set up SMTP yet).
+function buildEmailTransportFromEnv(): EmailTransport {
+  const provider = (process.env["LEARNPRO_EMAIL_PROVIDER"] ?? "noop").toLowerCase();
+  if (provider === "resend") {
+    const apiKey = process.env["RESEND_API_KEY"];
+    const defaultFrom = process.env["LEARNPRO_EMAIL_FROM"];
+    if (!apiKey || !defaultFrom) {
+      return new NoopEmailTransport();
+    }
+    return new ResendTransport({ apiKey, defaultFrom });
+  }
+  return new NoopEmailTransport();
 }
 
 // Builds the production session-plan factory: planSession agent tool wired to Haiku +
