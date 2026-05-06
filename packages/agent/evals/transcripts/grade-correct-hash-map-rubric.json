@@ -1,0 +1,39 @@
+{
+  "id": "grade-correct-hash-map-rubric",
+  "category": "grade",
+  "system_prompt_under_test": "tutor-2026-05-03",
+  "input": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Problem: Two sum\nLanguage: python\n\nStatement:\nReturn the indices of the two numbers in `nums` that sum to `target`. Each input has exactly one solution, and you may not use the same element twice.\n\nSubmission:\n```\ndef solve(nums, target):\n    seen = {}\n    for i, v in enumerate(nums):\n        if target - v in seen:\n            return [seen[target - v], i]\n        seen[v] = i\n    return []\n```\n\nTest result: 5/5 hidden tests passed.\n\n(all hidden tests passed)\n\nProduce the rubric JSON now."
+      }
+    ],
+    "context": {
+      "problem_slug": "two-sum",
+      "passed_tests": 5,
+      "total_tests": 5,
+      "language": "python"
+    }
+  },
+  "expected_behavior_tags": [
+    "should-return-valid-rubric-json",
+    "should-set-correctness-1.0-when-all-tests-pass",
+    "should-keep-rubric-bars-in-0-1-range",
+    "should-not-use-effusive-praise",
+    "should-include-1-to-2-sentence-prose-explanation"
+  ],
+  "explicit_failure_patterns": [
+    {
+      "type": "regex",
+      "pattern": "(?i)great\\s+(work|job|attempt)",
+      "message": "Praise language forbidden — grader is anti-praise."
+    },
+    {
+      "type": "regex",
+      "pattern": "(?i)excellent\\b",
+      "message": "Praise language forbidden — grader is anti-praise."
+    }
+  ],
+  "notes": "Single-pass hash-map solution, all tests pass. Rubric should land near correctness=1.0, idiomatic≥0.85, edge_case_coverage≥0.7. Prose should be candid + brief."
+}

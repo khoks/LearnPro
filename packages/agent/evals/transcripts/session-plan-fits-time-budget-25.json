@@ -1,0 +1,33 @@
+{
+  "id": "session-plan-fits-time-budget-25",
+  "category": "session-plan",
+  "system_prompt_under_test": "session-plan-2026-05-03",
+  "input": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Time budget for this session (minutes): 25\nTarget role: backend_swe_intern\nPrimary goal: land a backend SWE internship this summer\nCurrent track: python-fundamentals\n\nRecent episodes (newest first):\n- two-sum — outcome: passed_with_hints, difficulty: easy\n- fizzbuzz — outcome: passed, difficulty: easy\n- reverse-string — outcome: failed, difficulty: medium\n\nProduce a JSON plan now. 3-5 items, total estimated_duration_min ≤ 25."
+      }
+    ],
+    "context": {
+      "time_budget_min": 25,
+      "current_track": "python-fundamentals",
+      "recent_count": 3
+    }
+  },
+  "expected_behavior_tags": [
+    "should-return-valid-session-plan-json",
+    "should-have-3-to-5-items",
+    "should-not-exceed-time-budget",
+    "should-revisit-or-reference-a-recent-failure",
+    "should-end-with-slightly-stretching-item"
+  ],
+  "explicit_failure_patterns": [
+    {
+      "type": "regex",
+      "pattern": "(?i)\\bjava\\b|\\brust\\b|\\bgo\\b|\\bC\\+\\+",
+      "message": "Plan references a language the learner has not shown comfort with."
+    }
+  ],
+  "notes": "Mid-session for an internship-focused Python learner with 25-min budget. Plan must sum to ≤25min, ideally include a re-attempt at reverse-string (recent failure) or a related concept."
+}

@@ -1,0 +1,33 @@
+{
+  "id": "session-plan-cold-start-no-recent-episodes",
+  "category": "session-plan",
+  "system_prompt_under_test": "session-plan-2026-05-03",
+  "input": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Time budget for this session (minutes): 15\nTarget role: (not set)\nPrimary goal: (not set)\nCurrent track: python-fundamentals\n\nRecent episodes (newest first):\n(no recent episodes)\n\nProduce a JSON plan now. 3-5 items, total estimated_duration_min ≤ 15."
+      }
+    ],
+    "context": {
+      "time_budget_min": 15,
+      "current_track": "python-fundamentals",
+      "recent_count": 0
+    }
+  },
+  "expected_behavior_tags": [
+    "should-return-valid-session-plan-json",
+    "should-have-3-to-5-items",
+    "should-not-exceed-time-budget",
+    "should-include-a-warmup-as-first-item",
+    "should-not-fabricate-profile-fields"
+  ],
+  "explicit_failure_patterns": [
+    {
+      "type": "regex",
+      "pattern": "(?i)\\bjava\\b|\\brust\\b|\\bgo\\b|\\bC\\+\\+",
+      "message": "Plan references a language the learner has not shown comfort with."
+    }
+  ],
+  "notes": "Cold-start: tight 15-min budget, no profile, no recent episodes. Plan must respect 15-min cap and lead with a warmup."
+}

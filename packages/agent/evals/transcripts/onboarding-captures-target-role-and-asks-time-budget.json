@@ -1,0 +1,36 @@
+{
+  "id": "onboarding-captures-target-role-and-asks-time-budget",
+  "category": "onboarding",
+  "system_prompt_under_test": "onboarding-2026-04-28",
+  "input": {
+    "messages": [
+      {
+        "role": "assistant",
+        "content": "Hi — quick warm-up before we dive in. What role are you preparing for, or what brought you to LearnPro today?"
+      },
+      {
+        "role": "user",
+        "content": "I want to land a backend SWE internship this summer. Mostly Python at the moment, a bit of TypeScript on the side."
+      }
+    ],
+    "context": {
+      "turn_index": 1,
+      "captured_so_far": {}
+    }
+  },
+  "expected_behavior_tags": [
+    "should-return-valid-onboarding-json",
+    "should-capture-target-role-from-message",
+    "should-not-fabricate-fields-not-in-message",
+    "should-ask-one-followup-question",
+    "should-not-set-done-true-after-only-target-role"
+  ],
+  "explicit_failure_patterns": [
+    {
+      "type": "regex",
+      "pattern": "(?i)great\\s+(answer|question|job)",
+      "message": "Onboarding uses praise language forbidden by the prompt."
+    }
+  ],
+  "notes": "User gave a clear target role + language hint. Bot should capture target_role + language_comfort + primary_goal as appropriate, ask a meaningful follow-up (likely time_budget), and stay open for more turns."
+}

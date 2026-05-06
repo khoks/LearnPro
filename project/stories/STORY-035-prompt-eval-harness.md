@@ -2,14 +2,14 @@
 id: STORY-035
 title: Prompt eval harness — regression-test prompt changes on PR
 type: story
-status: backlog
+status: in-progress
 priority: P0
 estimate: M
 parent: EPIC-004
 phase: v1
 tags: [agent, eval, ci, prompts, v1]
 created: 2026-04-25
-updated: 2026-04-25
+updated: 2026-05-01
 ---
 
 ## Description
@@ -45,3 +45,4 @@ This is **the** highest-leverage tool for keeping pedagogy stable as we iterate.
 ## Activity log
 
 - 2026-04-25 — created
+- 2026-05-01 — picked up
