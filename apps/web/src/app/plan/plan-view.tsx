@@ -68,9 +68,7 @@ export function TodayPlanSummaryCard(props: TodayPlanSummaryCardProps): ReactEle
     : "/session";
 
   const headline =
-    reviewCount === 0 && sessionItemsTotal === 0
-      ? "Today's plan is empty."
-      : "Today's plan";
+    reviewCount === 0 && sessionItemsTotal === 0 ? "Today's plan is empty." : "Today's plan";
   const subheadline =
     reviewCount === 0 && sessionItemsTotal === 0
       ? "Open the planner to start a quick session."
@@ -139,9 +137,7 @@ function describeTodayCounts(input: {
   const parts: string[] = [];
   if (reviewCount > 0) {
     parts.push(
-      reviewCount === 1
-        ? "1 concept ready for review"
-        : `${reviewCount} concepts ready for review`,
+      reviewCount === 1 ? "1 concept ready for review" : `${reviewCount} concepts ready for review`,
     );
   }
   if (sessionItemsTotal > 0) {
@@ -328,10 +324,7 @@ export function ThisWeekDeferredStub(): ReactElement {
       data-testid="this-week-deferred-stub"
       style={{ ...cardBaseStyle, background: "#f8f9fb" }}
     >
-      <h2
-        id="this-week-section-label"
-        style={{ margin: 0, fontSize: "1.1rem", fontWeight: 600 }}
-      >
+      <h2 id="this-week-section-label" style={{ margin: 0, fontSize: "1.1rem", fontWeight: 600 }}>
         This week
       </h2>
       <p style={{ margin: "0.5rem 0 0", color: "#444", fontSize: "0.95rem", lineHeight: 1.5 }}>
@@ -351,13 +344,9 @@ export interface PlanReasoningPanelProps {
 
 export function PlanReasoningPanel(props: PlanReasoningPanelProps): ReactElement {
   const { plan } = props;
-  const hasContent =
-    plan.review_items.length > 0 || plan.session_plan_items.length > 0;
+  const hasContent = plan.review_items.length > 0 || plan.session_plan_items.length > 0;
   return (
-    <details
-      data-testid="plan-reasoning-panel"
-      style={{ ...cardBaseStyle, background: "#fcfcfd" }}
-    >
+    <details data-testid="plan-reasoning-panel" style={{ ...cardBaseStyle, background: "#fcfcfd" }}>
       <summary
         style={{
           fontSize: "0.95rem",
@@ -398,10 +387,7 @@ export function PlanReasoningPanel(props: PlanReasoningPanelProps): ReactElement
             </h4>
             <ul style={{ margin: "0.4rem 0 0", padding: "0 0 0 1rem" }}>
               {plan.session_plan_items.map((it) => (
-                <li
-                  key={it.slug}
-                  style={{ fontSize: "0.9rem", color: "#444", lineHeight: 1.5 }}
-                >
+                <li key={it.slug} style={{ fontSize: "0.9rem", color: "#444", lineHeight: 1.5 }}>
                   <span style={{ fontFamily: "monospace" }}>{it.slug}</span>
                   {": "}
                   {it.reasoning}

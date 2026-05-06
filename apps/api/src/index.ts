@@ -72,10 +72,7 @@ import {
   type SessionPlanCreateInput,
   type SessionPlanFactory,
 } from "./session-plan.js";
-import {
-  buildDbTodayPlanDeps,
-  registerTodayPlanRoutes,
-} from "./today-plan.js";
+import { buildDbTodayPlanDeps, registerTodayPlanRoutes } from "./today-plan.js";
 import { registerTutorRoutes, type TutorAgentFactory } from "./tutor.js";
 import { buildDrizzleTutorFactory } from "./tutor-factory.js";
 import {
@@ -83,11 +80,7 @@ import {
   SESSION_PLAN_SYSTEM_PROMPT,
   buildSessionPlanUserPrompt,
 } from "@learnpro/prompts";
-import {
-  createPlanSessionTool,
-  type PlanSessionDeps,
-  type TodayPlanDeps,
-} from "@learnpro/agent";
+import { createPlanSessionTool, type PlanSessionDeps, type TodayPlanDeps } from "@learnpro/agent";
 
 const PORT = Number(process.env["PORT"] ?? 4000);
 const HOST = process.env["HOST"] ?? "0.0.0.0";

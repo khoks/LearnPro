@@ -2,11 +2,7 @@
 
 import * as React from "react";
 import { useState } from "react";
-import {
-  PlanReasoningPanel,
-  TodayPlanFullView,
-  type TodayPlanShape,
-} from "./plan-view";
+import { PlanReasoningPanel, TodayPlanFullView, type TodayPlanShape } from "./plan-view";
 
 void React;
 
@@ -79,13 +75,7 @@ export function PlanClient(props: PlanClientProps) {
   );
 }
 
-function ReplanBar({
-  status,
-  onReplan,
-}: {
-  status: ReplanState;
-  onReplan: () => void;
-}) {
+function ReplanBar({ status, onReplan }: { status: ReplanState; onReplan: () => void }) {
   const banner = status.message ? (
     <div
       data-testid={`replan-banner-${status.status}`}

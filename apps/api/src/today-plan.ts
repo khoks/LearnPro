@@ -34,10 +34,7 @@ export interface TodayPlanRouteOptions {
 
 const DEFAULT_TIME_BUDGET_MIN = 25;
 
-export function registerTodayPlanRoutes(
-  app: FastifyInstance,
-  opts: TodayPlanRouteOptions,
-): void {
+export function registerTodayPlanRoutes(app: FastifyInstance, opts: TodayPlanRouteOptions): void {
   const default_budget = opts.default_time_budget_min ?? DEFAULT_TIME_BUDGET_MIN;
 
   app.get("/v1/today-plan", async (req, reply) => {

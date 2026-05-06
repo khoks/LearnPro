@@ -282,9 +282,7 @@ describe("TodayPlanFullView", () => {
     ];
     for (const p of variants) {
       assertNoForbiddenPhrases(
-        renderToStaticMarkup(
-          <TodayPlanFullView plan={p} activeTrackSlug="python-fundamentals" />,
-        ),
+        renderToStaticMarkup(<TodayPlanFullView plan={p} activeTrackSlug="python-fundamentals" />),
       );
     }
   });

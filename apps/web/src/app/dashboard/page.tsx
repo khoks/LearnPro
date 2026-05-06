@@ -78,10 +78,7 @@ export default async function DashboardPage() {
       />
 
       <section aria-label="Today's plan" style={{ marginTop: "1.25rem" }}>
-        <TodayPlanSummaryCard
-          plan={todayPlan}
-          activeTrackSlug={primaryTrackSlug ?? null}
-        />
+        <TodayPlanSummaryCard plan={todayPlan} activeTrackSlug={primaryTrackSlug ?? null} />
       </section>
 
       {dueReviews.length > 0 ? (
@@ -143,9 +140,7 @@ async function loadTodayPlanForDashboard(): Promise<TodayPlanShape | null> {
       cache: "no-store",
     });
     if (!res.ok) return null;
-    const json = (await res.json().catch(() => null)) as
-      | { today_plan: TodayPlanShape }
-      | null;
+    const json = (await res.json().catch(() => null)) as { today_plan: TodayPlanShape } | null;
     return json?.today_plan ?? null;
   } catch {
     return null;

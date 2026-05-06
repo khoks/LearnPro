@@ -56,9 +56,7 @@ function mockFetch(response: { status?: number; body: unknown } | { throws: true
 describe("PlanClient — re-plan button (STORY-046)", () => {
   it("renders the initial plan and a re-plan button", async () => {
     await act(async () => {
-      root.render(
-        <PlanClient initialPlan={makePlan()} activeTrackSlug="python-fundamentals" />,
-      );
+      root.render(<PlanClient initialPlan={makePlan()} activeTrackSlug="python-fundamentals" />);
     });
     const button = container.querySelector(
       '[data-testid="replan-button"]',
@@ -78,13 +76,9 @@ describe("PlanClient — re-plan button (STORY-046)", () => {
       },
     });
     await act(async () => {
-      root.render(
-        <PlanClient initialPlan={makePlan()} activeTrackSlug="python-fundamentals" />,
-      );
+      root.render(<PlanClient initialPlan={makePlan()} activeTrackSlug="python-fundamentals" />);
     });
-    const button = container.querySelector(
-      '[data-testid="replan-button"]',
-    ) as HTMLButtonElement;
+    const button = container.querySelector('[data-testid="replan-button"]') as HTMLButtonElement;
     await act(async () => {
       button.click();
     });
@@ -111,13 +105,9 @@ describe("PlanClient — re-plan button (STORY-046)", () => {
       },
     });
     await act(async () => {
-      root.render(
-        <PlanClient initialPlan={makePlan()} activeTrackSlug="python-fundamentals" />,
-      );
+      root.render(<PlanClient initialPlan={makePlan()} activeTrackSlug="python-fundamentals" />);
     });
-    const button = container.querySelector(
-      '[data-testid="replan-button"]',
-    ) as HTMLButtonElement;
+    const button = container.querySelector('[data-testid="replan-button"]') as HTMLButtonElement;
     await act(async () => {
       button.click();
     });
@@ -131,13 +121,9 @@ describe("PlanClient — re-plan button (STORY-046)", () => {
   it("shows the error banner when the API returns 503", async () => {
     mockFetch({ status: 503, body: { error: "today_plan_unavailable" } });
     await act(async () => {
-      root.render(
-        <PlanClient initialPlan={makePlan()} activeTrackSlug="python-fundamentals" />,
-      );
+      root.render(<PlanClient initialPlan={makePlan()} activeTrackSlug="python-fundamentals" />);
     });
-    const button = container.querySelector(
-      '[data-testid="replan-button"]',
-    ) as HTMLButtonElement;
+    const button = container.querySelector('[data-testid="replan-button"]') as HTMLButtonElement;
     await act(async () => {
       button.click();
     });
@@ -149,13 +135,9 @@ describe("PlanClient — re-plan button (STORY-046)", () => {
   it("shows the error banner when fetch throws (network outage)", async () => {
     mockFetch({ throws: true });
     await act(async () => {
-      root.render(
-        <PlanClient initialPlan={makePlan()} activeTrackSlug="python-fundamentals" />,
-      );
+      root.render(<PlanClient initialPlan={makePlan()} activeTrackSlug="python-fundamentals" />);
     });
-    const button = container.querySelector(
-      '[data-testid="replan-button"]',
-    ) as HTMLButtonElement;
+    const button = container.querySelector('[data-testid="replan-button"]') as HTMLButtonElement;
     await act(async () => {
       button.click();
     });
@@ -181,13 +163,9 @@ describe("PlanClient — re-plan button (STORY-046)", () => {
       },
     });
     await act(async () => {
-      root.render(
-        <PlanClient initialPlan={makePlan()} activeTrackSlug="python-fundamentals" />,
-      );
+      root.render(<PlanClient initialPlan={makePlan()} activeTrackSlug="python-fundamentals" />);
     });
-    const button = container.querySelector(
-      '[data-testid="replan-button"]',
-    ) as HTMLButtonElement;
+    const button = container.querySelector('[data-testid="replan-button"]') as HTMLButtonElement;
     await act(async () => {
       button.click();
     });
