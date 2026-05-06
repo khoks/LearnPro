@@ -15,6 +15,7 @@
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
+    "e2e": "node scripts/e2e/run.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },

@@ -8,9 +8,7 @@ Self-hosted-first, open-source under [BSL 1.1](./LICENSE) (auto-converts to Apac
 
 ## Status
 
-**MVP single-learning-loop end-to-end (April–May 2026).** The full loop — sign in → onboarding → track recommendation → tutor assigns a problem → editor → sandbox run → grader feedback → tutor explains → next problem with adapted difficulty — works end-to-end at both the API and UI layers. See [`docs/roadmap/MVP.md`](docs/roadmap/MVP.md) for what's shipped vs. v1 backlog, and [`project/BOARD.md`](project/BOARD.md) for the live status board.
-
-Remaining MVP P0 work: STORY-054 (adaptive autonomy controller).
+**MVP demoable (May 2026).** All 6 done-criteria from [`docs/roadmap/MVP.md`](docs/roadmap/MVP.md) are satisfied: the full loop — sign in → onboarding → track recommendation → tutor assigns a problem → editor → sandbox run → grader feedback → tutor explains → next problem with adapted difficulty — works end-to-end at both the API and UI layers. See [`project/BOARD.md`](project/BOARD.md) for the live status board.
 
 ## Quick start (dev)
 
@@ -90,9 +88,15 @@ pnpm test
 # Just apps/web (includes axe-core a11y sweep at apps/web/src/test/a11y.test.tsx
 # + responsive layout suite at apps/web/src/test/responsive.test.tsx)
 pnpm --filter @learnpro/web test
+
+# End-to-end MVP-loop test (gated on LEARNPRO_E2E=1; requires Docker)
+# Boots a dedicated Postgres container on port 5433, applies migrations, drives the full
+# sign-in → onboarding → recommended → session → submit → finish flow against a real Fastify.
+# `pnpm e2e -- --teardown` removes the container at the end.
+pnpm e2e
 ```
 
-Some integration suites are gated on `DATABASE_URL` and skip cleanly in CI when Postgres isn't available. The sandbox breakout suite is gated on `LEARNPRO_REQUIRE_PISTON=1` — without it, breakout tests run against a structural stub provider.
+Some integration suites are gated on `DATABASE_URL` and skip cleanly in CI when Postgres isn't available. The sandbox breakout suite is gated on `LEARNPRO_REQUIRE_PISTON=1` — without it, breakout tests run against a structural stub provider. The MVP-loop e2e suite (STORY-063) is gated on `LEARNPRO_E2E=1`; the `pnpm e2e` script orchestrates the Docker boot, migrations, and test run.
 
 ## License
 
