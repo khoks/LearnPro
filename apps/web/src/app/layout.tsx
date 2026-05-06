@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import * as React from "react";
 import type { ReactNode } from "react";
 import "./globals.css";
+import { ServiceWorkerRegistrar } from "../components/pwa/ServiceWorkerRegistrar";
 
 // Reference React explicitly so vitest's classic-runtime JSX transform doesn't strip the
 // import. Next.js's automatic JSX runtime handles this in production; vitest does not.
@@ -31,6 +32,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <a href="#main-content" className="skip-link">
           Skip to main content
         </a>
+        <ServiceWorkerRegistrar />
         {children}
       </body>
     </html>
