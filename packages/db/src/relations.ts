@@ -8,6 +8,7 @@ import {
   interactions,
   notifications,
   organizations,
+  portfolio_pushes,
   problems,
   profiles,
   sessions,
@@ -30,6 +31,7 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   notifications: many(notifications),
   web_push_subscriptions: many(web_push_subscriptions),
   concept_reviews: many(concept_reviews),
+  portfolio_pushes: many(portfolio_pushes),
 }));
 
 export const accountsRelations = relations(accounts, ({ one }) => ({
@@ -102,4 +104,9 @@ export const notificationsRelations = relations(notifications, ({ one }) => ({
 
 export const webPushSubscriptionsRelations = relations(web_push_subscriptions, ({ one }) => ({
   user: one(users, { fields: [web_push_subscriptions.user_id], references: [users.id] }),
+}));
+
+export const portfolioPushesRelations = relations(portfolio_pushes, ({ one }) => ({
+  user: one(users, { fields: [portfolio_pushes.user_id], references: [users.id] }),
+  episode: one(episodes, { fields: [portfolio_pushes.episode_id], references: [episodes.id] }),
 }));

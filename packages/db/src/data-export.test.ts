@@ -415,6 +415,8 @@ function makeProfile(overrides: Partial<Profile> = {}): Profile {
     quiet_hours_end_min: 480,
     timezone: "UTC",
     confidence_signal: null,
+    github_portfolio_repo: null,
+    github_auto_push_enabled: false,
     updated_at: new Date(0),
     ...overrides,
   };

@@ -61,6 +61,7 @@ import { registerQuietHoursRoutes } from "./quiet-hours.js";
 import { registerAutonomyRoutes } from "./autonomy.js";
 import { registerSpacedRepetitionRoutes } from "./spaced-repetition.js";
 import { registerInstallEligibleRoutes } from "./install-eligible.js";
+import { registerPortfolioRoutes } from "./portfolio.js";
 import { registerOnboardingRoute, type OnboardingProfileWriter } from "./onboarding.js";
 import { registerRecommendationRoute } from "./recommendation.js";
 import { MemoryRateLimiter, type RateLimiter } from "./rate-limiter.js";
@@ -151,6 +152,14 @@ export interface BuildServerOptions {
   // registers `GET /v1/today-plan` + `POST /v1/today-plan/replan`. Tests inject a fake deps
   // object; production wires `buildDbTodayPlanDeps(db)` via defaultsFromEnv.
   todayPlanDeps?: TodayPlanDeps;
+  // STORY-040 — DB handle for the portfolio routes (state / connect-init / disconnect / push /
+  // settings). Same injection pattern; tests inject a fake DB. `webBaseUrl` lets tests override
+  // the apps/web origin used to build the connect-init start URL.
+  portfolio?: {
+    db: import("@learnpro/db").LearnProDb;
+    webBaseUrl?: string;
+    buildClient?: import("./portfolio.js").PortfolioRouteOptions["buildClient"];
+  };
 }
 
 // Default impl when no store is provided — drops events on the floor. Useful for tests and
@@ -405,6 +414,19 @@ export function buildServer(opts: BuildServerOptions = {}) {
     registerInstallEligibleRoutes(app, { db: opts.installEligibleDb, sessionResolver });
   }
 
+  // STORY-040 — portfolio state / connect-init / disconnect / push / settings. Wired only when
+  // a db is supplied; defaultsFromEnv forwards the same `db` instance.
+  if (opts.portfolio) {
+    registerPortfolioRoutes(app, {
+      db: opts.portfolio.db,
+      sessionResolver,
+      ...(opts.portfolio.webBaseUrl !== undefined && { webBaseUrl: opts.portfolio.webBaseUrl }),
+      ...(opts.portfolio.buildClient !== undefined && {
+        buildClient: opts.portfolio.buildClient,
+      }),
+    });
+  }
+
   // STORY-060 deferred AC — friendly 429 mapping for the per-user daily token budget. Any handler
   // that calls into the LLM provider can throw `TokenBudgetExceededError`; this hook catches it
   // before Fastify's default 500 path so the playground can render the friendly message AC from
@@ -446,6 +468,7 @@ function defaultsFromEnv(): {
   spacedRepetitionDb?: import("@learnpro/db").LearnProDb;
   installEligibleDb?: import("@learnpro/db").LearnProDb;
   todayPlanDeps?: TodayPlanDeps;
+  portfolio?: BuildServerOptions["portfolio"];
 } {
   const url = process.env["DATABASE_URL"];
   if (!url) return {};
@@ -511,6 +534,7 @@ function defaultsFromEnv(): {
     spacedRepetitionDb: db,
     installEligibleDb: db,
     todayPlanDeps: buildDbTodayPlanDeps({ db }),
+    portfolio: { db },
     redactor: buildDefaultRedactor({ llm }),
     dataControls: {
       summary: (user_id) => getUserDataSummary(db, user_id),

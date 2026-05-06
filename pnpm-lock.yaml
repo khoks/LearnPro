@@ -50,6 +50,9 @@ importers:
       '@learnpro/notifications':
         specifier: workspace:*
         version: link:../../packages/notifications
+      '@learnpro/portfolio':
+        specifier: workspace:*
+        version: link:../../packages/portfolio
       '@learnpro/problems':
         specifier: workspace:*
         version: link:../../packages/problems
@@ -123,6 +126,9 @@ importers:
       '@monaco-editor/react':
         specifier: ^4.6.0
         version: 4.7.0(monaco-editor@0.52.2)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
+      drizzle-orm:
+        specifier: ^0.36.4
+        version: 0.36.4(@types/pg@8.20.0)(@types/react@19.2.14)(pg@8.20.0)(react@19.2.5)
       monaco-editor:
         specifier: ^0.52.2
         version: 0.52.2
@@ -305,6 +311,22 @@ importers:
       '@types/web-push':
         specifier: ^3.6.4
         version: 3.6.4
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
+      vitest:
+        specifier: ^2.1.8
+        version: 2.1.9(@types/node@22.19.17)(jsdom@29.1.1)
+
+  packages/portfolio:
+    dependencies:
+      zod:
+        specifier: ^3.24.1
+        version: 3.25.76
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.2
+        version: 22.19.17
       typescript:
         specifier: ^5.7.2
         version: 5.9.3
