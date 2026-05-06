@@ -3,12 +3,7 @@
 // `LEARNPRO_E2E=1`.
 
 import { describe, expect, it } from "vitest";
-import {
-  AlwaysPassSandbox,
-  FakeLLMQueue,
-  buildFakeLLM,
-  fixedUserSession,
-} from "./harness.js";
+import { AlwaysPassSandbox, FakeLLMQueue, buildFakeLLM, fixedUserSession } from "./harness.js";
 import { VERDICT_PASS_TOKEN } from "@learnpro/problems";
 
 describe("FakeLLMQueue", () => {
