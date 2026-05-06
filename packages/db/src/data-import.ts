@@ -1,5 +1,16 @@
+import { eq } from "drizzle-orm";
 import { z } from "zod";
 import type { LearnProDb } from "./client.js";
+import {
+  agent_calls,
+  episodes,
+  notifications,
+  problems,
+  profiles,
+  SELF_HOSTED_ORG_ID,
+  submissions,
+  users,
+} from "./schema.js";
 
 // STORY-061 — inverse of `exportUserData()` from STORY-026. Takes a parsed export envelope
 // and writes the rows back into the supplied DB.
@@ -172,11 +183,101 @@ export interface ImportDumpOptions {
 }
 
 export async function importDump(
-  _db: LearnProDb,
-  _dump: unknown,
-  _opts: ImportDumpOptions = {},
+  db: LearnProDb,
+  dump: unknown,
+  opts: ImportDumpOptions = {},
 ): Promise<ImportDumpResult> {
-  // Implementation lands in subsequent commits. This stub keeps the type contract stable for
-  // consumers and lets the round-trip-by-shape test in the next commit compile.
-  throw new Error("importDump: not yet implemented");
+  const envelope = DumpEnvelopeSchema.parse(dump);
+  const log = opts.logger ?? ((line) => console.warn(line));
+
+  const result: ImportDumpResult = {
+    user_created: false,
+    inserted: { profiles: 0, episodes: 0, submissions: 0, agent_calls: 0, notifications: 0 },
+    skipped: { episodes: 0, submissions: 0, agent_calls: 0, notifications: 0 },
+    warnings: [],
+  };
+
+  // The whole import runs inside a single transaction so a partial failure (e.g. missing
+  // problem_id half-way through episodes) leaves no half-imported user behind.
+  await db.transaction(async (tx) => {
+    if (envelope.profile === null) {
+      // Nothing to import — the dump corresponds to a user that didn't exist when exported.
+      // The export shape allows this (used as a "user-was-deleted" snapshot); honor it.
+      log("[importDump] dump.profile is null — nothing to import");
+      return;
+    }
+
+    const userIdToImport = envelope.profile.user_id;
+
+    // ----- users row -----
+    const existingUser = await tx
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.id, userIdToImport))
+      .limit(1);
+
+    if (existingUser.length === 0) {
+      await tx.insert(users).values({
+        id: userIdToImport,
+        org_id: envelope.profile.org_id || SELF_HOSTED_ORG_ID,
+        email: envelope.profile.email,
+        name: envelope.profile.name,
+        image: envelope.profile.image,
+        emailVerified: envelope.profile.emailVerified
+          ? new Date(envelope.profile.emailVerified)
+          : null,
+        xp: envelope.profile.xp,
+        streak_grace_days_remaining: envelope.profile.streak_grace_days_remaining,
+        streak_grace_last_replenished_at: envelope.profile.streak_grace_last_replenished_at
+          ? new Date(envelope.profile.streak_grace_last_replenished_at)
+          : null,
+        created_at: new Date(envelope.profile.created_at),
+      });
+      result.user_created = true;
+    } else {
+      log(
+        `[importDump] users row ${userIdToImport} already exists — keeping existing identity columns`,
+      );
+    }
+
+    // ----- profiles row (UPSERT) -----
+    if (envelope.profile.profile !== null) {
+      const profileBlock = envelope.profile.profile;
+      const profileRow = {
+        user_id: userIdToImport,
+        org_id: envelope.profile.org_id || SELF_HOSTED_ORG_ID,
+        target_role: profileBlock.target_role,
+        time_budget_min: profileBlock.time_budget_min,
+        primary_goal: profileBlock.primary_goal,
+        self_assessed_level: profileBlock.self_assessed_level,
+        language_comfort: profileBlock.language_comfort ?? null,
+        updated_at: new Date(profileBlock.updated_at),
+      };
+
+      await tx
+        .insert(profiles)
+        .values(profileRow)
+        .onConflictDoUpdate({
+          target: profiles.user_id,
+          set: {
+            target_role: profileRow.target_role,
+            time_budget_min: profileRow.time_budget_min,
+            primary_goal: profileRow.primary_goal,
+            self_assessed_level: profileRow.self_assessed_level,
+            language_comfort: profileRow.language_comfort,
+            updated_at: profileRow.updated_at,
+          },
+        });
+      result.inserted.profiles = 1;
+    }
+
+    // Per-section insert helpers land in the next commit.
+    void problems;
+    void episodes;
+    void submissions;
+    void agent_calls;
+    void notifications;
+  });
+
+  return result;
 }

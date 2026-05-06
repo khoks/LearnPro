@@ -71,11 +71,19 @@ describe("DumpEnvelopeSchema (no-DB validation contract)", () => {
   });
 });
 
-describe("importDump (no-DB stub contract)", () => {
-  it("the helper is exported and accepts the canonical empty envelope shape", () => {
-    // Sanity: keeps the public surface present even before the impl lands. The first
-    // implementation commit replaces this with real behavior.
+describe("importDump (no-DB validation)", () => {
+  it("the helper is exported", () => {
     expect(typeof importDump).toBe("function");
+  });
+
+  it("rejects an envelope that fails Zod validation before touching the DB", async () => {
+    // No DB call should fire — the parse error throws synchronously inside the helper.
+    const fakeDb = {
+      transaction: async () => {
+        throw new Error("DB should not be touched on validation failure");
+      },
+    } as unknown as LearnProDb;
+    await expect(importDump(fakeDb, { not: "an envelope" })).rejects.toThrow();
   });
 });
 
@@ -140,23 +148,148 @@ describe.skipIf(!DATABASE_URL)("importDump (integration)", () => {
     // Each integration test creates its own fresh user and registers it for cleanup.
   });
 
-  // The actual round-trip / idempotency / collision tests land in subsequent commits.
-  // Stubbed here so the file structure is in place.
   it("integration harness boots and the test problem exists", async () => {
     const rows = await db.select().from(problems).where(eq(problems.id, testProblemId));
     expect(rows).toHaveLength(1);
   });
 
-  // Helper exposed for later tests to register a created user for cleanup.
-  function _registerForCleanup(userId: string): void {
-    importedUserIds.push(userId);
-  }
-  // Suppress unused-warning while the helper is wired in by later commits.
-  void _registerForCleanup;
+  it("creates the user row when it doesn't exist", async () => {
+    const newUserId = randomUuid();
+    importedUserIds.push(newUserId);
+    const dump = makeMinimalDump({ user_id: newUserId });
+
+    const result = await importDump(db, dump);
+
+    expect(result.user_created).toBe(true);
+    const inserted = await db.select().from(users).where(eq(users.id, newUserId));
+    expect(inserted).toHaveLength(1);
+    expect(inserted[0]!.email).toBe(dump.profile!.email);
+    expect(inserted[0]!.xp).toBe(dump.profile!.xp);
+  });
+
+  it("preserves existing user identity columns when the user already exists", async () => {
+    const newUserId = randomUuid();
+    importedUserIds.push(newUserId);
+    await db.insert(users).values({
+      id: newUserId,
+      email: `existing-${Date.now()}@learnpro.local`,
+      name: "Original",
+    });
+
+    const logs: string[] = [];
+    const dump = makeMinimalDump({ user_id: newUserId, name: "Replaced" });
+    const result = await importDump(db, dump, { logger: (l) => logs.push(l) });
+
+    expect(result.user_created).toBe(false);
+    const row = await db.select().from(users).where(eq(users.id, newUserId));
+    expect(row[0]!.name).toBe("Original");
+    expect(logs.some((l) => l.includes("already exists"))).toBe(true);
+  });
+
+  it("UPSERTs the profile row (insert path)", async () => {
+    const newUserId = randomUuid();
+    importedUserIds.push(newUserId);
+    const dump = makeMinimalDump({ user_id: newUserId });
+    dump.profile!.profile = {
+      target_role: "swe_intern",
+      time_budget_min: 30,
+      primary_goal: "land internship",
+      self_assessed_level: "beginner",
+      language_comfort: { python: "comfortable" },
+      updated_at: new Date("2026-04-01T00:00:00.000Z").toISOString(),
+    };
+
+    const result = await importDump(db, dump);
+
+    expect(result.inserted.profiles).toBe(1);
+    const row = await db.select().from(profiles).where(eq(profiles.user_id, newUserId));
+    expect(row[0]!.target_role).toBe("swe_intern");
+    expect(row[0]!.time_budget_min).toBe(30);
+    expect(row[0]!.language_comfort).toEqual({ python: "comfortable" });
+  });
+
+  it("UPSERTs the profile row (update path) — second import overwrites tunable fields", async () => {
+    const newUserId = randomUuid();
+    importedUserIds.push(newUserId);
+    await db.insert(users).values({
+      id: newUserId,
+      email: `prof-update-${Date.now()}@learnpro.local`,
+    });
+    await db.insert(profiles).values({
+      user_id: newUserId,
+      target_role: "OLD",
+      time_budget_min: 5,
+    });
+
+    const dump = makeMinimalDump({ user_id: newUserId });
+    dump.profile!.profile = {
+      target_role: "NEW",
+      time_budget_min: 60,
+      primary_goal: null,
+      self_assessed_level: null,
+      language_comfort: null,
+      updated_at: new Date("2026-04-15T00:00:00.000Z").toISOString(),
+    };
+
+    await importDump(db, dump);
+
+    const row = await db.select().from(profiles).where(eq(profiles.user_id, newUserId));
+    expect(row[0]!.target_role).toBe("NEW");
+    expect(row[0]!.time_budget_min).toBe(60);
+  });
+
+  it("does nothing when dump.profile is null", async () => {
+    const logs: string[] = [];
+    const dump: DumpEnvelope = {
+      profile: null,
+      settings: null,
+      episodes: [],
+      submissions: [],
+      agent_calls: [],
+      notifications: [],
+    };
+    const result = await importDump(db, dump, { logger: (l) => logs.push(l) });
+    expect(result.user_created).toBe(false);
+    expect(result.inserted.profiles).toBe(0);
+    expect(logs.some((l) => l.includes("dump.profile is null"))).toBe(true);
+  });
+
   // exportUserData is used by the round-trip test landing in a later commit; reference it
   // here to keep the import live.
   void exportUserData;
 });
+
+// =============================================================================
+// Stub-data factories for the integration tests above.
+// =============================================================================
+
+function randomUuid(): string {
+  return crypto.randomUUID();
+}
+
+function makeMinimalDump(overrides: { user_id: string; name?: string | null }): DumpEnvelope {
+  const created = new Date("2026-04-01T00:00:00.000Z").toISOString();
+  return {
+    profile: {
+      user_id: overrides.user_id,
+      org_id: "self",
+      email: `import-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@learnpro.local`,
+      name: overrides.name ?? null,
+      image: null,
+      emailVerified: null,
+      created_at: created,
+      xp: 42,
+      streak_grace_days_remaining: 2,
+      streak_grace_last_replenished_at: null,
+      profile: null,
+    },
+    settings: null,
+    episodes: [],
+    submissions: [],
+    agent_calls: [],
+    notifications: [],
+  };
+}
 
 async function cleanupUserData(db: LearnProDb, userId: string): Promise<void> {
   const userEpisodes = await db
