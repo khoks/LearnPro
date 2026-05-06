@@ -24,6 +24,13 @@ export {
 } from "./grade.js";
 
 export {
+  GRADE_PROMPT_VERSION,
+  buildGradeAgentSystemPrompt,
+  buildGradeAgentUserPrompt,
+  type GradeAgentPromptOptions,
+} from "./grade-prompt.js";
+
+export {
   SESSION_PLAN_SYSTEM_PROMPT,
   PROMPT_VERSION as SESSION_PLAN_PROMPT_VERSION,
   buildSessionPlanUserPrompt,

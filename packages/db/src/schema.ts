@@ -291,6 +291,14 @@ export const episodes = pgTable(
     // Skill-update logic short-circuits the concept-mastery bump for got_help=true episodes, but
     // grading and XP still proceed normally. Anti-dark-pattern: never penalize, just don't reward.
     got_help: boolean("got_help").notNull().default(false),
+    // STORY-034 — split critique/grader agent rubric. 1-5 integer dimensions + free-text reasoning
+    // produced by `gradeAgent` AFTER the tests-as-floor pass/fail. Nullable: historical rows
+    // pre-split stay valid, and a parse-failure on the grader's LLM output skips the persist
+    // (pass-with-warning, never block the user).
+    rubric_idiomatic: integer("rubric_idiomatic"),
+    rubric_efficiency: integer("rubric_efficiency"),
+    rubric_test_coverage: integer("rubric_test_coverage"),
+    rubric_reasoning: text("rubric_reasoning"),
   },
   (t) => ({
     user_started_idx: index("episodes_user_started_idx").on(t.user_id, t.started_at),
