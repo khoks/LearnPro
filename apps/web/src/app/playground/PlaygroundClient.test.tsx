@@ -73,3 +73,31 @@ describe("PlaygroundClient — STORY-025 responsive controls row", () => {
     expect(row.dataset.breakpoint).toBe("laptop");
   });
 });
+
+describe("PlaygroundClient — STORY-059 streaming toggle", () => {
+  it("renders the stream-output toggle defaulting to off", () => {
+    installViewport(1366);
+    act(() => {
+      root.render(<PlaygroundClient />);
+    });
+    const toggle = container.querySelector(
+      '[data-testid="stream-output-toggle"]',
+    ) as HTMLInputElement;
+    expect(toggle).toBeTruthy();
+    expect(toggle.checked).toBe(false);
+  });
+
+  it("toggling stream-output flips the checkbox state", () => {
+    installViewport(1366);
+    act(() => {
+      root.render(<PlaygroundClient />);
+    });
+    const toggle = container.querySelector(
+      '[data-testid="stream-output-toggle"]',
+    ) as HTMLInputElement;
+    act(() => {
+      toggle.click();
+    });
+    expect(toggle.checked).toBe(true);
+  });
+});

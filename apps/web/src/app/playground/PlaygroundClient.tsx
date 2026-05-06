@@ -7,6 +7,7 @@ import type { SandboxLanguage, SandboxRunResponse } from "@learnpro/sandbox";
 import { OfflineBanner } from "../../components/pwa/OfflineBanner";
 import { StatusBadge } from "../../components/status-badge";
 import { runSandbox, type RunSandboxResult } from "../../lib/run-sandbox";
+import { runSandboxStream } from "../../lib/run-sandbox-stream";
 import { useInteractionCapture, type MonacoLikeEditor } from "../../lib/use-interaction-capture";
 import { useViewportSize } from "../../lib/use-viewport-size";
 import { statusFor } from "./status";
@@ -44,11 +45,18 @@ const MONACO_LANGUAGE: Record<SandboxLanguage, string> = {
   typescript: "typescript",
 };
 
+export interface StreamingState {
+  stdout: string[];
+  stderr: string[];
+}
+
 export function PlaygroundClient() {
   const [language, setLanguage] = useState<SandboxLanguage>("python");
   const [code, setCode] = useState<string>(STARTERS.python);
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState<RunSandboxResult | null>(null);
+  const [streamOutput, setStreamOutput] = useState(false);
+  const [streamState, setStreamState] = useState<StreamingState | null>(null);
   const [voiceOptIn, setVoiceOptIn] = useState(false);
   const capture = useInteractionCapture();
 
@@ -56,6 +64,7 @@ export function PlaygroundClient() {
     setLanguage(next);
     setCode(STARTERS[next]);
     setResult(null);
+    setStreamState(null);
   }, []);
 
   const onEditorMount = useCallback(
@@ -69,6 +78,58 @@ export function PlaygroundClient() {
   const onRun = useCallback(async () => {
     setRunning(true);
     setResult(null);
+    setStreamState(null);
+    if (streamOutput) {
+      const live: StreamingState = { stdout: [], stderr: [] };
+      setStreamState({ ...live });
+      let finalResult: RunSandboxResult | null = null;
+      for await (const ev of runSandboxStream({ language, code })) {
+        if (!ev.ok) {
+          finalResult = {
+            ok: false,
+            status: 0,
+            error: ev.error,
+            ...(ev.message !== undefined && { message: ev.message }),
+          };
+          break;
+        }
+        const chunk = ev.chunk;
+        if (chunk.type === "stdout") {
+          live.stdout.push(chunk.line);
+          setStreamState({ stdout: [...live.stdout], stderr: [...live.stderr] });
+        } else if (chunk.type === "stderr") {
+          live.stderr.push(chunk.line);
+          setStreamState({ stdout: [...live.stdout], stderr: [...live.stderr] });
+        } else {
+          finalResult = {
+            ok: true,
+            result: {
+              stdout: live.stdout.length > 0 ? `${live.stdout.join("\n")}\n` : "",
+              stderr: live.stderr.length > 0 ? `${live.stderr.join("\n")}\n` : "",
+              exit_code: chunk.exit_code,
+              duration_ms: chunk.duration_ms,
+              killed_by: chunk.killed_by,
+              language: chunk.language,
+              ...(chunk.runtime_version !== undefined && {
+                runtime_version: chunk.runtime_version,
+              }),
+            },
+          };
+        }
+      }
+      setResult(finalResult);
+      setRunning(false);
+      if (finalResult?.ok) {
+        const dur = finalResult.result.duration_ms;
+        const exit_code = finalResult.result.exit_code ?? -1;
+        capture.emit({
+          type: "run",
+          payload:
+            dur !== null ? { language, exit_code, duration_ms: dur } : { language, exit_code },
+        });
+      }
+      return;
+    }
     const r = await runSandbox({ language, code });
     setResult(r);
     setRunning(false);
@@ -82,7 +143,7 @@ export function PlaygroundClient() {
         payload: dur !== null ? { language, exit_code, duration_ms: dur } : { language, exit_code },
       });
     }
-  }, [language, code, capture]);
+  }, [language, code, capture, streamOutput]);
 
   const status = useMemo(() => statusFor(result), [result]);
   const { breakpoint } = useViewportSize();
@@ -141,10 +202,28 @@ export function PlaygroundClient() {
         </span>
         <label
           style={{
-            // marginLeft: auto pushes the voice opt-in to the right of the row on wide
-            // screens; below the mobile breakpoint the row is column-stacked, so we drop
-            // the auto-margin to keep the checkbox flush-left like every other control.
+            // marginLeft: auto pushes the streaming toggle to the right of the row on wide
+            // screens; below the mobile breakpoint the row is column-stacked, so we drop the
+            // auto-margin to keep the checkbox flush-left like every other control.
             marginLeft: isNarrow ? 0 : "auto",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+          }}
+          title="Stream stdout/stderr lines as they're produced (STORY-059). Default off; the existing request/response UX is unchanged."
+        >
+          <input
+            type="checkbox"
+            checked={streamOutput}
+            onChange={(e) => setStreamOutput(e.target.checked)}
+            disabled={running}
+            aria-label="Stream output as lines arrive"
+            data-testid="stream-output-toggle"
+          />
+          <span style={{ fontSize: 13, color: "#555" }}>Stream output</span>
+        </label>
+        <label
+          style={{
             display: "inline-flex",
             alignItems: "center",
             gap: 6,
@@ -190,12 +269,40 @@ export function PlaygroundClient() {
         </p>
       </section>
 
-      <ResultPanel result={result} running={running} />
+      <ResultPanel result={result} running={running} streamState={streamState} />
     </div>
   );
 }
 
-function ResultPanel({ result, running }: { result: RunSandboxResult | null; running: boolean }) {
+function ResultPanel({
+  result,
+  running,
+  streamState,
+}: {
+  result: RunSandboxResult | null;
+  running: boolean;
+  streamState: StreamingState | null;
+}) {
+  if (running && streamState !== null) {
+    // STORY-059 — streaming mode in flight. Show the partial output as it arrives so the
+    // user gets immediate feedback instead of waiting for the full request/response.
+    return (
+      <section aria-live="polite" style={{ display: "grid", gap: "0.5rem" }} data-testid="stream-panel">
+        <div style={{ color: "#666", fontSize: 13 }}>Streaming output…</div>
+        <Block
+          label="stdout"
+          value={streamState.stdout.join("\n")}
+          emptyHint="(awaiting stdout…)"
+        />
+        <Block
+          label="stderr"
+          value={streamState.stderr.join("\n")}
+          emptyHint="(awaiting stderr…)"
+          tone="warn"
+        />
+      </section>
+    );
+  }
   if (running) {
     return (
       <section aria-live="polite" style={{ color: "#666" }}>
