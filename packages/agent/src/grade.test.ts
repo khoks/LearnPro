@@ -9,7 +9,7 @@ import type {
   ToolCallResponse,
 } from "@learnpro/llm";
 import type { ProblemDef } from "@learnpro/problems";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
   GradeAgentResultSchema,
   GraderRubricSchema,
@@ -88,9 +88,7 @@ describe("RubricScoreSchema", () => {
 
 describe("GraderRubricSchema", () => {
   it("requires all three rubric dimensions", () => {
-    expect(() =>
-      GraderRubricSchema.parse({ idiomatic: 3, efficiency: 4 }),
-    ).toThrow();
+    expect(() => GraderRubricSchema.parse({ idiomatic: 3, efficiency: 4 })).toThrow();
   });
 
   it("validates a fully-filled rubric", () => {
@@ -117,7 +115,8 @@ describe("parseGraderResponse", () => {
   });
 
   it("strips markdown fences", () => {
-    const text = "```json\n" +
+    const text =
+      "```json\n" +
       JSON.stringify({
         pass: false,
         rubric: { idiomatic: 2, efficiency: 1, test_coverage_thinking: 2 },
@@ -157,17 +156,23 @@ describe("parseGraderResponse", () => {
     expect(parseGraderResponse('{"pass": true}')).toBeNull();
     expect(
       parseGraderResponse(
-        JSON.stringify({ pass: "yes", rubric: { idiomatic: 3, efficiency: 3, test_coverage_thinking: 3 }, reasoning: "x" }),
+        JSON.stringify({
+          pass: "yes",
+          rubric: { idiomatic: 3, efficiency: 3, test_coverage_thinking: 3 },
+          reasoning: "x",
+        }),
       ),
     ).toBeNull();
     expect(
-      parseGraderResponse(
-        JSON.stringify({ pass: true, rubric: { idiomatic: 3 }, reasoning: "x" }),
-      ),
+      parseGraderResponse(JSON.stringify({ pass: true, rubric: { idiomatic: 3 }, reasoning: "x" })),
     ).toBeNull();
     expect(
       parseGraderResponse(
-        JSON.stringify({ pass: true, rubric: { idiomatic: 3, efficiency: 3, test_coverage_thinking: 3 }, reasoning: "" }),
+        JSON.stringify({
+          pass: true,
+          rubric: { idiomatic: 3, efficiency: 3, test_coverage_thinking: 3 },
+          reasoning: "",
+        }),
       ),
     ).toBeNull();
   });

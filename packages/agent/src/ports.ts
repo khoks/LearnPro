@@ -124,10 +124,7 @@ export interface GradeDeps {
 
   // STORY-034 — persists the grader's rubric to the episode row. Optional, mirrors
   // `runGraderAgent` so adapters can wire either both or neither.
-  persistGraderRubric?(input: {
-    episode_id: string;
-    rubric: GraderAgentRubric;
-  }): Promise<void>;
+  persistGraderRubric?(input: { episode_id: string; rubric: GraderAgentRubric }): Promise<void>;
 }
 
 export interface GradeEpisodeContext {

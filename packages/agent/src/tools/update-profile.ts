@@ -363,8 +363,7 @@ export function applyGraderBonus(args: {
   if (!r) return 0;
   if (r.fallback_used) return 0;
   const dims = [r.rubric.idiomatic, r.rubric.efficiency, r.rubric.test_coverage_thinking];
-  const meanDelta =
-    dims.reduce((acc, n) => acc + (n - 3) / 2, 0) / dims.length;
+  const meanDelta = dims.reduce((acc, n) => acc + (n - 3) / 2, 0) / dims.length;
   const bonus = meanDelta * GRADER_BONUS_PER_DIMENSION;
   if (bonus > GRADER_BONUS_CLAMP) return GRADER_BONUS_CLAMP;
   if (bonus < -GRADER_BONUS_CLAMP) return -GRADER_BONUS_CLAMP;
