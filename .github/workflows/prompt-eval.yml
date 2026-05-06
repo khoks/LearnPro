@@ -60,11 +60,23 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
           set -e
-          if [ -z "$ANTHROPIC_API_KEY" ]; then
-            echo "::error::ANTHROPIC_API_KEY is not set in repo secrets. See CLAUDE.md → 'Prompt-touching PRs' for setup."
-            exit 1
-          fi
           mkdir -p /tmp/eval-out
+          if [ -z "$ANTHROPIC_API_KEY" ]; then
+            # Skip-gracefully when the secret isn't configured. The first time this workflow
+            # runs (this PR introduces it), there's no secret yet — failing would block the
+            # bootstrap merge in a chicken-and-egg loop. Operators add the secret afterwards
+            # so subsequent prompt-touching PRs run real evals. See CLAUDE.md → "Prompt-touching PRs".
+            echo "::warning::ANTHROPIC_API_KEY is not set in repo secrets. Skipping eval run. See CLAUDE.md → 'Prompt-touching PRs' for setup."
+            {
+              echo "## Prompt eval — skipped"
+              echo ""
+              echo "\`ANTHROPIC_API_KEY\` is not set in repo secrets. The eval workflow skipped this run."
+              echo ""
+              echo "To enable: an admin sets \`ANTHROPIC_API_KEY\` as a repository secret (Settings → Secrets and variables → Actions). See \`CLAUDE.md\` → \"Prompt-touching PRs\" for the cost note (~\$0.50–\$2 per run)."
+            } > /tmp/eval-out/summary.md
+            echo "EVAL_EXIT=0" >> "$GITHUB_ENV"
+            exit 0
+          fi
           BASELINE_FLAG=""
           if [ -n "${{ steps.baseline.outputs.baseline_path }}" ]; then
             BASELINE_FLAG="--baseline ${{ steps.baseline.outputs.baseline_path }}"
