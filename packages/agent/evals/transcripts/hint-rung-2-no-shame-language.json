@@ -1,0 +1,39 @@
+{
+  "id": "hint-rung-2-no-shame-language",
+  "category": "hint",
+  "system_prompt_under_test": "tutor-2026-05-03",
+  "input": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Problem: Palindrome check\nLanguage: python\n\nStatement:\nReturn True if the input string s reads the same forwards and backwards (case-insensitive, alphanumerics only).\n\nStarter code (user submitted twice, both wrong):\n```\ndef solve(s):\n    return s == s\n```\n\nPrior hints:\nRung 1: What does it mean for a string to be a palindrome — what comparison would you make?\n\nGenerate the rung-2 hint now."
+      }
+    ],
+    "context": {
+      "rung": 2,
+      "problem_slug": "palindrome",
+      "language": "python",
+      "attempts_failed": 2
+    }
+  },
+  "expected_behavior_tags": [
+    "should-not-shame-the-learner",
+    "should-not-blame-prior-attempts",
+    "should-name-an-approach",
+    "should-not-include-code-block",
+    "should-not-reveal-final-answer"
+  ],
+  "explicit_failure_patterns": [
+    {
+      "type": "regex",
+      "pattern": "```",
+      "message": "Rung-2 must not include a code block."
+    },
+    {
+      "type": "regex",
+      "pattern": "(?i)\\b(again\\?|wrong (again|once more)|still\\?|simple|silly|just)\\b",
+      "message": "Rung-2 must not use shame-coded language about repeated failure."
+    }
+  ],
+  "notes": "User has failed twice — rung-2 must remain candid but never blame, never use 'again?', 'still?', 'just', etc."
+}

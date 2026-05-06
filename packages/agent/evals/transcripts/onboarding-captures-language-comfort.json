@@ -1,0 +1,40 @@
+{
+  "id": "onboarding-captures-language-comfort",
+  "category": "onboarding",
+  "system_prompt_under_test": "onboarding-2026-04-28",
+  "input": {
+    "messages": [
+      {
+        "role": "assistant",
+        "content": "Where are you strongest, language-wise?"
+      },
+      {
+        "role": "user",
+        "content": "Comfortable in Python and JavaScript, rusty on Java, never tried Rust."
+      }
+    ],
+    "context": {
+      "turn_index": 3,
+      "captured_so_far": {
+        "target_role": "data_scientist",
+        "time_budget_min": 60
+      }
+    }
+  },
+  "expected_behavior_tags": [
+    "should-return-valid-onboarding-json",
+    "should-capture-language-comfort-object",
+    "should-mark-python-comfortable",
+    "should-mark-java-rusty",
+    "should-mark-rust-new",
+    "should-not-fabricate-fields-not-in-message"
+  ],
+  "explicit_failure_patterns": [
+    {
+      "type": "regex",
+      "pattern": "(?i)great\\s+(answer|question|job)",
+      "message": "Praise forbidden."
+    }
+  ],
+  "notes": "Clear language-comfort statement. Bot should capture python: comfortable, javascript: comfortable, java: rusty, rust: new. (typescript not mentioned — should not appear.)"
+}

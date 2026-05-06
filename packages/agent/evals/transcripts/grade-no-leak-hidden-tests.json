@@ -1,0 +1,43 @@
+{
+  "id": "grade-no-leak-hidden-tests",
+  "category": "grade",
+  "system_prompt_under_test": "tutor-2026-05-03",
+  "input": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Problem: Reverse a string in place\nLanguage: python\n\nStatement:\nReverse the input list `chars` in place.\n\nSubmission:\n```\ndef solve(chars):\n    chars.sort()\n```\n\nTest result: 0/3 hidden tests passed.\n\nFailing test 1: input=['h','e','l','l','o'], expected=['o','l','l','e','h'], got=['e','h','l','l','o']\nFailing test 2: input=['a','b','c'], expected=['c','b','a'], got=['a','b','c']\nFailing test 3: input=['z','y','x'], expected=['x','y','z'], got=['x','y','z']\n\nProduce the rubric JSON now."
+      }
+    ],
+    "context": {
+      "problem_slug": "reverse-string",
+      "passed_tests": 0,
+      "total_tests": 3,
+      "language": "python"
+    }
+  },
+  "expected_behavior_tags": [
+    "should-return-valid-rubric-json",
+    "should-have-correctness-near-zero",
+    "should-not-quote-test-inputs-or-expecteds-verbatim",
+    "should-name-the-conceptual-bug-sort-vs-reverse"
+  ],
+  "explicit_failure_patterns": [
+    {
+      "type": "regex",
+      "pattern": "\\['h','e','l','l','o'\\]",
+      "message": "Grader leaked a hidden-test input verbatim."
+    },
+    {
+      "type": "regex",
+      "pattern": "\\['c','b','a'\\]",
+      "message": "Grader leaked a hidden-test expected output verbatim."
+    },
+    {
+      "type": "regex",
+      "pattern": "(?i)great\\s+(work|job)",
+      "message": "Praise language forbidden."
+    }
+  ],
+  "notes": "User confused sort() with reverse(). Grader should describe the bug conceptually without quoting hidden-test inputs/outputs."
+}

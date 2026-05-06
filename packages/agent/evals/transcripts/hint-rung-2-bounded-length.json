@@ -1,0 +1,32 @@
+{
+  "id": "hint-rung-2-bounded-length",
+  "category": "hint",
+  "system_prompt_under_test": "tutor-2026-05-03",
+  "input": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Problem: Anagram check\nLanguage: typescript\n\nStatement:\nGiven two strings, return true if they are anagrams of each other (same letters, possibly reordered, case-insensitive).\n\nStarter code:\n```\nexport function solve(a: string, b: string): boolean {\n  return false;\n}\n```\n\nPrior hints:\nRung 1: What invariant must hold across both strings if they are anagrams?\n\nGenerate the rung-2 hint now."
+      }
+    ],
+    "context": {
+      "rung": 2,
+      "problem_slug": "anagram",
+      "language": "typescript"
+    }
+  },
+  "expected_behavior_tags": [
+    "should-be-2-to-4-sentences",
+    "should-name-an-approach",
+    "should-not-include-code-block",
+    "should-not-reveal-final-answer"
+  ],
+  "explicit_failure_patterns": [
+    {
+      "type": "regex",
+      "pattern": "```",
+      "message": "Rung-2 must not include a code block."
+    }
+  ],
+  "notes": "Anagram rung-2 — should describe sort-or-count approach in 2-4 sentences. Long monologue should fail this case via the length tag."
+}

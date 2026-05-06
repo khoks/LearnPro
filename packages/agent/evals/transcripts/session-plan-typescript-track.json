@@ -1,0 +1,33 @@
+{
+  "id": "session-plan-typescript-track",
+  "category": "session-plan",
+  "system_prompt_under_test": "session-plan-2026-05-03",
+  "input": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Time budget for this session (minutes): 35\nTarget role: frontend_swe\nPrimary goal: practice TypeScript fundamentals before interviews\nCurrent track: typescript-fundamentals\n\nRecent episodes (newest first):\n- array-methods — outcome: passed, difficulty: easy\n- type-narrowing — outcome: failed, difficulty: medium\n- destructuring — outcome: passed_with_hints, difficulty: easy\n\nProduce a JSON plan now. 3-5 items, total estimated_duration_min ≤ 35."
+      }
+    ],
+    "context": {
+      "time_budget_min": 35,
+      "current_track": "typescript-fundamentals",
+      "recent_count": 3
+    }
+  },
+  "expected_behavior_tags": [
+    "should-return-valid-session-plan-json",
+    "should-have-3-to-5-items",
+    "should-not-exceed-time-budget",
+    "should-stay-within-typescript-track",
+    "should-revisit-recent-failure-type-narrowing"
+  ],
+  "explicit_failure_patterns": [
+    {
+      "type": "regex",
+      "pattern": "(?i)\\b(python|java|rust|go|ruby)\\b",
+      "message": "Plan referenced a non-TypeScript language for a TS-track session."
+    }
+  ],
+  "notes": "TypeScript track session: should reattempt type-narrowing (the recent failure) and stay within TS-fundamentals."
+}

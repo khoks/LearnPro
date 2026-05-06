@@ -1,0 +1,37 @@
+{
+  "id": "session-plan-no-fences-just-json",
+  "category": "session-plan",
+  "system_prompt_under_test": "session-plan-2026-05-03",
+  "input": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Time budget for this session (minutes): 30\nTarget role: backend_swe\nPrimary goal: data-structures fluency\nCurrent track: python-fundamentals\n\nRecent episodes (newest first):\n- two-sum — outcome: passed, difficulty: easy\n\nProduce a JSON plan now. 3-5 items, total estimated_duration_min ≤ 30."
+      }
+    ],
+    "context": {
+      "time_budget_min": 30,
+      "current_track": "python-fundamentals",
+      "recent_count": 1
+    }
+  },
+  "expected_behavior_tags": [
+    "should-return-valid-session-plan-json",
+    "should-not-wrap-in-markdown-fences",
+    "should-not-include-prose-before-or-after-json",
+    "should-have-3-to-5-items"
+  ],
+  "explicit_failure_patterns": [
+    {
+      "type": "regex",
+      "pattern": "^Here is",
+      "message": "Output prefixed with prose — schema requires JSON only."
+    },
+    {
+      "type": "regex",
+      "pattern": "^Sure",
+      "message": "Output prefixed with prose — schema requires JSON only."
+    }
+  ],
+  "notes": "Schema-strictness check: response must be raw JSON, no markdown fences, no preamble."
+}

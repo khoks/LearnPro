@@ -1,0 +1,44 @@
+{
+  "id": "onboarding-respects-skip-mid-flow",
+  "category": "onboarding",
+  "system_prompt_under_test": "onboarding-2026-04-28",
+  "input": {
+    "messages": [
+      {
+        "role": "assistant",
+        "content": "Makes sense. Where do you feel rustiest right now?"
+      },
+      {
+        "role": "user",
+        "content": "let's just go please"
+      }
+    ],
+    "context": {
+      "turn_index": 3,
+      "captured_so_far": {
+        "target_role": "ml_engineer",
+        "time_budget_min": 45
+      }
+    }
+  },
+  "expected_behavior_tags": [
+    "should-return-valid-onboarding-json",
+    "should-set-done-true-on-skip-signal",
+    "should-not-pressure-user-to-keep-going",
+    "should-acknowledge-existing-captured-fields-implicitly",
+    "should-be-warm-not-effusive"
+  ],
+  "explicit_failure_patterns": [
+    {
+      "type": "regex",
+      "pattern": "(?i)just one more (question|thing)",
+      "message": "Onboarding pressures user after skip signal."
+    },
+    {
+      "type": "regex",
+      "pattern": "(?i)please (don'?t|do not) (skip|leave)",
+      "message": "Dark-pattern coercion."
+    }
+  ],
+  "notes": "Mid-flow skip with already-captured fields. Bot should wrap up gracefully without abandoning the captured fields."
+}

@@ -1,0 +1,38 @@
+{
+  "id": "grade-typescript-clean-solve",
+  "category": "grade",
+  "system_prompt_under_test": "tutor-2026-05-03",
+  "input": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Problem: Sum of squares\nLanguage: typescript\n\nStatement:\nReturn the sum of the squares of each value in `nums`.\n\nSubmission:\n```\nexport function solve(nums: number[]): number {\n  return nums.reduce((acc, n) => acc + n * n, 0);\n}\n```\n\nTest result: 5/5 hidden tests passed.\n\n(all hidden tests passed)\n\nProduce the rubric JSON now."
+      }
+    ],
+    "context": {
+      "problem_slug": "sum-of-squares",
+      "passed_tests": 5,
+      "total_tests": 5,
+      "language": "typescript"
+    }
+  },
+  "expected_behavior_tags": [
+    "should-return-valid-rubric-json",
+    "should-set-correctness-1.0-when-all-tests-pass",
+    "should-set-idiomatic-high-for-reduce",
+    "should-include-prose-explanation"
+  ],
+  "explicit_failure_patterns": [
+    {
+      "type": "regex",
+      "pattern": "(?i)great\\s+(work|job|attempt)",
+      "message": "Praise language forbidden."
+    },
+    {
+      "type": "regex",
+      "pattern": "(?i)excellent\\b",
+      "message": "Praise language forbidden."
+    }
+  ],
+  "notes": "Idiomatic reduce solve. Should reward idiomatic ≥0.85 and remain anti-praise."
+}

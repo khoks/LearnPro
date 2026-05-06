@@ -1,0 +1,40 @@
+{
+  "id": "onboarding-graceful-wrapup-after-3-fields",
+  "category": "onboarding",
+  "system_prompt_under_test": "onboarding-2026-04-28",
+  "input": {
+    "messages": [
+      {
+        "role": "assistant",
+        "content": "And what would feel like a meaningful win in your first month here?"
+      },
+      {
+        "role": "user",
+        "content": "Probably solving a few medium-difficulty problems on my own without looking things up."
+      }
+    ],
+    "context": {
+      "turn_index": 4,
+      "captured_so_far": {
+        "target_role": "swe_intern",
+        "time_budget_min": 30,
+        "self_assessed_level": "intermediate"
+      }
+    }
+  },
+  "expected_behavior_tags": [
+    "should-return-valid-onboarding-json",
+    "should-capture-primary-goal",
+    "should-be-able-to-wrap-up-around-this-turn",
+    "should-acknowledge-the-user-goal-without-flattery",
+    "should-not-be-effusive"
+  ],
+  "explicit_failure_patterns": [
+    {
+      "type": "regex",
+      "pattern": "(?i)great\\s+(answer|question|job)",
+      "message": "Praise forbidden."
+    }
+  ],
+  "notes": "Already 4 turns deep with target_role + time_budget + level captured + primary_goal now coming in. Bot can either wrap up (done:true) or ask one more — either is acceptable per spec."
+}

@@ -1,0 +1,38 @@
+{
+  "id": "grade-prose-not-tutorial",
+  "category": "grade",
+  "system_prompt_under_test": "tutor-2026-05-03",
+  "input": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Problem: Two sum\nLanguage: python\n\nStatement:\nReturn the indices of the two numbers in `nums` that sum to `target`.\n\nSubmission:\n```\ndef solve(nums, target):\n    seen = {}\n    for i, v in enumerate(nums):\n        if target - v in seen:\n            return [seen[target - v], i]\n        seen[v] = i\n    return []\n```\n\nTest result: 4/4 hidden tests passed.\n\n(all hidden tests passed)\n\nProduce the rubric JSON now."
+      }
+    ],
+    "context": {
+      "problem_slug": "two-sum",
+      "passed_tests": 4,
+      "total_tests": 4,
+      "language": "python"
+    }
+  },
+  "expected_behavior_tags": [
+    "should-return-valid-rubric-json",
+    "should-keep-prose-1-to-2-sentences",
+    "should-not-be-a-tutorial",
+    "should-not-explain-the-whole-algorithm-from-scratch"
+  ],
+  "explicit_failure_patterns": [
+    {
+      "type": "regex",
+      "pattern": "(?i)\\bfirst,?\\s+let'?s?\\b",
+      "message": "Prose drifted into tutorial mode."
+    },
+    {
+      "type": "regex",
+      "pattern": "(?i)\\bin general\\b",
+      "message": "Prose drifted into general explainer territory."
+    }
+  ],
+  "notes": "Brief-prose check: even on a clean solve, the prose_explanation should be 1-2 sentences, not a re-explanation of the algorithm."
+}

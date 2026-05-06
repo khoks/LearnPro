@@ -2,9 +2,9 @@ import { describe, expect, it } from "vitest";
 import { loadAllEvalCases } from "./loader.js";
 
 describe("loadAllEvalCases", () => {
-  it("loads every transcript and parses cleanly through EvalCaseSchema", async () => {
+  it("loads at least 50 transcripts (the spec target)", async () => {
     const cases = await loadAllEvalCases();
-    expect(cases.length).toBeGreaterThanOrEqual(10);
+    expect(cases.length).toBeGreaterThanOrEqual(50);
     for (const c of cases) {
       expect(c.id).toMatch(/^[a-z0-9-]+$/);
       expect(c.expected_behavior_tags.length).toBeGreaterThan(0);
@@ -12,13 +12,14 @@ describe("loadAllEvalCases", () => {
     }
   });
 
-  it("has all four categories represented", async () => {
+  it("has the spec distribution: ≥15 hint, ≥15 grade, ≥10 onboarding, ≥10 session-plan", async () => {
     const cases = await loadAllEvalCases();
-    const cats = new Set(cases.map((c) => c.category));
-    expect(cats.has("hint")).toBe(true);
-    expect(cats.has("grade")).toBe(true);
-    expect(cats.has("onboarding")).toBe(true);
-    expect(cats.has("session-plan")).toBe(true);
+    const counts: Record<string, number> = { hint: 0, grade: 0, onboarding: 0, "session-plan": 0 };
+    for (const c of cases) counts[c.category]! += 1;
+    expect(counts["hint"]).toBeGreaterThanOrEqual(15);
+    expect(counts["grade"]).toBeGreaterThanOrEqual(15);
+    expect(counts["onboarding"]).toBeGreaterThanOrEqual(10);
+    expect(counts["session-plan"]).toBeGreaterThanOrEqual(10);
   });
 
   it("ids are unique across cases", async () => {

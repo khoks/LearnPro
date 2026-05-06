@@ -1,0 +1,39 @@
+{
+  "id": "grade-rubric-bars-clamped",
+  "category": "grade",
+  "system_prompt_under_test": "tutor-2026-05-03",
+  "input": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Problem: Anagram check\nLanguage: typescript\n\nStatement:\nReturn true if the two input strings are anagrams (case-insensitive, alphanumerics).\n\nSubmission:\n```\nexport function solve(a: string, b: string): boolean {\n  const norm = (s: string) => s.toLowerCase().split('').sort().join('');\n  return norm(a) === norm(b);\n}\n```\n\nTest result: 4/4 hidden tests passed.\n\n(all hidden tests passed)\n\nProduce the rubric JSON now."
+      }
+    ],
+    "context": {
+      "problem_slug": "anagram",
+      "passed_tests": 4,
+      "total_tests": 4,
+      "language": "typescript"
+    }
+  },
+  "expected_behavior_tags": [
+    "should-return-valid-rubric-json",
+    "should-keep-all-bars-in-0-1-range",
+    "should-not-set-correctness-above-1.0",
+    "should-not-set-any-bar-below-0",
+    "should-include-prose-explanation"
+  ],
+  "explicit_failure_patterns": [
+    {
+      "type": "regex",
+      "pattern": "\"correctness\"\\s*:\\s*[2-9]",
+      "message": "Rubric correctness exceeds 1.0."
+    },
+    {
+      "type": "regex",
+      "pattern": "(?i)great\\s+(work|job)",
+      "message": "Praise language forbidden."
+    }
+  ],
+  "notes": "Bars-in-range check: even on a clean solve, model must keep correctness/idiomatic/edge_case_coverage in [0,1]."
+}

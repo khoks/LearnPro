@@ -1,0 +1,33 @@
+{
+  "id": "grade-off-by-one-correct-language",
+  "category": "grade",
+  "system_prompt_under_test": "tutor-2026-05-03",
+  "input": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Problem: First n primes\nLanguage: typescript\n\nStatement:\nReturn an array of the first n prime numbers, in ascending order, where n is a non-negative integer.\n\nSubmission:\n```\nexport function solve(n: number): number[] {\n  const primes: number[] = [];\n  for (let i = 2; primes.length < n - 1; i++) {\n    if (primes.every((p) => i % p !== 0)) primes.push(i);\n  }\n  return primes;\n}\n```\n\nTest result: 0/5 hidden tests passed.\n\nFailing test 1: n=1, expected=[2], got=[]\nFailing test 2: n=3, expected=[2,3,5], got=[2,3]\nFailing test 3: n=5, expected=[2,3,5,7,11], got=[2,3,5,7]\n\nProduce the rubric JSON now."
+      }
+    ],
+    "context": {
+      "problem_slug": "first-n-primes",
+      "passed_tests": 0,
+      "total_tests": 5,
+      "language": "typescript"
+    }
+  },
+  "expected_behavior_tags": [
+    "should-return-valid-rubric-json",
+    "should-name-the-off-by-one-condition",
+    "should-have-correctness-near-zero",
+    "should-not-fault-the-prime-check-which-is-correct"
+  ],
+  "explicit_failure_patterns": [
+    {
+      "type": "regex",
+      "pattern": "(?i)great\\s+(work|job)",
+      "message": "Praise forbidden."
+    }
+  ],
+  "notes": "Primes algorithm is fine; loop bound `< n - 1` is wrong — should be `< n`. Grader should isolate the off-by-one without trashing the rest."
+}

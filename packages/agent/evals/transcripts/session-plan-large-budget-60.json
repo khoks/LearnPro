@@ -1,0 +1,27 @@
+{
+  "id": "session-plan-large-budget-60",
+  "category": "session-plan",
+  "system_prompt_under_test": "session-plan-2026-05-03",
+  "input": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Time budget for this session (minutes): 60\nTarget role: backend_swe\nPrimary goal: get strong on data structures before interviews\nCurrent track: python-fundamentals\n\nRecent episodes (newest first):\n- linked-list-traverse — outcome: passed, difficulty: medium\n- two-sum — outcome: passed, difficulty: easy\n- valid-parens — outcome: passed_with_hints, difficulty: medium\n- climbing-stairs — outcome: failed, difficulty: medium\n\nProduce a JSON plan now. 3-5 items, total estimated_duration_min ≤ 60."
+      }
+    ],
+    "context": {
+      "time_budget_min": 60,
+      "current_track": "python-fundamentals",
+      "recent_count": 4
+    }
+  },
+  "expected_behavior_tags": [
+    "should-return-valid-session-plan-json",
+    "should-have-3-to-5-items",
+    "should-not-exceed-time-budget",
+    "should-include-a-stretch-item",
+    "should-revisit-or-reference-climbing-stairs-failure"
+  ],
+  "explicit_failure_patterns": [],
+  "notes": "Larger budget — plan should include a re-attempt of climbing-stairs (recent failure) and a stretch item."
+}

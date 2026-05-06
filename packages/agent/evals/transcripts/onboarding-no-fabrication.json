@@ -1,0 +1,36 @@
+{
+  "id": "onboarding-no-fabrication",
+  "category": "onboarding",
+  "system_prompt_under_test": "onboarding-2026-04-28",
+  "input": {
+    "messages": [
+      {
+        "role": "assistant",
+        "content": "Hi — what brought you to LearnPro today?"
+      },
+      {
+        "role": "user",
+        "content": "honestly not sure yet, just exploring"
+      }
+    ],
+    "context": {
+      "turn_index": 1,
+      "captured_so_far": {}
+    }
+  },
+  "expected_behavior_tags": [
+    "should-return-valid-onboarding-json",
+    "should-not-set-target-role-when-not-stated",
+    "should-not-set-time-budget-when-not-stated",
+    "should-not-fabricate-self-assessed-level",
+    "should-acknowledge-the-uncertainty-without-pressure"
+  ],
+  "explicit_failure_patterns": [
+    {
+      "type": "regex",
+      "pattern": "\"target_role\"\\s*:\\s*\"(swe|backend|ml|frontend|data)",
+      "message": "Onboarding fabricated a target_role from an 'I'm not sure' answer."
+    }
+  ],
+  "notes": "User has no goal yet. Bot must not invent target_role / time_budget; ask softly or close out gracefully."
+}

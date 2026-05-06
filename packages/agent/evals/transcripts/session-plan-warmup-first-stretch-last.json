@@ -1,0 +1,27 @@
+{
+  "id": "session-plan-warmup-first-stretch-last",
+  "category": "session-plan",
+  "system_prompt_under_test": "session-plan-2026-05-03",
+  "input": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Time budget for this session (minutes): 40\nTarget role: swe_intern\nPrimary goal: nail the technical screen\nCurrent track: python-fundamentals\n\nRecent episodes (newest first):\n- two-sum — outcome: passed, difficulty: easy\n- valid-parens — outcome: passed, difficulty: medium\n- max-subarray — outcome: passed_with_hints, difficulty: medium\n\nProduce a JSON plan now. 3-5 items, total estimated_duration_min ≤ 40."
+      }
+    ],
+    "context": {
+      "time_budget_min": 40,
+      "current_track": "python-fundamentals",
+      "recent_count": 3
+    }
+  },
+  "expected_behavior_tags": [
+    "should-return-valid-session-plan-json",
+    "should-have-3-to-5-items",
+    "should-open-with-warmup-or-recent-difficulty",
+    "should-end-with-stretching-item",
+    "should-not-exceed-time-budget"
+  ],
+  "explicit_failure_patterns": [],
+  "notes": "Mid-skill learner with varied recent outcomes. Plan should open with a warmup, end with a stretch — per the prompt's spec."
+}

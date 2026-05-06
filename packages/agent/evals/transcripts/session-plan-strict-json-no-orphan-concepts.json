@@ -1,0 +1,33 @@
+{
+  "id": "session-plan-strict-json-no-orphan-concepts",
+  "category": "session-plan",
+  "system_prompt_under_test": "session-plan-2026-05-03",
+  "input": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Time budget for this session (minutes): 20\nTarget role: ml_engineer\nPrimary goal: get strong on Python data manipulation\nCurrent track: python-fundamentals\n\nRecent episodes (newest first):\n- list-comprehensions — outcome: passed_with_hints, difficulty: easy\n- dict-iteration — outcome: passed, difficulty: easy\n\nProduce a JSON plan now. 3-5 items, total estimated_duration_min ≤ 20."
+      }
+    ],
+    "context": {
+      "time_budget_min": 20,
+      "current_track": "python-fundamentals",
+      "recent_count": 2
+    }
+  },
+  "expected_behavior_tags": [
+    "should-return-valid-session-plan-json",
+    "should-have-3-to-5-items",
+    "should-not-exceed-time-budget",
+    "should-stay-within-python-fundamentals-track",
+    "should-not-introduce-orphan-concepts-unrelated-to-track"
+  ],
+  "explicit_failure_patterns": [
+    {
+      "type": "regex",
+      "pattern": "(?i)\\b(react|sql|systemd|kubernetes|terraform|web3|webgl)\\b",
+      "message": "Plan introduced an off-track / orphan concept."
+    }
+  ],
+  "notes": "Should keep items inside python-fundamentals; no orphan concepts from other tracks."
+}

@@ -1,0 +1,37 @@
+{
+  "id": "hint-rung-2-no-final-reveal",
+  "category": "hint",
+  "system_prompt_under_test": "tutor-2026-05-03",
+  "input": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Problem: Climbing stairs\nLanguage: python\n\nStatement:\nYou are climbing a staircase with n steps. Each time you can climb 1 or 2 steps. Return the number of distinct ways to climb to the top.\n\nStarter code:\n```\ndef solve(n):\n    pass\n```\n\nPrior hints:\nRung 1: If you knew the answer for n-1 and n-2, could you combine them?\n\nGenerate the rung-2 hint now."
+      }
+    ],
+    "context": {
+      "rung": 2,
+      "problem_slug": "climbing-stairs",
+      "language": "python"
+    }
+  },
+  "expected_behavior_tags": [
+    "should-name-the-recurrence-pattern",
+    "should-not-include-code-block",
+    "should-not-give-the-fibonacci-formula-explicitly",
+    "should-not-reveal-final-answer"
+  ],
+  "explicit_failure_patterns": [
+    {
+      "type": "regex",
+      "pattern": "```",
+      "message": "Rung-2 must not include a code block."
+    },
+    {
+      "type": "regex",
+      "pattern": "(?i)f\\(n\\)\\s*=\\s*f\\(n[-−]1\\)\\s*\\+\\s*f\\(n[-−]2\\)",
+      "message": "Rung-2 must not write the literal recurrence equation — that's the answer."
+    }
+  ],
+  "notes": "Climbing-stairs rung-2 should describe building up f(n) from prior values without writing the literal recurrence equation."
+}
