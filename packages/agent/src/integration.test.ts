@@ -20,7 +20,14 @@ import {
   type AnthropicMessageResponse,
   type LLMProvider,
 } from "@learnpro/llm";
-import type { SandboxLanguage, SandboxProvider, SandboxRunResponse } from "@learnpro/sandbox";
+import {
+  streamChunksFromRun,
+  type SandboxLanguage,
+  type SandboxProvider,
+  type SandboxRunChunk,
+  type SandboxRunRequest,
+  type SandboxRunResponse,
+} from "@learnpro/sandbox";
 import { ProblemDefSchema, type ProblemDef } from "@learnpro/problems";
 import { eq, sql } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
@@ -378,5 +385,9 @@ class FakeSandbox implements SandboxProvider {
       killed_by: null,
       language: req.language,
     };
+  }
+
+  runStream(req: SandboxRunRequest, signal?: AbortSignal): AsyncIterable<SandboxRunChunk> {
+    return streamChunksFromRun(() => this.run(req), signal);
   }
 }

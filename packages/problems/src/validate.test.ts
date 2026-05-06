@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   PistonHttpTransport,
   PistonSandboxProvider,
+  streamChunksFromRun,
   type SandboxProvider,
+  type SandboxRunChunk,
   type SandboxRunRequest,
   type SandboxRunResponse,
 } from "@learnpro/sandbox";
@@ -27,6 +29,10 @@ class StubPassingProvider implements SandboxProvider {
       language: req.language,
     });
   }
+
+  runStream(req: SandboxRunRequest, signal?: AbortSignal): AsyncIterable<SandboxRunChunk> {
+    return streamChunksFromRun(() => this.run(req), signal);
+  }
 }
 
 class StubFailingProvider implements SandboxProvider {
@@ -42,6 +48,10 @@ class StubFailingProvider implements SandboxProvider {
       language: req.language,
     });
   }
+
+  runStream(req: SandboxRunRequest, signal?: AbortSignal): AsyncIterable<SandboxRunChunk> {
+    return streamChunksFromRun(() => this.run(req), signal);
+  }
 }
 
 class StubExitNonZeroProvider implements SandboxProvider {
@@ -56,6 +66,10 @@ class StubExitNonZeroProvider implements SandboxProvider {
       killed_by: null,
       language: req.language,
     });
+  }
+
+  runStream(req: SandboxRunRequest, signal?: AbortSignal): AsyncIterable<SandboxRunChunk> {
+    return streamChunksFromRun(() => this.run(req), signal);
   }
 }
 

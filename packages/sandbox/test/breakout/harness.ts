@@ -21,10 +21,12 @@ import {
   type SandboxKilledBy,
   type SandboxLanguage,
   type SandboxProvider,
+  type SandboxRunChunk,
   type SandboxRunRequest,
   type SandboxRunResponse,
   PistonHttpTransport,
   PistonSandboxProvider,
+  streamChunksFromRun,
 } from "../../src/index.js";
 
 export type BreakoutScenarioId =
@@ -169,6 +171,10 @@ class HardenedStubSandboxProvider implements SandboxProvider {
   async run(_req: SandboxRunRequest): Promise<SandboxRunResponse> {
     const r = STUB_RESPONSES[this.scenario];
     return Promise.resolve(r);
+  }
+
+  runStream(req: SandboxRunRequest, signal?: AbortSignal): AsyncIterable<SandboxRunChunk> {
+    return streamChunksFromRun(() => this.run(req), signal);
   }
 }
 

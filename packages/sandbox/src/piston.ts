@@ -1,3 +1,4 @@
+import { streamChunksFromRun } from "./chunker.js";
 import { SandboxLanguageNotSupportedError, SandboxRequestError } from "./errors.js";
 import type { SandboxProvider } from "./provider.js";
 import { NullSandboxTelemetrySink } from "./telemetry.js";
@@ -5,6 +6,7 @@ import {
   SandboxRunRequestSchema,
   type SandboxKilledBy,
   type SandboxLanguage,
+  type SandboxRunChunk,
   type SandboxRunRequest,
   type SandboxRunResponse,
   type SandboxTelemetrySink,
@@ -75,6 +77,13 @@ export class PistonSandboxProvider implements SandboxProvider {
     this.languages = { ...DEFAULT_PISTON_LANGUAGES, ...(opts.languages ?? {}) };
     this.telemetry = opts.telemetry ?? new NullSandboxTelemetrySink();
     this.now = opts.now ?? (() => Date.now());
+  }
+
+  // STORY-059 — streaming variant. Calls `run()` once (Piston is request/response) and
+  // re-emits the result as newline-delimited chunks via the shared `streamChunksFromRun`
+  // helper. Telemetry is emitted exactly once (inside the underlying `run()`).
+  runStream(req: SandboxRunRequest, signal?: AbortSignal): AsyncIterable<SandboxRunChunk> {
+    return streamChunksFromRun(() => this.run(req), signal);
   }
 
   async run(rawReq: SandboxRunRequest): Promise<SandboxRunResponse> {

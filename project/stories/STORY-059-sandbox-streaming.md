@@ -2,14 +2,14 @@
 id: STORY-059
 title: Live stdout/stderr streaming for sandbox runs (split from STORY-006)
 type: story
-status: backlog
+status: in-progress
 priority: P1
 estimate: M
 parent: EPIC-003
 phase: v1
-tags: [sandbox, websocket, streaming, ux]
+tags: [sandbox, sse, streaming, ux]
 created: 2026-04-26
-updated: 2026-04-26
+updated: 2026-05-06
 ---
 
 ## Description
@@ -45,3 +45,4 @@ Filed during STORY-006 close-out (2026-04-26) when the WebSocket-streaming AC wa
 ## Activity log
 
 - 2026-04-26 — created (split from STORY-006).
+- 2026-05-06 — picked up. Chose Option 2 (fake-stream by chunking the request/response output) for v1. Rationale: Piston's HTTP API is fundamentally request/response; Option 1 (raw `docker run` primitive) is ADR-worthy and would require re-doing the 13-test STORY-010 hardening suite for a new spawn primitive — out of scope for a P1/M story. Option 2 keeps the `SandboxProvider` contract intact (still calls Piston, gets the full output, then chunks-and-emits as Server-Sent Events). For long programs the underlying Piston call still has a wall-clock cap, so streaming isn't a regression vs. status quo; for short programs the user sees output appear progressively (the actual UX win). **Real streaming for STORY-048 (project-based learning)** will need Option 1 — a new `SandboxProvider` impl backed by raw `docker run` + an ADR + redoing the breakout suite. Filing that follow-up under STORY-048's plan.
