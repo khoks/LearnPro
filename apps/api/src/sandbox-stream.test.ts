@@ -57,6 +57,7 @@ class ThrowingSandbox implements SandboxProvider {
   async run(): Promise<SandboxRunResponse> {
     throw new SandboxRequestError("upstream down", "throwing-fake", new Error("ECONNREFUSED"));
   }
+  // eslint-disable-next-line require-yield -- run() throws first; the generator never yields.
   async *runStream(): AsyncIterable<SandboxRunChunk> {
     await this.run();
   }
