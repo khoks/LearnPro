@@ -38,6 +38,8 @@ function fakeAssignOutput(): AssignProblemOutput {
     difficulty_tier: "easy",
     why_this_difficulty: "cold-start",
     started_at: 1700000000000,
+    due_concepts_count: null,
+    review_session_suggested: false,
   };
 }
 
@@ -79,6 +81,8 @@ function fakeUpdateProfileOutput(): UpdateProfileOutput {
     ],
     xp_award: { amount: 5, reason: "episode-passed-with-hints", awarded: true },
     plan_item_marked: false,
+    reviews_written: [],
+    due_concepts_count: null,
   };
 }
 

@@ -22,6 +22,9 @@ export interface AssignedProblem {
   difficulty_tier: AssignProblemOutput["difficulty_tier"];
   why_this_difficulty: string;
   started_at: number;
+  // STORY-031 — surfaced from the assigner. Optional so older serialized states still load.
+  due_concepts_count?: number | null;
+  review_session_suggested?: boolean;
 }
 
 export interface HintEntry {

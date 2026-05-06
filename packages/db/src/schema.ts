@@ -390,6 +390,32 @@ export const web_push_subscriptions = pgTable(
   }),
 );
 
+// STORY-031 — FSRS spaced-repetition state, one row per (user, concept). The `state` jsonb mirrors
+// the algorithm's per-card view: `{ stability, difficulty, due (ISO), lapses, last_reviewed (ISO|null) }`.
+// `total_reviews` counts how many times the user has graded a problem touching this concept (the
+// FSRS card's internal `reps` is preserved inside `state` jsonb if a future Story needs it). The
+// (user_id, concept_id) unique pair lets us idempotently UPSERT after each episode close.
+export const concept_reviews = pgTable(
+  "concept_reviews",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    org_id: orgId(),
+    user_id: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    concept_id: uuid("concept_id")
+      .notNull()
+      .references(() => concepts.id, { onDelete: "cascade" }),
+    state: jsonb("state").notNull(),
+    total_reviews: integer("total_reviews").notNull().default(0),
+    created_at: createdAt(),
+  },
+  (t) => ({
+    user_concept_uniq: uniqueIndex("concept_reviews_user_concept_uniq").on(t.user_id, t.concept_id),
+    user_idx: index("concept_reviews_user_idx").on(t.user_id),
+  }),
+);
+
 // STORY-024 — quiet-hours-deferred notifications. When the dispatcher's `shouldDeliverNow()`
 // hook returns false (user is inside their quiet window), the dispatcher writes the would-be
 // payload here with a `deliver_after` timestamp set to the next moment delivery is allowed.
@@ -508,6 +534,8 @@ export type SessionPlanRow = typeof session_plans.$inferSelect;
 export type NewSessionPlanRow = typeof session_plans.$inferInsert;
 export type DeferredNotification = typeof deferred_notifications.$inferSelect;
 export type NewDeferredNotification = typeof deferred_notifications.$inferInsert;
+export type ConceptReview = typeof concept_reviews.$inferSelect;
+export type NewConceptReview = typeof concept_reviews.$inferInsert;
 
 export const ALL_TABLES = [
   organizations,
@@ -529,6 +557,7 @@ export const ALL_TABLES = [
   xp_awards,
   session_plans,
   deferred_notifications,
+  concept_reviews,
 ] as const;
 
 // Auth.js tables (`accounts`, `sessions`, `verificationTokens`) are intentionally NOT in this
@@ -550,6 +579,7 @@ export const ORG_SCOPED_TABLES = [
   xp_awards,
   session_plans,
   deferred_notifications,
+  concept_reviews,
 ] as const;
 
 export const PGVECTOR_PROLOGUE_SQL = sql`CREATE EXTENSION IF NOT EXISTS vector`;

@@ -7,6 +7,7 @@ import {
   agentRoleEnum,
   agentTaskEnum,
   ALL_TABLES,
+  concept_reviews,
   concepts,
   deferred_notifications,
   episodes,
@@ -468,5 +469,42 @@ describe("schema: session_plans (STORY-015)", () => {
   it("session_plans is included in both ALL_TABLES and ORG_SCOPED_TABLES", () => {
     expect(ALL_TABLES).toContain(session_plans);
     expect(ORG_SCOPED_TABLES as readonly unknown[]).toContain(session_plans);
+  });
+});
+
+describe("schema: concept_reviews (STORY-031)", () => {
+  it("has id / org_id / user_id / concept_id / state / total_reviews / created_at", () => {
+    const cols = getTableColumns(concept_reviews);
+    expect(cols.id?.primary).toBe(true);
+    expect(cols.org_id?.notNull).toBe(true);
+    expect(cols.user_id?.notNull).toBe(true);
+    expect(cols.concept_id?.notNull).toBe(true);
+    expect(cols.state?.notNull).toBe(true);
+    expect(cols.total_reviews?.notNull).toBe(true);
+    expect(cols.total_reviews?.default).toBe(0);
+    expect(cols.created_at?.notNull).toBe(true);
+  });
+
+  it("state uses jsonb (FsrsCardState shape lives in the Zod schema)", () => {
+    const cols = getTableColumns(concept_reviews);
+    expect(cols.state?.getSQLType()).toBe("jsonb");
+  });
+
+  it("declares a unique (user_id, concept_id) index for idempotent UPSERT", () => {
+    const config = getTableConfig(concept_reviews);
+    const uniq = config.indexes.find((i) => i.config.name === "concept_reviews_user_concept_uniq");
+    expect(uniq, "concept_reviews unique (user_id, concept_id) index missing").toBeDefined();
+    expect(uniq?.config.unique).toBe(true);
+  });
+
+  it("declares a (user_id) index for the per-user due-list scan", () => {
+    const config = getTableConfig(concept_reviews);
+    const names = config.indexes.map((i) => i.config.name);
+    expect(names).toContain("concept_reviews_user_idx");
+  });
+
+  it("concept_reviews is included in both ALL_TABLES and ORG_SCOPED_TABLES", () => {
+    expect(ALL_TABLES).toContain(concept_reviews);
+    expect(ORG_SCOPED_TABLES as readonly unknown[]).toContain(concept_reviews);
   });
 });

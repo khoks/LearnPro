@@ -2,12 +2,16 @@ import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 import {
   agent_calls,
   awardXp,
+  concept_reviews,
   concepts,
   episodes,
+  getCardState,
   getConfidenceSignal,
+  getDueConcepts,
   getLatestActivePlan,
   markItemCompleted,
   problems,
+  recordReview,
   skill_scores,
   submissions,
   tracks,
@@ -136,6 +140,18 @@ export function buildAssignProblemDrizzleDeps(
       const row = inserted[0];
       if (!row) throw new Error("episode insert returned no row");
       return { episode_id: row.id, started_at: row.started_at.getTime() };
+    },
+    async loadDueConceptSlugs(input) {
+      // STORY-031 — concept-id -> slug mapping for the assigner's tie-break. Bounded by the
+      // capped due-list (50 in @learnpro/db), so the join-and-map pass is cheap.
+      const due = await getDueConcepts(opts.db, input.user_id);
+      if (due.length === 0) return [];
+      const ids = due.map((d) => d.concept_id);
+      const rows = await opts.db
+        .select({ id: concepts.id, slug: concepts.slug })
+        .from(concepts)
+        .where(inArray(concepts.id, ids));
+      return rows.map((r) => r.slug);
     },
   };
 }
@@ -442,8 +458,33 @@ export function buildUpdateProfileDrizzleDeps(
         signal: afterOutcome,
       });
     },
+    async loadConceptCardState(input) {
+      // STORY-031 — read the persisted FSRS card state. Returns null on cold-start.
+      return getCardState(opts.db, input.user_id, input.concept_id);
+    },
+    async recordConceptReview(input) {
+      // STORY-031 — UPSERT the recomputed card state. Idempotency: caller passes a fresh state
+      // each time; the DB helper UPSERTs on (user_id, concept_id) so duplicate close calls
+      // simply refresh the row.
+      await recordReview(
+        opts.db,
+        input.user_id,
+        input.concept_id,
+        null,
+        input.next_state,
+        input.org_id,
+      );
+    },
+    async countDueConcepts(input) {
+      const due = await getDueConcepts(opts.db, input.user_id);
+      return due.length;
+    },
   };
 }
+
+// Re-export concept_reviews for the integration test's afterAll teardown — mirrors the existing
+// `agent_calls` re-export at the top of this module.
+export { concept_reviews };
 
 interface EpisodeProblemRow {
   episode_id: string;

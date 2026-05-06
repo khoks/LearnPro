@@ -1,5 +1,6 @@
 import {
   getActiveTrackSlugs,
+  getDueConcepts,
   getStreakSnapshot,
   getTrackProgress,
   getUserXp,
@@ -11,7 +12,7 @@ import { getAuthDb } from "../../auth/db.js";
 import { destinationForUser } from "../../auth/post-signin.js";
 import { AutonomyBandIndicator } from "../../components/autonomy/AutonomyBandIndicator.js";
 import { QuietHoursCard } from "../../components/settings/QuietHoursCard.js";
-import { TrackProgressBar } from "./dashboard-components.js";
+import { DueReviewsCard, TrackProgressBar } from "./dashboard-components.js";
 import { DashboardCardsRow } from "./DashboardCardsRow.js";
 import { DashboardHeader } from "./DashboardHeader.js";
 
@@ -32,10 +33,11 @@ export default async function DashboardPage() {
   const userId = session.user.id;
   const db = getAuthDb();
   const today = new Date();
-  const [xp, streak, activeTrackSlugs] = await Promise.all([
+  const [xp, streak, activeTrackSlugs, dueReviews] = await Promise.all([
     getUserXp(db, userId),
     getStreakSnapshot(db, userId, today, MONTHLY_GRACE_CAP),
     getActiveTrackSlugs(db, userId),
+    getDueConcepts(db, userId, today),
   ]);
 
   const trackProgress = (
@@ -68,6 +70,12 @@ export default async function DashboardPage() {
         graceDaysUsedThisCheck={streak.graceDaysUsed}
         monthlyGraceCap={MONTHLY_GRACE_CAP}
       />
+
+      {dueReviews.length > 0 ? (
+        <section aria-label="Spaced repetition" style={{ marginTop: "1.25rem" }}>
+          <DueReviewsCard count={dueReviews.length} activeTrackSlug={primaryTrackSlug ?? null} />
+        </section>
+      ) : null}
 
       <section aria-label="Tutor autonomy" style={{ marginTop: "1.25rem" }}>
         <AutonomyBandIndicator />

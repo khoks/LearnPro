@@ -3,10 +3,14 @@ import {
   awardXpForEpisode,
   DEFAULT_DIFFICULTY_HEURISTIC,
   DEFAULT_XP_POLICY,
+  initialCardState,
+  mapEpisodeOutcomeToGrade,
+  recomputeAfterReview,
   updateSkillScore,
   type ConceptSkill,
   type DifficultyHeuristicConfig,
   type EpisodeSignalInput,
+  type FsrsCardState,
   type XpPolicyConfig,
 } from "@learnpro/scoring";
 import type { UpdateProfileDeps } from "../ports.js";
@@ -54,6 +58,21 @@ export const UpdateProfileOutputSchema = z.object({
   // to completed during this close. Idempotent re-runs return false. False when the user has no
   // active plan, or when no plan item matches the slug.
   plan_item_marked: z.boolean(),
+  // STORY-031 — per-concept FSRS review writes. Empty array when spaced-repetition isn't wired
+  // OR when the problem's concept tags don't resolve to any DB rows. The `grade` is the FSRS
+  // discriminator the wrapper computed; the `next_due` is the persisted state's due timestamp
+  // so the consumer can show "review again on YYYY-MM-DD" without re-fetching.
+  reviews_written: z.array(
+    z.object({
+      concept_id: z.string(),
+      concept_slug: z.string(),
+      grade: z.enum(["again", "hard", "good", "easy"]),
+      next_due: z.string().datetime(),
+    }),
+  ),
+  // STORY-031 — count of currently-due cards after this close (best-effort, null when the deps
+  // adapter doesn't wire countDueConcepts).
+  due_concepts_count: z.number().int().min(0).nullable(),
 });
 export type UpdateProfileOutput = z.infer<typeof UpdateProfileOutputSchema>;
 
@@ -130,6 +149,15 @@ export function createUpdateProfileTool(opts: CreateUpdateProfileToolOptions): U
       });
 
       const skill_updates: UpdateProfileOutput["skill_updates"] = [];
+      const reviews_written: UpdateProfileOutput["reviews_written"] = [];
+      const now = new Date(input.finished_at_ms);
+      const fsrsGrade = mapEpisodeOutcomeToGrade({
+        outcome: input.outcome,
+        hints_used,
+        time_to_solve_ms,
+        expected_time_ms: ctx.problem.expected_median_time_to_solve_ms,
+      });
+
       for (const slug of conceptSlugs) {
         const concept_id = idMap.get(slug);
         if (!concept_id) continue;
@@ -153,6 +181,37 @@ export function createUpdateProfileTool(opts: CreateUpdateProfileToolOptions): U
           next_confidence: next.confidence,
           attempts: next.attempts,
         });
+
+        // STORY-031 — FSRS review write. Best-effort, swallows DB errors so a hiccup never
+        // fails the close. Cold-start: when no card state exists yet, seed via initialCardState.
+        if (opts.deps.loadConceptCardState && opts.deps.recordConceptReview) {
+          try {
+            const priorRaw = await opts.deps.loadConceptCardState({
+              user_id: ctx.user_id,
+              concept_id,
+            });
+            const prior: FsrsCardState = priorRaw ?? initialCardState(now);
+            const nextState = recomputeAfterReview({
+              state: prior,
+              grade: fsrsGrade,
+              now,
+            });
+            await opts.deps.recordConceptReview({
+              user_id: ctx.user_id,
+              org_id: ctx.org_id,
+              concept_id,
+              next_state: nextState,
+            });
+            reviews_written.push({
+              concept_id,
+              concept_slug: slug,
+              grade: fsrsGrade,
+              next_due: nextState.due,
+            });
+          } catch {
+            // intentional: spaced-repetition write is best-effort; never fail the close.
+          }
+        }
       }
 
       const xpDecision = awardXpForEpisode(
@@ -188,6 +247,17 @@ export function createUpdateProfileTool(opts: CreateUpdateProfileToolOptions): U
         }
       }
 
+      // STORY-031 — best-effort due-count read for the close response. Returns null when the
+      // adapter doesn't wire spaced-repetition.
+      let dueCount: number | null = null;
+      if (opts.deps.countDueConcepts) {
+        try {
+          dueCount = await opts.deps.countDueConcepts({ user_id: ctx.user_id });
+        } catch {
+          dueCount = null;
+        }
+      }
+
       // STORY-054 — refresh the autonomy controller's confidence signal. Best-effort: a DB hiccup
       // shouldn't fail the close (the user already passed/failed). Idempotency: re-grading is rare
       // on the request path (the API only calls finish() once per episode); the EWMA absorbs any
@@ -220,6 +290,8 @@ export function createUpdateProfileTool(opts: CreateUpdateProfileToolOptions): U
           awarded: xpResult.inserted,
         },
         plan_item_marked,
+        reviews_written,
+        due_concepts_count: dueCount,
       };
     },
   };

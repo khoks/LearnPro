@@ -1,7 +1,7 @@
 import * as React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { StreakCard, TrackProgressBar, XpCard } from "./dashboard-components.js";
+import { DueReviewsCard, StreakCard, TrackProgressBar, XpCard } from "./dashboard-components.js";
 
 // Reference React explicitly so vitest's classic-runtime JSX transform doesn't strip the
 // import. (Without this, esbuild's classic JSX transform emits React.createElement calls and
@@ -13,8 +13,11 @@ void React;
 // test, just shape + copy.
 
 function html(
-  node: ReturnType<typeof XpCard | typeof StreakCard | typeof TrackProgressBar>,
+  node: ReturnType<
+    typeof XpCard | typeof StreakCard | typeof TrackProgressBar | typeof DueReviewsCard
+  >,
 ): string {
+  if (node === null) return "";
   return renderToStaticMarkup(node);
 }
 
@@ -201,5 +204,43 @@ describe("TrackProgressBar", () => {
         />,
       ),
     );
+  });
+});
+
+describe("DueReviewsCard (STORY-031)", () => {
+  it("returns null when count is 0 (zero-state is absence, not noise)", () => {
+    const node = DueReviewsCard({ count: 0, activeTrackSlug: "python-fundamentals" });
+    expect(node).toBeNull();
+  });
+
+  it("renders singular phrasing for count === 1", () => {
+    const out = html(<DueReviewsCard count={1} activeTrackSlug="python-fundamentals" />);
+    expect(out).toContain("1 concept is ready for a quick review.");
+    expect(out).toContain("Start a review session");
+  });
+
+  it("renders plural phrasing for count > 1", () => {
+    const out = html(<DueReviewsCard count={5} activeTrackSlug="python-fundamentals" />);
+    expect(out).toContain("5 concepts are ready for a quick review.");
+  });
+
+  it("CTA links to /session?track=...&review=1 when an active track is supplied", () => {
+    const out = html(<DueReviewsCard count={3} activeTrackSlug="python-fundamentals" />);
+    expect(out).toContain('href="/session?track=python-fundamentals&amp;review=1"');
+  });
+
+  it("CTA links to /session?review=1 when no active track", () => {
+    const out = html(<DueReviewsCard count={3} activeTrackSlug={null} />);
+    expect(out).toContain('href="/session?review=1"');
+  });
+
+  it("uses warm coach voice — no urgency, no shame, no forbidden phrases", () => {
+    assertNoForbiddenPhrases(
+      html(<DueReviewsCard count={7} activeTrackSlug="python-fundamentals" />),
+    );
+    const out = html(<DueReviewsCard count={3} activeTrackSlug="python-fundamentals" />);
+    expect(out).not.toContain("forget");
+    expect(out).not.toContain("losing");
+    expect(out).not.toContain("fading");
   });
 });

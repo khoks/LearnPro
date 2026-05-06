@@ -24,6 +24,8 @@ const assignBody: AssignProblemOutput = {
   difficulty_tier: "easy",
   why_this_difficulty: "cold-start: starting at easy",
   started_at: 1_700_000_000_000,
+  due_concepts_count: null,
+  review_session_suggested: false,
 };
 
 const passingGrade: GradeOutput = {
@@ -65,6 +67,8 @@ const profile: UpdateProfileOutput = {
   ],
   xp_award: { amount: 30, reason: "episode-passed", awarded: true },
   plan_item_marked: false,
+  reviews_written: [],
+  due_concepts_count: null,
 };
 
 const hint1Body = { rung: 1 as const, hint: "Think about pairs.", xp_cost: 5 };
@@ -258,6 +262,8 @@ describe("session-driver: illegal-transition guards", () => {
         difficulty_tier: "easy",
         why_this_difficulty: "ok",
         started_at: 1,
+        due_concepts_count: null,
+        review_session_suggested: false,
       },
       hints: [],
       grade: passingGrade,

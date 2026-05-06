@@ -125,3 +125,13 @@ export {
   type SessionPlanItem,
   type SessionPlanItemStatus,
 } from "./session-plan.js";
+export {
+  getCardState,
+  getDueConcepts,
+  recordReview,
+  upsertCardState,
+  withOverdueDays,
+  type DueConceptRow,
+  type DueConceptWithOverdue,
+  type RecordReviewInput,
+} from "./concept-reviews.js";
