@@ -16,10 +16,7 @@ import {
   type WeeklyDigestMasteryDelta,
   type WeeklyDigestSkillSnapshotRow,
 } from "@learnpro/notifications/email";
-import {
-  type NotificationDispatcher,
-  type QuietHoursDispatcher,
-} from "@learnpro/notifications";
+import { type NotificationDispatcher, type QuietHoursDispatcher } from "@learnpro/notifications";
 
 // STORY-045 — Glue between the digest builders, the DB reads, and the dispatcher. The cron
 // callers (daily-reminder.ts extension + weekly-digest.ts) wrap the per-user iteration; this
@@ -65,15 +62,8 @@ export async function runDailyEmailDigest(
   for (const r of recipients) {
     const yesterday = startOfUtcDay(addDays(now, -1));
     const todayStart = startOfUtcDay(now);
-    const episodes = await listFinishedEpisodesInWindow(
-      opts.db,
-      r.user_id,
-      yesterday,
-      todayStart,
-    );
-    const planItems = opts.getTodayPlanItems
-      ? await opts.getTodayPlanItems(r.user_id, now)
-      : [];
+    const episodes = await listFinishedEpisodesInWindow(opts.db, r.user_id, yesterday, todayStart);
+    const planItems = opts.getTodayPlanItems ? await opts.getTodayPlanItems(r.user_id, now) : [];
     const difficultyHint = opts.getDifficultyHint
       ? await opts.getDifficultyHint(r.user_id, now)
       : null;
@@ -143,19 +133,12 @@ export async function runWeeklyEmailDigest(
   for (const r of eligible) {
     const weekEnd = startOfUtcDay(now);
     const weekStart = addDays(weekEnd, -7);
-    const episodes = await listFinishedEpisodesInWindow(
-      opts.db,
-      r.user_id,
-      weekStart,
-      weekEnd,
-    );
+    const episodes = await listFinishedEpisodesInWindow(opts.db, r.user_id, weekStart, weekEnd);
     const skillSnapshot = await listSkillSnapshot(opts.db, r.user_id);
     const masteryDeltas = opts.getMasteryDeltas
       ? await opts.getMasteryDeltas(r.user_id, weekStart, weekEnd)
       : [];
-    const nextStepHint = opts.getNextStepHint
-      ? await opts.getNextStepHint(r.user_id, now)
-      : null;
+    const nextStepHint = opts.getNextStepHint ? await opts.getNextStepHint(r.user_id, now) : null;
     const userName = opts.getUserName ? await opts.getUserName(r.user_id) : null;
 
     const hoursPracticed = sumHours(episodes);

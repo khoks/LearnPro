@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  DEFAULT_EMAIL_DIGEST_PREFS,
-  EmailDigestPrefsSchema,
-} from "./email-digest-prefs.js";
+import { DEFAULT_EMAIL_DIGEST_PREFS, EmailDigestPrefsSchema } from "./email-digest-prefs.js";
 
 // STORY-045 — exercises the pure parts of the helpers that don't need a DB. The DB-dependent
 // paths (UPSERT, token-lookup, recipient list) are exercised end-to-end in apps/api integration

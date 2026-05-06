@@ -11,7 +11,8 @@ export const DAILY_DIGEST_SUBJECT = "Your daily LearnPro digest";
 export const WEEKLY_DIGEST_SUBJECT = "Your weekly LearnPro digest";
 
 // Friendly footer + unsubscribe wording. Rendered into both HTML and text variants.
-export const UNSUBSCRIBE_FOOTER = "You're getting this because you opted into LearnPro digest emails.";
+export const UNSUBSCRIBE_FOOTER =
+  "You're getting this because you opted into LearnPro digest emails.";
 
 export const UNSUBSCRIBE_LINK_TEXT = "Unsubscribe";
 
@@ -33,7 +34,4 @@ export const EMPTY_WEEKLY_BODY =
 
 // The forbidden-phrase set the digest copy test scans for. Imported from the main copy module
 // so we share STORY-023's set verbatim. We re-export here to keep the import surface small.
-export {
-  containsForbiddenPhrase,
-  FORBIDDEN_PHRASES,
-} from "../src/copy.js";
+export { containsForbiddenPhrase, FORBIDDEN_PHRASES } from "../src/copy.js";

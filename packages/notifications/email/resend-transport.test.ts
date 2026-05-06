@@ -1,9 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { ResendTransport } from "./resend-transport.js";
 
-function makeFetcher(
-  handler: (url: string, init: RequestInit) => Promise<Response>,
-): typeof fetch {
+function makeFetcher(handler: (url: string, init: RequestInit) => Promise<Response>): typeof fetch {
   return ((url: string | URL, init?: RequestInit) =>
     handler(typeof url === "string" ? url : url.toString(), init ?? {})) as unknown as typeof fetch;
 }
@@ -25,9 +23,9 @@ describe("ResendTransport", () => {
   });
 
   it("posts to /emails with the bearer key + JSON body", async () => {
-    const fetcher = vi.fn().mockResolvedValue(
-      new Response(JSON.stringify({ id: "msg-abc" }), { status: 200 }),
-    );
+    const fetcher = vi
+      .fn()
+      .mockResolvedValue(new Response(JSON.stringify({ id: "msg-abc" }), { status: 200 }));
     const t = new ResendTransport({ ...BASE_OPTS, fetcher: makeFetcher(fetcher) });
     const out = await t.send({
       to: "user@example.com",
@@ -53,9 +51,9 @@ describe("ResendTransport", () => {
   });
 
   it("forwards optional headers + reply_to + per-send from override", async () => {
-    const fetcher = vi.fn().mockResolvedValue(
-      new Response(JSON.stringify({ id: "msg-1" }), { status: 200 }),
-    );
+    const fetcher = vi
+      .fn()
+      .mockResolvedValue(new Response(JSON.stringify({ id: "msg-1" }), { status: 200 }));
     const t = new ResendTransport({ ...BASE_OPTS, fetcher: makeFetcher(fetcher) });
     await t.send({
       to: "user@example.com",
@@ -116,9 +114,9 @@ describe("ResendTransport", () => {
   });
 
   it("returns reason='malformed_response' when the body is missing the id field", async () => {
-    const fetcher = vi.fn().mockResolvedValue(
-      new Response(JSON.stringify({ unrelated: true }), { status: 200 }),
-    );
+    const fetcher = vi
+      .fn()
+      .mockResolvedValue(new Response(JSON.stringify({ unrelated: true }), { status: 200 }));
     const t = new ResendTransport({ ...BASE_OPTS, fetcher: makeFetcher(fetcher) });
     const out = await t.send({ to: "u@example.com", subject: "x", html: "x", text: "x" });
     expect(out.reason).toBe("malformed_response");

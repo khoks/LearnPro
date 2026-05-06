@@ -26,9 +26,8 @@ vi.mock("@learnpro/db", async (importOriginal) => {
     ...actual,
     listDigestRecipients: (...a: Parameters<typeof actual.listDigestRecipients>) =>
       listDigestRecipients(...a),
-    listFinishedEpisodesInWindow: (
-      ...a: Parameters<typeof actual.listFinishedEpisodesInWindow>
-    ) => listFinishedEpisodesInWindow(...a),
+    listFinishedEpisodesInWindow: (...a: Parameters<typeof actual.listFinishedEpisodesInWindow>) =>
+      listFinishedEpisodesInWindow(...a),
     listSkillSnapshot: (...a: Parameters<typeof actual.listSkillSnapshot>) =>
       listSkillSnapshot(...a),
   };

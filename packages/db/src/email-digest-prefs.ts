@@ -74,8 +74,7 @@ export async function updateEmailDigestPrefs(
   const generate = opts.generateToken ?? defaultGenerateToken;
   const existing = await getEmailDigestPrefs(opts.db, opts.user_id);
   const anyOptIn = opts.prefs.daily_opt_in || opts.prefs.weekly_opt_in;
-  const nextToken =
-    existing.unsubscribe_token ?? (anyOptIn ? generate() : null);
+  const nextToken = existing.unsubscribe_token ?? (anyOptIn ? generate() : null);
 
   const setMap = {
     email_daily_opt_in: opts.prefs.daily_opt_in,
@@ -103,10 +102,7 @@ export async function updateEmailDigestPrefs(
         email_unsubscribe_token: nextToken,
       })
       .onConflictDoNothing();
-    await opts.db
-      .update(profiles)
-      .set(setMap)
-      .where(eq(profiles.user_id, opts.user_id));
+    await opts.db.update(profiles).set(setMap).where(eq(profiles.user_id, opts.user_id));
   }
 
   return {

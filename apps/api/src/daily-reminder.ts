@@ -129,8 +129,7 @@ async function main(): Promise<void> {
     const digestOutcomes = await runDailyEmailDigest({
       db,
       dispatcher,
-      unsubscribeBaseUrl:
-        process.env["LEARNPRO_PUBLIC_BASE_URL"] ?? "https://learnpro.local",
+      unsubscribeBaseUrl: process.env["LEARNPRO_PUBLIC_BASE_URL"] ?? "https://learnpro.local",
     });
     const digestDelivered = digestOutcomes.filter((o) => o.any_delivered).length;
     console.log(
