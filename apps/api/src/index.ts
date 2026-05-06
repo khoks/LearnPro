@@ -63,6 +63,7 @@ import { registerSpacedRepetitionRoutes } from "./spaced-repetition.js";
 import { registerInstallEligibleRoutes } from "./install-eligible.js";
 import { registerPortfolioRoutes } from "./portfolio.js";
 import { registerOnboardingRoute, type OnboardingProfileWriter } from "./onboarding.js";
+import { registerSandboxStreamRoute } from "./sandbox-stream.js";
 import { registerRecommendationRoute } from "./recommendation.js";
 import {
   MemoryRateLimiter,
@@ -278,6 +279,12 @@ export function buildServer(opts: BuildServerOptions = {}) {
       throw err;
     }
   });
+
+  // STORY-059 — Server-Sent Events streaming variant of `/sandbox/run`. Same body shape; the
+  // route chunks the post-run output into newline-delimited tokens and emits them as SSE
+  // events ending with an `exit` event carrying the run metadata. Opt-in from the playground
+  // (default UX still uses the request/response endpoint).
+  registerSandboxStreamRoute(app, { sandbox });
 
   // STORY-055 — batched ingestion of rich interaction telemetry. STORY-005 wires the user_id
   // from the cross-app session lookup; unauthenticated requests still pass through as null.
