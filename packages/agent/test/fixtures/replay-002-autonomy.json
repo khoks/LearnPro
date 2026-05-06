@@ -1,0 +1,167 @@
+{
+  "$schema": "https://learnpro.local/agent-replay-fixture-v1.json",
+  "name": "replay-002-autonomy",
+  "description": "Autonomy band progression: 20 step transcript exercising the EwmaBandedAutonomyPolicy with synthetic confidence signals at Low (cold-start), Medium (mid-confidence), and High (steady-state) bands. Asserts the policy's `decide()` lands on the expected band at each window and that the right `decision` shape comes back per consequence.",
+  "user_id": "11111111-1111-4111-8111-111111111111",
+  "org_id": "self",
+  "track_id": "22222222-2222-4222-8222-222222222222",
+  "windows": [
+    {
+      "name": "low-band-cold-start",
+      "episode_count": 0,
+      "signal": null,
+      "expectations": [
+        {
+          "step": 1,
+          "kind": "assign-next-problem",
+          "expect_band": "low",
+          "expect_decision": "ask"
+        },
+        {
+          "step": 2,
+          "kind": "proactive-hint",
+          "expect_band": "low",
+          "expect_decision": "ask"
+        },
+        {
+          "step": 3,
+          "kind": "auto-set-final-outcome",
+          "expect_band": "low",
+          "expect_decision": "ask"
+        },
+        {
+          "step": 4,
+          "kind": "switch-track",
+          "expect_band": "low",
+          "expect_decision": "ask_freeform"
+        },
+        {
+          "step": 5,
+          "kind": "assign-next-problem",
+          "expect_band": "low",
+          "expect_decision": "ask"
+        },
+        {
+          "step": 6,
+          "kind": "proactive-hint",
+          "expect_band": "low",
+          "expect_decision": "ask"
+        },
+        {
+          "step": 7,
+          "kind": "auto-set-final-outcome",
+          "expect_band": "low",
+          "expect_decision": "ask"
+        }
+      ]
+    },
+    {
+      "name": "medium-band-mid-confidence",
+      "episode_count": 12,
+      "signal": {
+        "agreement_rate": 0.5,
+        "engagement": 0.45,
+        "success": 0.55,
+        "updated_at": "2026-04-25T12:00:00.000Z"
+      },
+      "expectations": [
+        {
+          "step": 8,
+          "kind": "assign-next-problem",
+          "expect_band": "medium",
+          "expect_decision": "execute"
+        },
+        {
+          "step": 9,
+          "kind": "proactive-hint",
+          "expect_band": "medium",
+          "expect_decision": "ask"
+        },
+        {
+          "step": 10,
+          "kind": "auto-set-final-outcome",
+          "expect_band": "medium",
+          "expect_decision": "ask"
+        },
+        {
+          "step": 11,
+          "kind": "switch-track",
+          "expect_band": "medium",
+          "expect_decision": "ask"
+        },
+        {
+          "step": 12,
+          "kind": "assign-next-problem",
+          "expect_band": "medium",
+          "expect_decision": "execute"
+        },
+        {
+          "step": 13,
+          "kind": "proactive-hint",
+          "expect_band": "medium",
+          "expect_decision": "ask"
+        }
+      ]
+    },
+    {
+      "name": "high-band-steady-state",
+      "episode_count": 50,
+      "signal": {
+        "agreement_rate": 0.85,
+        "engagement": 0.8,
+        "success": 0.9,
+        "updated_at": "2026-04-25T12:00:00.000Z"
+      },
+      "expectations": [
+        {
+          "step": 14,
+          "kind": "assign-next-problem",
+          "expect_band": "high",
+          "expect_decision": "execute"
+        },
+        {
+          "step": 15,
+          "kind": "proactive-hint",
+          "expect_band": "high",
+          "expect_decision": "execute"
+        },
+        {
+          "step": 16,
+          "kind": "auto-set-final-outcome",
+          "expect_band": "high",
+          "expect_decision": "execute"
+        },
+        {
+          "step": 17,
+          "kind": "switch-track",
+          "expect_band": "high",
+          "expect_decision": "ask"
+        },
+        {
+          "step": 18,
+          "kind": "assign-next-problem",
+          "expect_band": "high",
+          "expect_decision": "execute"
+        },
+        {
+          "step": 19,
+          "kind": "proactive-hint",
+          "expect_band": "high",
+          "expect_decision": "execute"
+        },
+        {
+          "step": 20,
+          "kind": "auto-set-final-outcome",
+          "expect_band": "high",
+          "expect_decision": "execute"
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "total_steps": 20,
+    "low_band_steps": 7,
+    "medium_band_steps": 6,
+    "high_band_steps": 7
+  }
+}
