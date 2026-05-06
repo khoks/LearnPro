@@ -18,6 +18,7 @@ import {
   notifications,
   ORG_SCOPED_TABLES,
   organizations,
+  portfolio_pushes,
   problems,
   profiles,
   SELF_HOSTED_ORG_ID,
@@ -469,6 +470,58 @@ describe("schema: session_plans (STORY-015)", () => {
   it("session_plans is included in both ALL_TABLES and ORG_SCOPED_TABLES", () => {
     expect(ALL_TABLES).toContain(session_plans);
     expect(ORG_SCOPED_TABLES as readonly unknown[]).toContain(session_plans);
+  });
+});
+
+describe("schema: github portfolio (STORY-040)", () => {
+  it("profiles carries github_portfolio_repo (text, nullable)", () => {
+    const cols = getTableColumns(profiles);
+    expect(cols.github_portfolio_repo).toBeDefined();
+    expect(cols.github_portfolio_repo?.notNull).toBe(false);
+    expect(cols.github_portfolio_repo?.getSQLType()).toBe("text");
+  });
+
+  it("profiles carries github_auto_push_enabled (notNull, default false)", () => {
+    const cols = getTableColumns(profiles);
+    expect(cols.github_auto_push_enabled).toBeDefined();
+    expect(cols.github_auto_push_enabled?.notNull).toBe(true);
+    expect(cols.github_auto_push_enabled?.default).toBe(false);
+  });
+
+  it("portfolio_pushes has id / org_id / user_id / episode_id / repo_owner / repo_name / directory_path / commit_sha / pushed_at / auto", () => {
+    const cols = getTableColumns(portfolio_pushes);
+    expect(cols.id?.primary).toBe(true);
+    expect(cols.org_id?.notNull).toBe(true);
+    expect(cols.user_id?.notNull).toBe(true);
+    expect(cols.episode_id?.notNull).toBe(true);
+    expect(cols.repo_owner?.notNull).toBe(true);
+    expect(cols.repo_name?.notNull).toBe(true);
+    expect(cols.repo_name?.default).toBe("learnpro-portfolio");
+    expect(cols.directory_path?.notNull).toBe(true);
+    expect(cols.commit_sha?.notNull).toBe(true);
+    expect(cols.pushed_at?.notNull).toBe(true);
+    expect(cols.auto?.notNull).toBe(true);
+    expect(cols.auto?.default).toBe(false);
+  });
+
+  it("portfolio_pushes declares (user_id, episode_id) unique index for idempotent re-push", () => {
+    const config = getTableConfig(portfolio_pushes);
+    const uniq = config.indexes.find(
+      (i) => i.config.name === "portfolio_pushes_user_episode_uniq",
+    );
+    expect(uniq, "portfolio_pushes (user_id, episode_id) unique index missing").toBeDefined();
+    expect(uniq?.config.unique).toBe(true);
+  });
+
+  it("portfolio_pushes declares (user_id, pushed_at) index for the recent-pushes list", () => {
+    const config = getTableConfig(portfolio_pushes);
+    const names = config.indexes.map((i) => i.config.name);
+    expect(names).toContain("portfolio_pushes_user_pushed_idx");
+  });
+
+  it("portfolio_pushes is included in both ALL_TABLES and ORG_SCOPED_TABLES", () => {
+    expect(ALL_TABLES).toContain(portfolio_pushes);
+    expect(ORG_SCOPED_TABLES as readonly unknown[]).toContain(portfolio_pushes);
   });
 });
 

@@ -171,6 +171,15 @@ export const profiles = pgTable("profiles", {
   // success) plus episode-count snapshot. Null until the first close lands; the controller's
   // cold-start safety branch pins users to "low" while this is null or episode_count < 5.
   confidence_signal: jsonb("confidence_signal"),
+  // STORY-040 — sticky preference for the GitHub portfolio repo name. Defaults to
+  // "learnpro-portfolio" everywhere else; nullable here because the row is bootstrapped
+  // before the user has connected a portfolio. Same coach-voice principle as quiet hours:
+  // the user picks the name, we never auto-rename.
+  github_portfolio_repo: text("github_portfolio_repo"),
+  // STORY-040 — per-user toggle for "auto-push every passing episode without confirming".
+  // OFF by default (AC #5 — opt-in only after the first manual push). The settings UI flips
+  // this; the API gates auto-push checks against it.
+  github_auto_push_enabled: boolean("github_auto_push_enabled").notNull().default(false),
   updated_at: updatedAt(),
 });
 
@@ -498,6 +507,39 @@ export const xp_awards = pgTable(
   }),
 );
 
+// STORY-040 — one row per (user, episode) push to the user's GitHub portfolio repo. Re-pushing
+// the same episode UPDATEs `commit_sha` + `pushed_at` rather than appending a duplicate row,
+// per the unique constraint below. `directory_path` is the slug-shaped folder we wrote into
+// (e.g. "python-fundamentals/two-sum/"); `auto` records whether this came from the per-user
+// auto-push toggle or a manual click. The `(user_id, episode_id)` unique index is the
+// idempotency bedrock — apps/api uses ON CONFLICT DO UPDATE to keep the row in sync.
+export const portfolio_pushes = pgTable(
+  "portfolio_pushes",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    org_id: orgId(),
+    user_id: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    episode_id: uuid("episode_id")
+      .notNull()
+      .references(() => episodes.id, { onDelete: "cascade" }),
+    repo_owner: text("repo_owner").notNull(),
+    repo_name: text("repo_name").notNull().default("learnpro-portfolio"),
+    directory_path: text("directory_path").notNull(),
+    commit_sha: text("commit_sha").notNull(),
+    pushed_at: timestamp("pushed_at", { withTimezone: true }).notNull().defaultNow(),
+    auto: boolean("auto").notNull().default(false),
+  },
+  (t) => ({
+    user_episode_uniq: uniqueIndex("portfolio_pushes_user_episode_uniq").on(
+      t.user_id,
+      t.episode_id,
+    ),
+    user_pushed_idx: index("portfolio_pushes_user_pushed_idx").on(t.user_id, t.pushed_at),
+  }),
+);
+
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type Account = typeof accounts.$inferSelect;
@@ -536,6 +578,8 @@ export type DeferredNotification = typeof deferred_notifications.$inferSelect;
 export type NewDeferredNotification = typeof deferred_notifications.$inferInsert;
 export type ConceptReview = typeof concept_reviews.$inferSelect;
 export type NewConceptReview = typeof concept_reviews.$inferInsert;
+export type PortfolioPush = typeof portfolio_pushes.$inferSelect;
+export type NewPortfolioPush = typeof portfolio_pushes.$inferInsert;
 
 export const ALL_TABLES = [
   organizations,
@@ -558,6 +602,7 @@ export const ALL_TABLES = [
   session_plans,
   deferred_notifications,
   concept_reviews,
+  portfolio_pushes,
 ] as const;
 
 // Auth.js tables (`accounts`, `sessions`, `verificationTokens`) are intentionally NOT in this
@@ -580,6 +625,7 @@ export const ORG_SCOPED_TABLES = [
   session_plans,
   deferred_notifications,
   concept_reviews,
+  portfolio_pushes,
 ] as const;
 
 export const PGVECTOR_PROLOGUE_SQL = sql`CREATE EXTENSION IF NOT EXISTS vector`;
