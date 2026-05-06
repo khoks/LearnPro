@@ -25,11 +25,19 @@ LearnPro is an adaptive, AI-tutored, self-hosted learning platform that teaches 
 | Backend | Node.js (Fastify) + TS, tRPC + REST adapter, BullMQ on Redis | Same |
 | Sandbox (MVP) | Self-hosted Piston in Docker on WSL2, hardened (no-net, read-only, cgroups, seccomp, non-root) | [ADR-0002](./docs/architecture/ADR-0002-sandbox.md) |
 | Databases | Postgres 16 + pgvector + Redis 7 + MinIO | [ADR-0004](./docs/architecture/ADR-0004-database.md) |
+| Auth | NextAuth v5 (Auth.js), magic link + GitHub OAuth, DB-session strategy via Drizzle adapter; cross-app auth via the `sessions` cookie (no shared JWT secret) | STORY-005 |
+| Policy adapters | Deterministic defaults at every cross-cutting seam (`SandboxProvider`, `LLMProvider`, `NotificationChannel`, `RateLimiter`, `UsageStore`, `InteractionStore`); swap-without-rewrite | STORY-057 |
+| Interaction telemetry | 9-event `interaction_type` pgEnum + `episodes.interactions_summary` jsonb; Zod-validated client batches with 200-event cap; voice opt-in only | STORY-055 |
+| Cost telemetry & budget | DB-backed `agent_calls` sink + per-user daily token budget with Opus → Sonnet → Haiku tier ladder (downgrade at 80%) | STORY-012 / STORY-060 |
+| Coach-voice copy | All user-visible nudges/notifications/dashboard copy go through `@learnpro/notifications/copy` (or local copy module); forbidden-phrase tests reject FOMO/loss-aversion/streak-shaming | STORY-022 / STORY-023 / STORY-024 |
+| MVP scope | **Substantially complete (2026-05-05).** Single learning loop end-to-end at API + UI; STORY-054 (adaptive autonomy controller) is the last MVP P0 in flight | [`docs/roadmap/MVP.md`](./docs/roadmap/MVP.md) |
 | Primary OS for dev | Windows (WSL2 for Docker) | User's machine; Mac/Linux via adapters |
 
 ---
 
 ## Where to find things
+
+### Docs
 
 - **The user's original vision** (verbatim, untouched): [`docs/vision/RAW_VISION.md`](./docs/vision/RAW_VISION.md). Treat as source-of-truth for *intent*.
 - **Groomed features (MVP/v1/v2/v3 tagged)**: [`docs/vision/GROOMED_FEATURES.md`](./docs/vision/GROOMED_FEATURES.md).
@@ -41,6 +49,26 @@ LearnPro is an adaptive, AI-tutored, self-hosted learning platform that teaches 
 - **Decisions log** (lighter-weight than ADRs): [`docs/decisions/DECISIONS_LOG.md`](./docs/decisions/DECISIONS_LOG.md). Maintained automatically by the `harvest-knowledge` skill.
 - **Novel / patentable ideas log**: [`docs/vision/NOVEL_IDEAS.md`](./docs/vision/NOVEL_IDEAS.md). Same skill maintains it.
 - **Product strategy docs**: [`docs/product/COMPETITIVE.md`](./docs/product/COMPETITIVE.md), [`docs/product/DIFFERENTIATORS.md`](./docs/product/DIFFERENTIATORS.md), [`docs/product/UX_DETAILS.md`](./docs/product/UX_DETAILS.md).
+- **Data retention & PII**: [`docs/security/RETENTION.md`](./docs/security/RETENTION.md) — windows + redaction patterns (STORY-056).
+
+### Apps
+
+- `apps/api` — Fastify HTTP API. Tutor / onboarding / sandbox / interactions / export / settings routes. Cross-app auth via the NextAuth `sessions` cookie.
+- `apps/web` — Next.js 15 App Router. `/`, `/auth/signin`, `/onboarding`, `/dashboard`, `/session`, `/playground`, `/settings/*`. Monaco editor, axe-core a11y baseline, responsive at <768 / <1024 / 1024+.
+
+### Workspace packages (`packages/*`)
+
+- `@learnpro/shared` — Zod schemas + shared TS types crossing the API/web boundary; pure regex `redactPii` (5 PII categories incl. Luhn-checked credit cards).
+- `@learnpro/db` — Drizzle schema + migrations + seed scripts; retention sweepers (`db:retention`); helper queries.
+- `@learnpro/llm` — `LLMProvider` interface + Anthropic adapter; `BudgetGatedLLMProvider` decorator; `MODEL_PRICING` + `costFor()`.
+- `@learnpro/sandbox` — `SandboxProvider` interface + hardened Piston-on-Docker impl; ADR-0002 breakout test harness (`LEARNPRO_REQUIRE_PISTON=1`).
+- `@learnpro/agent` — Tutor harness (state machine + 4 tools: `assign-problem` / `give-hint` / `grade` / `update-profile`); session-plan agent.
+- `@learnpro/prompts` — Versioned prompt registry (onboarding / hint / grade / session-plan).
+- `@learnpro/scoring` — Heuristic difficulty tuner; XP / streak / per-track progress policies; DST-aware quiet-hours policy.
+- `@learnpro/notifications` — `NotificationChannel` interface; in-app + Web Push channels; `QuietHoursDispatcher` decorator + deferred-flusher; coach-voice copy module.
+- `@learnpro/redaction` — Haiku-second-pass PII redactor + `OrchestratedRedactor` (regex + LLM passes).
+- `@learnpro/problems` — Curated seed bank (33 Python + 30 TS YAMLs with hidden tests); schema validators + idempotent seeder.
+- `@learnpro/tracks` — Track YAML files + concept-ordering loader (Python fundamentals, TS fundamentals).
 
 ---
 
@@ -84,6 +112,7 @@ Conventions are documented in [`project/README.md`](./project/README.md). Templa
 - **No dead code.** If you remove a feature, delete it. No `// removed` comments, no commented-out blocks.
 - **Tests:** Vitest for units, Playwright for E2E. Hit a real Postgres in dev (Docker Compose), never mock the DB in integration tests.
 - **Errors:** validate at boundaries, trust internal code. Don't add try/catch for impossible cases.
+- **Coach-voice copy, no dark patterns.** All user-visible nudges, notifications, dashboard copy, and notification-center entries must be warm, calm, and never coercive. **Forbidden phrases** (enforced by tests in `packages/notifications/src/copy.test.ts`, `packages/scoring/src/policies/streak-policy.ts`, `apps/web/src/app/dashboard/dashboard-components.test.tsx`, etc.): "DON'T LOSE", "DAY X" of-streak shouting, FOMO timers, fire emoji 🔥, warning emoji ⚠️, all-caps imperatives, leaderboard threats. See STORY-022 / STORY-023 / STORY-024 for the enforcement pattern when adding new user-visible copy.
 
 ---
 
