@@ -1,0 +1,54 @@
+slug: debug-async-race-counter
+name: Debug — concurrent counter (async race)
+language: typescript
+difficulty: 4
+track: typescript-fundamentals
+kind: debug
+bug_archetype: async_race
+concept_tags:
+  - async
+  - promises
+expected_median_time_to_solve_ms: 300000
+expected_behavior: |
+  Run n increments of a shared counter and return the final count. Increments
+  must complete sequentially so no value is lost — solve(5) must return 5,
+  solve(100) must return 100.
+statement: |
+  This SHOULD return n after n awaited increments. Firing every increment
+  without awaiting drops some completions on the floor — the count is racy
+  and undercounts. Find and fix the bug (await each increment in sequence, or
+  use Promise.all only after every increment is queued).
+starter_code: |
+  async function solve(n: number): Promise<number> {
+      let count = 0;
+      const inc = () => Promise.resolve().then(() => { count++; });
+      for (let i = 0; i < n; i++) {
+          inc();
+      }
+      return count;
+  }
+reference_solution: |
+  async function solve(n: number): Promise<number> {
+      let count = 0;
+      const inc = () => Promise.resolve().then(() => { count++; });
+      for (let i = 0; i < n; i++) {
+          await inc();
+      }
+      return count;
+  }
+public_examples:
+  - input: 5
+    expected: 5
+  - input: 1
+    expected: 1
+hidden_tests:
+  - input: 0
+    expected: 0
+  - input: 2
+    expected: 2
+  - input: 10
+    expected: 10
+  - input: 25
+    expected: 25
+  - input: 50
+    expected: 50

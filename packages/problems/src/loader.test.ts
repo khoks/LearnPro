@@ -57,14 +57,16 @@ describe("loadProblems", () => {
   });
 });
 
-describe("loadProblems — Python distribution", () => {
-  const python = loadProblems().filter((p) => p.language === "python");
+describe("loadProblems — Python distribution (implement bank)", () => {
+  // STORY-016 distribution-shape contract — applies to the implement-bank only. Debug-bank has
+  // its own shape contract below (STORY-037).
+  const python = loadProblems().filter((p) => p.language === "python" && p.kind === "implement");
 
-  it("has at least 30 Python problems", () => {
+  it("has at least 30 Python implement problems", () => {
     expect(python.length).toBeGreaterThanOrEqual(30);
   });
 
-  it("difficulty distribution roughly matches the spec (Python)", () => {
+  it("difficulty distribution roughly matches the spec (Python implement)", () => {
     const easy = python.filter((p) => p.difficulty <= 2).length;
     const mid = python.filter((p) => p.difficulty === 3).length;
     const hard = python.filter((p) => p.difficulty >= 4).length;
@@ -79,14 +81,14 @@ describe("loadProblems — Python distribution", () => {
   });
 });
 
-describe("loadProblems — TypeScript distribution", () => {
-  const ts = loadProblems().filter((p) => p.language === "typescript");
+describe("loadProblems — TypeScript distribution (implement bank)", () => {
+  const ts = loadProblems().filter((p) => p.language === "typescript" && p.kind === "implement");
 
-  it("has at least 30 TypeScript problems", () => {
+  it("has at least 30 TypeScript implement problems", () => {
     expect(ts.length).toBeGreaterThanOrEqual(30);
   });
 
-  it("difficulty distribution roughly matches the spec (TypeScript)", () => {
+  it("difficulty distribution roughly matches the spec (TypeScript implement)", () => {
     const easy = ts.filter((p) => p.difficulty <= 2).length;
     const mid = ts.filter((p) => p.difficulty === 3).length;
     const hard = ts.filter((p) => p.difficulty >= 4).length;
@@ -98,5 +100,47 @@ describe("loadProblems — TypeScript distribution", () => {
     expect(mid).toBeLessThanOrEqual(17);
     expect(hard, `expected ~5 L4-5 TypeScript problems (got ${hard})`).toBeGreaterThanOrEqual(3);
     expect(hard).toBeLessThanOrEqual(8);
+  });
+});
+
+// STORY-037 — debug-bank shape contract: ≥20 problems per language and ≥4 distinct archetypes
+// per language. Verifies the curated debug bank stays at AC-thickness across PRs.
+describe("loadProblems — debug bank distribution (STORY-037)", () => {
+  const all = loadProblems();
+  const pythonDebug = all.filter((p) => p.language === "python" && p.kind === "debug");
+  const tsDebug = all.filter((p) => p.language === "typescript" && p.kind === "debug");
+
+  it("has at least 20 Python debug problems", () => {
+    expect(pythonDebug.length).toBeGreaterThanOrEqual(20);
+  });
+
+  it("has at least 20 TypeScript debug problems", () => {
+    expect(tsDebug.length).toBeGreaterThanOrEqual(20);
+  });
+
+  it("Python debug bank covers at least 4 distinct archetypes", () => {
+    const archetypes = new Set<string>();
+    for (const p of pythonDebug) {
+      if (p.kind === "debug") archetypes.add(p.bug_archetype);
+    }
+    expect(archetypes.size).toBeGreaterThanOrEqual(4);
+  });
+
+  it("TypeScript debug bank covers at least 4 distinct archetypes", () => {
+    const archetypes = new Set<string>();
+    for (const p of tsDebug) {
+      if (p.kind === "debug") archetypes.add(p.bug_archetype);
+    }
+    expect(archetypes.size).toBeGreaterThanOrEqual(4);
+  });
+
+  it("every debug problem carries a non-empty expected_behavior", () => {
+    for (const p of [...pythonDebug, ...tsDebug]) {
+      if (p.kind === "debug") {
+        expect(p.expected_behavior.trim().length, `${p.slug} expected_behavior empty`).toBeGreaterThan(
+          0,
+        );
+      }
+    }
   });
 });

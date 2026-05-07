@@ -1,0 +1,45 @@
+slug: debug-counter-default-dict-mutability
+name: Debug — counter default dict (mutability)
+language: python
+difficulty: 3
+track: python-fundamentals
+kind: debug
+bug_archetype: default_arg_mutability
+concept_tags:
+  - functions
+  - dicts
+  - default-args
+expected_median_time_to_solve_ms: 240000
+expected_behavior: |
+  Each call should return a fresh single-key dict mapping `key` to 1.
+  State must NOT leak between independent invocations of solve.
+statement: |
+  This SHOULD return a new {key: 1} dict on every call. The mutable default
+  arg keeps accumulating across calls, so the second call returns the wrong
+  value. Find and fix the bug.
+starter_code: |
+  def solve(key, counts={}):
+      counts[key] = counts.get(key, 0) + 1
+      return counts
+reference_solution: |
+  def solve(key, counts=None):
+      if counts is None:
+          counts = {}
+      counts[key] = counts.get(key, 0) + 1
+      return counts
+public_examples:
+  - input: "a"
+    expected: { a: 1 }
+  - input: "x"
+    expected: { x: 1 }
+hidden_tests:
+  - input: "alpha"
+    expected: { alpha: 1 }
+  - input: "beta"
+    expected: { beta: 1 }
+  - input: "gamma"
+    expected: { gamma: 1 }
+  - input: "delta"
+    expected: { delta: 1 }
+  - input: "epsilon"
+    expected: { epsilon: 1 }

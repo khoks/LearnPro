@@ -1,0 +1,44 @@
+slug: debug-truthy-zero-coercion
+name: Debug — truthy zero (type coercion)
+language: python
+difficulty: 2
+track: python-fundamentals
+kind: debug
+bug_archetype: type_coercion
+concept_tags:
+  - control-flow
+  - truthiness
+expected_median_time_to_solve_ms: 150000
+expected_behavior: |
+  Return `default` when `value` is None; otherwise return `value`. The number 0
+  and the empty string "" are valid values — they should NOT trigger the default.
+statement: |
+  This SHOULD return `default` only when `value` is None. Treating Python's
+  truthiness as None-ness collapses 0 and "" into the default branch. Find and
+  fix the bug.
+starter_code: |
+  def solve(value, default):
+      if not value:
+          return default
+      return value
+reference_solution: |
+  def solve(value, default):
+      if value is None:
+          return default
+      return value
+public_examples:
+  - input: [null, 42]
+    expected: 42
+  - input: [7, 99]
+    expected: 7
+hidden_tests:
+  - input: [0, 99]
+    expected: 0
+  - input: ["", "fallback"]
+    expected: ""
+  - input: [false, "y"]
+    expected: false
+  - input: ["x", "y"]
+    expected: "x"
+  - input: [null, "fallback"]
+    expected: "fallback"

@@ -1,0 +1,44 @@
+slug: debug-string-equality-reference-ts
+name: Debug — string equality (reference)
+language: typescript
+difficulty: 1
+track: typescript-fundamentals
+kind: debug
+bug_archetype: reference_equality
+concept_tags:
+  - strings
+  - equality
+expected_median_time_to_solve_ms: 90000
+expected_behavior: |
+  Return true when string `a` equals string `b` by VALUE; false otherwise.
+  Two equal strings must compare equal even when constructed differently
+  (e.g. via `.toString()`).
+statement: |
+  This SHOULD compare strings by value. Wrapping a string with `new String()`
+  yields a String object, and `===` between an object and a primitive is
+  always false. Find and fix the bug.
+starter_code: |
+  function solve(a: string, b: string): boolean {
+      const wrapped = new String(a);
+      return wrapped === b as unknown;
+  }
+reference_solution: |
+  function solve(a: string, b: string): boolean {
+      return a === b;
+  }
+public_examples:
+  - input: ["abc", "abc"]
+    expected: true
+  - input: ["x", "y"]
+    expected: false
+hidden_tests:
+  - input: ["", ""]
+    expected: true
+  - input: ["hello", "hello"]
+    expected: true
+  - input: ["A", "a"]
+    expected: false
+  - input: ["12", "12"]
+    expected: true
+  - input: ["abc", "ab"]
+    expected: false

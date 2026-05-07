@@ -1,0 +1,47 @@
+slug: debug-async-race-fetch-order
+name: Debug — sequential fetch order (async race)
+language: typescript
+difficulty: 4
+track: typescript-fundamentals
+kind: debug
+bug_archetype: async_race
+concept_tags:
+  - async
+  - promises
+  - arrays
+expected_median_time_to_solve_ms: 300000
+expected_behavior: |
+  Given an array of ids, await each (id => Promise<value>) in input order and
+  return the values in input order. The result for [1,2,3] is the values
+  produced by waiting on each id sequentially.
+statement: |
+  This SHOULD await fetches sequentially and return values in input order. The
+  code maps without awaiting, returning Promise objects instead of resolved
+  values. Find and fix the bug (await Promise.all of the .map results, or
+  await each in a for-of loop).
+starter_code: |
+  async function solve(ids: number[]): Promise<number[]> {
+      const fetcher = (id: number) => Promise.resolve(id * 2);
+      return ids.map(fetcher) as unknown as number[];
+  }
+reference_solution: |
+  async function solve(ids: number[]): Promise<number[]> {
+      const fetcher = (id: number) => Promise.resolve(id * 2);
+      return Promise.all(ids.map(fetcher));
+  }
+public_examples:
+  - input: [[1, 2, 3]]
+    expected: [2, 4, 6]
+  - input: [[5]]
+    expected: [10]
+hidden_tests:
+  - input: [[]]
+    expected: []
+  - input: [[0]]
+    expected: [0]
+  - input: [[1, 1, 1]]
+    expected: [2, 2, 2]
+  - input: [[10, 20, 30]]
+    expected: [20, 40, 60]
+  - input: [[7, 0, 5]]
+    expected: [14, 0, 10]

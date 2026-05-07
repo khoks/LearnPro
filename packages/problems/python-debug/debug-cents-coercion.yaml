@@ -1,0 +1,45 @@
+slug: debug-cents-coercion
+name: Debug — cents to dollars string (type coercion)
+language: python
+difficulty: 2
+track: python-fundamentals
+kind: debug
+bug_archetype: type_coercion
+concept_tags:
+  - numbers
+  - strings
+expected_median_time_to_solve_ms: 150000
+expected_behavior: |
+  Given an integer number of cents, return a string like "$1.25" (always two
+  decimal places, no thousands separator). For 0 cents return "$0.00"; for
+  100 cents return "$1.00".
+statement: |
+  This SHOULD format `cents` as a dollar string. Concatenating an int with a
+  string raises TypeError; integer division also drops the cents portion of
+  the formatted output. Find and fix the bug.
+starter_code: |
+  def solve(cents):
+      dollars = cents // 100
+      remainder = cents % 100
+      return "$" + dollars + "." + remainder
+reference_solution: |
+  def solve(cents):
+      dollars = cents // 100
+      remainder = cents % 100
+      return f"${dollars}.{remainder:02d}"
+public_examples:
+  - input: 125
+    expected: "$1.25"
+  - input: 0
+    expected: "$0.00"
+hidden_tests:
+  - input: 100
+    expected: "$1.00"
+  - input: 1
+    expected: "$0.01"
+  - input: 99
+    expected: "$0.99"
+  - input: 1000
+    expected: "$10.00"
+  - input: 12345
+    expected: "$123.45"

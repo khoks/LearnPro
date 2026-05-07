@@ -1,0 +1,50 @@
+slug: debug-fibonacci-off-by-one-ts
+name: Debug — fibonacci index (off-by-one) (TypeScript)
+language: typescript
+difficulty: 2
+track: typescript-fundamentals
+kind: debug
+bug_archetype: off_by_one
+concept_tags:
+  - control-flow
+  - numbers
+expected_median_time_to_solve_ms: 150000
+expected_behavior: |
+  Return the n-th Fibonacci number, with F(0) = 0 and F(1) = 1.
+statement: |
+  This SHOULD return F(n). The loop iterates one too many times so the answers
+  are off by one Fibonacci step. Find and fix the bug.
+starter_code: |
+  function solve(n: number): number {
+      let a = 0;
+      let b = 1;
+      for (let i = 0; i <= n; i++) {
+          [a, b] = [b, a + b];
+      }
+      return a;
+  }
+reference_solution: |
+  function solve(n: number): number {
+      let a = 0;
+      let b = 1;
+      for (let i = 0; i < n; i++) {
+          [a, b] = [b, a + b];
+      }
+      return a;
+  }
+public_examples:
+  - input: 0
+    expected: 0
+  - input: 5
+    expected: 5
+hidden_tests:
+  - input: 1
+    expected: 1
+  - input: 2
+    expected: 1
+  - input: 3
+    expected: 2
+  - input: 10
+    expected: 55
+  - input: 15
+    expected: 610

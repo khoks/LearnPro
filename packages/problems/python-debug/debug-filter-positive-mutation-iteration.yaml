@@ -1,0 +1,45 @@
+slug: debug-filter-positive-mutation-iteration
+name: Debug — filter positives (mutation in iteration)
+language: python
+difficulty: 2
+track: python-fundamentals
+kind: debug
+bug_archetype: mutation_in_iteration
+concept_tags:
+  - lists
+  - control-flow
+expected_median_time_to_solve_ms: 180000
+expected_behavior: |
+  Return a new list with only the positive integers from `nums`, in original
+  order. Negative numbers and zero are dropped. Do not mutate the caller's
+  list.
+statement: |
+  This SHOULD return only the positives from `nums`. Removing items from the
+  same list while iterating over it shifts indices and adjacent
+  non-positives slip through. Find and fix the bug (a list comprehension or
+  building a fresh list both work).
+starter_code: |
+  def solve(nums):
+      for x in nums:
+          if x <= 0:
+              nums.remove(x)
+      return nums
+reference_solution: |
+  def solve(nums):
+      return [x for x in nums if x > 0]
+public_examples:
+  - input: [[-1, 2, -3, 4]]
+    expected: [2, 4]
+  - input: [[1, 2, 3]]
+    expected: [1, 2, 3]
+hidden_tests:
+  - input: [[]]
+    expected: []
+  - input: [[-1, -1, -1]]
+    expected: []
+  - input: [[0, 0, 1, 2]]
+    expected: [1, 2]
+  - input: [[-2, -2, 3, -2]]
+    expected: [3]
+  - input: [[-1, -2, -3, 4]]
+    expected: [4]

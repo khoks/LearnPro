@@ -1,0 +1,46 @@
+slug: debug-build-cache-default-mutability
+name: Debug — build cache default arg (mutability)
+language: python
+difficulty: 3
+track: python-fundamentals
+kind: debug
+bug_archetype: default_arg_mutability
+concept_tags:
+  - functions
+  - dicts
+  - default-args
+expected_median_time_to_solve_ms: 240000
+expected_behavior: |
+  Each independent call should build a single-entry cache and return it. State
+  must not leak between calls; consecutive solve(...) invocations are
+  independent.
+statement: |
+  This SHOULD return a new dict each call mapping `name` to its uppercase
+  form. Mutable default-arg makes consecutive calls return progressively
+  larger dicts. Find and fix the bug.
+starter_code: |
+  def solve(name, cache={}):
+      cache[name] = name.upper()
+      return cache
+reference_solution: |
+  def solve(name, cache=None):
+      if cache is None:
+          cache = {}
+      cache[name] = name.upper()
+      return cache
+public_examples:
+  - input: "alice"
+    expected: { alice: "ALICE" }
+  - input: "bob"
+    expected: { bob: "BOB" }
+hidden_tests:
+  - input: "carol"
+    expected: { carol: "CAROL" }
+  - input: "dave"
+    expected: { dave: "DAVE" }
+  - input: "erin"
+    expected: { erin: "ERIN" }
+  - input: "frank"
+    expected: { frank: "FRANK" }
+  - input: "grace"
+    expected: { grace: "GRACE" }

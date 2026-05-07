@@ -1,0 +1,41 @@
+slug: debug-int-from-string-coercion-ts
+name: Debug — int from string + 1 (type coercion) (TypeScript)
+language: typescript
+difficulty: 1
+track: typescript-fundamentals
+kind: debug
+bug_archetype: type_coercion
+concept_tags:
+  - strings
+  - numbers
+expected_median_time_to_solve_ms: 90000
+expected_behavior: |
+  Given a numeric string like "42", return the value plus 1 as a number (43).
+  The function must convert the string to a number before adding.
+statement: |
+  This SHOULD return s + 1 as a number. JavaScript's `+` concatenates strings
+  with numbers — "42" + 1 yields "421", not 43. Find and fix the bug.
+starter_code: |
+  function solve(s: string): number {
+      return (s + 1) as unknown as number;
+  }
+reference_solution: |
+  function solve(s: string): number {
+      return Number(s) + 1;
+  }
+public_examples:
+  - input: "1"
+    expected: 2
+  - input: "42"
+    expected: 43
+hidden_tests:
+  - input: "0"
+    expected: 1
+  - input: "100"
+    expected: 101
+  - input: "-1"
+    expected: 0
+  - input: "9999"
+    expected: 10000
+  - input: "7"
+    expected: 8

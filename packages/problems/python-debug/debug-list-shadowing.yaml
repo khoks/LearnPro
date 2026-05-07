@@ -1,0 +1,46 @@
+slug: debug-list-shadowing
+name: Debug — list shadowing built-in
+language: python
+difficulty: 3
+track: python-fundamentals
+kind: debug
+bug_archetype: shadowing
+concept_tags:
+  - functions
+  - lists
+expected_median_time_to_solve_ms: 180000
+expected_behavior: |
+  Return a fresh list constructed from `range(n)`. For n = 4 the result is
+  [0, 1, 2, 3]; for n = 0 it's [].
+statement: |
+  This SHOULD build a list from range(n). The local variable `list` shadows
+  the built-in `list()` constructor, so the final `list(out)` call raises
+  TypeError. Find and fix the bug.
+starter_code: |
+  def solve(n):
+      list = []
+      for i in range(n):
+          list.append(i)
+      return list(list)
+reference_solution: |
+  def solve(n):
+      out = []
+      for i in range(n):
+          out.append(i)
+      return list(out)
+public_examples:
+  - input: 4
+    expected: [0, 1, 2, 3]
+  - input: 1
+    expected: [0]
+hidden_tests:
+  - input: 0
+    expected: []
+  - input: 2
+    expected: [0, 1]
+  - input: 3
+    expected: [0, 1, 2]
+  - input: 5
+    expected: [0, 1, 2, 3, 4]
+  - input: 6
+    expected: [0, 1, 2, 3, 4, 5]

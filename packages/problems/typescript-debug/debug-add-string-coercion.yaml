@@ -1,0 +1,42 @@
+slug: debug-add-string-coercion
+name: Debug — add string number (type coercion)
+language: typescript
+difficulty: 1
+track: typescript-fundamentals
+kind: debug
+bug_archetype: type_coercion
+concept_tags:
+  - numbers
+  - strings
+expected_median_time_to_solve_ms: 90000
+expected_behavior: |
+  Given a numeric string like "5" and a number n, return their integer sum as a
+  number. solve("5", 3) returns 8, NOT "53".
+statement: |
+  This SHOULD return the integer sum of `s` (a numeric string) and `n`. The
+  `+` operator concatenates the string with the number instead of adding —
+  find and fix the bug.
+starter_code: |
+  function solve(s: string, n: number): number {
+      return (s + n) as unknown as number;
+  }
+reference_solution: |
+  function solve(s: string, n: number): number {
+      return Number(s) + n;
+  }
+public_examples:
+  - input: ["5", 3]
+    expected: 8
+  - input: ["10", 0]
+    expected: 10
+hidden_tests:
+  - input: ["0", 0]
+    expected: 0
+  - input: ["1", 1]
+    expected: 2
+  - input: ["100", 99]
+    expected: 199
+  - input: ["7", -2]
+    expected: 5
+  - input: ["50", 50]
+    expected: 100

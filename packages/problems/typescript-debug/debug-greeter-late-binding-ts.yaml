@@ -1,0 +1,53 @@
+slug: debug-greeter-late-binding-ts
+name: Debug — greeters (late binding) (TypeScript)
+language: typescript
+difficulty: 4
+track: typescript-fundamentals
+kind: debug
+bug_archetype: late_binding
+concept_tags:
+  - functions
+  - closures
+expected_median_time_to_solve_ms: 270000
+expected_behavior: |
+  Build a list of greeting closures, one per name. Each closure should return
+  "Hello, NAME". Calling each closure in turn should yield greetings in input
+  order.
+statement: |
+  This SHOULD build per-name greeter closures. `var name` hoists the binding
+  so every closure sees the LAST name. Find and fix the bug (use `let` or
+  capture per-iteration).
+starter_code: |
+  function solve(names: string[]): string[] {
+      const greeters: Array<() => string> = [];
+      for (var i = 0; i < names.length; i++) {
+          var name = names[i];
+          greeters.push(() => `Hello, ${name}`);
+      }
+      return greeters.map((g) => g());
+  }
+reference_solution: |
+  function solve(names: string[]): string[] {
+      const greeters: Array<() => string> = [];
+      for (let i = 0; i < names.length; i++) {
+          const name = names[i];
+          greeters.push(() => `Hello, ${name}`);
+      }
+      return greeters.map((g) => g());
+  }
+public_examples:
+  - input: [["Ana", "Bo", "Cy"]]
+    expected: ["Hello, Ana", "Hello, Bo", "Hello, Cy"]
+  - input: [["Solo"]]
+    expected: ["Hello, Solo"]
+hidden_tests:
+  - input: [[]]
+    expected: []
+  - input: [["A"]]
+    expected: ["Hello, A"]
+  - input: [["X", "Y"]]
+    expected: ["Hello, X", "Hello, Y"]
+  - input: [["one", "two", "three"]]
+    expected: ["Hello, one", "Hello, two", "Hello, three"]
+  - input: [["a", "b", "c", "d"]]
+    expected: ["Hello, a", "Hello, b", "Hello, c", "Hello, d"]

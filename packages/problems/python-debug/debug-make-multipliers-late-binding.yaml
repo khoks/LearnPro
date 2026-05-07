@@ -1,0 +1,48 @@
+slug: debug-make-multipliers-late-binding
+name: Debug — closure multipliers (late binding)
+language: python
+difficulty: 4
+track: python-fundamentals
+kind: debug
+bug_archetype: late_binding
+concept_tags:
+  - functions
+  - closures
+expected_median_time_to_solve_ms: 300000
+expected_behavior: |
+  Build a list of n multiplier functions where the i-th function multiplies its
+  argument by i. Calling the result for n=3 with x=10 should yield [0, 10, 20]
+  — function 0 returns 0*10, function 1 returns 1*10, function 2 returns 2*10.
+statement: |
+  This SHOULD build n closures where closure i multiplies its arg by i. Python's
+  late binding makes every closure share the same `i` — they all multiply by
+  n-1. Solve(3, 10) returns [20, 20, 20] instead of [0, 10, 20]. Find and fix
+  the bug (default-arg capture or `functools.partial` both work).
+starter_code: |
+  def solve(n, x):
+      multipliers = []
+      for i in range(n):
+          multipliers.append(lambda v: v * i)
+      return [m(x) for m in multipliers]
+reference_solution: |
+  def solve(n, x):
+      multipliers = []
+      for i in range(n):
+          multipliers.append(lambda v, i=i: v * i)
+      return [m(x) for m in multipliers]
+public_examples:
+  - input: [3, 10]
+    expected: [0, 10, 20]
+  - input: [1, 5]
+    expected: [0]
+hidden_tests:
+  - input: [0, 99]
+    expected: []
+  - input: [2, 7]
+    expected: [0, 7]
+  - input: [4, 1]
+    expected: [0, 1, 2, 3]
+  - input: [5, 0]
+    expected: [0, 0, 0, 0, 0]
+  - input: [3, -2]
+    expected: [0, -2, -4]

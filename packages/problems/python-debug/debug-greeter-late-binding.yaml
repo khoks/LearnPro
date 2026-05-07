@@ -1,0 +1,46 @@
+slug: debug-greeter-late-binding
+name: Debug — greeters (late binding)
+language: python
+difficulty: 4
+track: python-fundamentals
+kind: debug
+bug_archetype: late_binding
+concept_tags:
+  - functions
+  - closures
+expected_median_time_to_solve_ms: 270000
+expected_behavior: |
+  Build a list of greeting functions, one per name. Each function should return
+  "Hello, NAME". Calling each function in turn should yield greetings in input
+  order — solve(["Ana","Bo","Cy"]) returns ["Hello, Ana","Hello, Bo","Hello, Cy"].
+statement: |
+  This SHOULD build per-name greeter closures. Late binding makes every closure
+  greet the LAST name in the list. Find and fix the bug.
+starter_code: |
+  def solve(names):
+      greeters = []
+      for name in names:
+          greeters.append(lambda: f"Hello, {name}")
+      return [g() for g in greeters]
+reference_solution: |
+  def solve(names):
+      greeters = []
+      for name in names:
+          greeters.append(lambda name=name: f"Hello, {name}")
+      return [g() for g in greeters]
+public_examples:
+  - input: [["Ana", "Bo", "Cy"]]
+    expected: ["Hello, Ana", "Hello, Bo", "Hello, Cy"]
+  - input: [["Solo"]]
+    expected: ["Hello, Solo"]
+hidden_tests:
+  - input: [[]]
+    expected: []
+  - input: [["A"]]
+    expected: ["Hello, A"]
+  - input: [["X", "Y"]]
+    expected: ["Hello, X", "Hello, Y"]
+  - input: [["one", "two", "three"]]
+    expected: ["Hello, one", "Hello, two", "Hello, three"]
+  - input: [["a", "b", "c", "d"]]
+    expected: ["Hello, a", "Hello, b", "Hello, c", "Hello, d"]

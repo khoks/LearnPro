@@ -1,0 +1,44 @@
+slug: debug-double-equals-coercion
+name: Debug — loose equality (type coercion)
+language: typescript
+difficulty: 2
+track: typescript-fundamentals
+kind: debug
+bug_archetype: type_coercion
+concept_tags:
+  - equality
+  - numbers
+  - strings
+expected_median_time_to_solve_ms: 150000
+expected_behavior: |
+  Return true only when the inputs `a` and `b` are STRICTLY equal — same value
+  AND same primitive type. So 1 === "1" is false; null === undefined is false;
+  but 1 === 1 is true.
+statement: |
+  This SHOULD return strict equality (===) but uses `==` and gets caught by
+  JavaScript's type-coercion rules. Find and fix the bug.
+starter_code: |
+  function solve(a: unknown, b: unknown): boolean {
+      // eslint-disable-next-line eqeqeq
+      return a == b;
+  }
+reference_solution: |
+  function solve(a: unknown, b: unknown): boolean {
+      return a === b;
+  }
+public_examples:
+  - input: [1, 1]
+    expected: true
+  - input: [1, "1"]
+    expected: false
+hidden_tests:
+  - input: [null, null]
+    expected: true
+  - input: [null, 0]
+    expected: false
+  - input: [0, false]
+    expected: false
+  - input: ["", false]
+    expected: false
+  - input: ["abc", "abc"]
+    expected: true

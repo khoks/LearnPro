@@ -1,0 +1,49 @@
+slug: debug-sum-range-off-by-one-ts
+name: Debug — sum 1 to n (off-by-one) (TypeScript)
+language: typescript
+difficulty: 1
+track: typescript-fundamentals
+kind: debug
+bug_archetype: off_by_one
+concept_tags:
+  - control-flow
+  - numbers
+expected_median_time_to_solve_ms: 90000
+expected_behavior: |
+  Return the sum of integers from 1 through n (inclusive). For n = 5 the answer
+  is 15; for n = 0 return 0.
+statement: |
+  This SHOULD return the sum of 1..n (inclusive) but it stops one short of n.
+  Find and fix the bug.
+starter_code: |
+  function solve(n: number): number {
+      let total = 0;
+      for (let i = 1; i < n; i++) {
+          total += i;
+      }
+      return total;
+  }
+reference_solution: |
+  function solve(n: number): number {
+      let total = 0;
+      for (let i = 1; i <= n; i++) {
+          total += i;
+      }
+      return total;
+  }
+public_examples:
+  - input: 5
+    expected: 15
+  - input: 1
+    expected: 1
+hidden_tests:
+  - input: 0
+    expected: 0
+  - input: 2
+    expected: 3
+  - input: 10
+    expected: 55
+  - input: 100
+    expected: 5050
+  - input: 50
+    expected: 1275

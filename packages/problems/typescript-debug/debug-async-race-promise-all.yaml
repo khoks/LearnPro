@@ -1,0 +1,48 @@
+slug: debug-async-race-promise-all
+name: Debug — sum awaited promises (async race)
+language: typescript
+difficulty: 4
+track: typescript-fundamentals
+kind: debug
+bug_archetype: async_race
+concept_tags:
+  - async
+  - promises
+  - numbers
+expected_median_time_to_solve_ms: 270000
+expected_behavior: |
+  Given an array of numbers, return their sum after passing each through an
+  async helper. solve([1,2,3]) returns 6.
+statement: |
+  This SHOULD await every Promise<number> and return the resulting sum. The
+  code reduces over Promise objects (treated as if they were already resolved)
+  and the +-on-Promise produces NaN. Find and fix the bug (await Promise.all,
+  THEN reduce).
+starter_code: |
+  async function solve(nums: number[]): Promise<number> {
+      const f = (n: number) => Promise.resolve(n);
+      const promised = nums.map(f);
+      return promised.reduce((acc, p) => acc + (p as unknown as number), 0);
+  }
+reference_solution: |
+  async function solve(nums: number[]): Promise<number> {
+      const f = (n: number) => Promise.resolve(n);
+      const resolved = await Promise.all(nums.map(f));
+      return resolved.reduce((acc, n) => acc + n, 0);
+  }
+public_examples:
+  - input: [[1, 2, 3]]
+    expected: 6
+  - input: [[]]
+    expected: 0
+hidden_tests:
+  - input: [[0]]
+    expected: 0
+  - input: [[5]]
+    expected: 5
+  - input: [[1, 1, 1, 1]]
+    expected: 4
+  - input: [[10, 20, 30]]
+    expected: 60
+  - input: [[-1, 1]]
+    expected: 0
