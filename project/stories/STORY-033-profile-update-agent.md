@@ -2,14 +2,14 @@
 id: STORY-033
 title: Async profile-update agent for higher-level trait synthesis
 type: story
-status: backlog
+status: done
 priority: P1
 estimate: M
 parent: EPIC-004
 phase: v1
 tags: [agent, profile, async, v1]
 created: 2026-04-25
-updated: 2026-04-25
+updated: 2026-05-06
 ---
 
 ## Description
@@ -20,11 +20,11 @@ Split out an **async profile-update agent** that runs after each session. It rea
 
 ## Acceptance criteria
 
-- [ ] Profile-update agent runs as a BullMQ job triggered at session-end.
-- [ ] Reads the session's episodes + the user's last 30 days of relevant episodes.
-- [ ] Generates 1–3 cross-episode insights per session, stored in a new `profile_insights` table.
-- [ ] Insights are surfaced to the tutor at next-session start (so the tutor can reference them: "I noticed yesterday you kept reaching for `for` when comprehensions would be cleaner — let's keep an eye on that today").
-- [ ] Telemetry on agent latency, cost, and how often insights are referenced by the tutor.
+- [x] Profile-update agent runs as a BullMQ job triggered at session-end.
+- [x] Reads the session's episodes + the user's last 30 days of relevant episodes.
+- [x] Generates 1–3 cross-episode insights per session, stored in a new `profile_insights` table.
+- [x] Insights are surfaced to the tutor at next-session start (so the tutor can reference them: "I noticed yesterday you kept reaching for `for` when comprehensions would be cleaner — let's keep an eye on that today").
+- [x] Telemetry on agent latency, cost, and how often insights are referenced by the tutor.
 
 ## Tasks under this Story
 
@@ -44,3 +44,5 @@ Split out an **async profile-update agent** that runs after each session. It rea
 ## Activity log
 
 - 2026-04-25 — created
+- 2026-05-06 — picked up; implemented end-to-end (migration 0017 + DB helpers + Haiku-backed synthesis agent + BullMQ cron + session-end hook + assign-problem v4 prompt with previous_insights + reference-tracking heuristic + Fastify route + Next.js proxy + dashboard ProfileInsightsCard with coach-voice copy)
+- 2026-05-06 — done. ~50 new tests; PR opened.

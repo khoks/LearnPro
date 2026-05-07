@@ -50,3 +50,11 @@ export {
   buildAssignProblemUserPrompt,
   type AssignProblemPromptOptions,
 } from "./assign-problem.js";
+
+export {
+  PROFILE_INSIGHTS_PROMPT_VERSION,
+  PROFILE_INSIGHTS_SYSTEM_PROMPT,
+  buildProfileInsightsUserPrompt,
+  type ProfileInsightsEpisodeShape,
+  type ProfileInsightsPromptOptions,
+} from "./profile-insights-prompt.js";

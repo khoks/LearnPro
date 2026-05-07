@@ -28,6 +28,7 @@
     "@learnpro/sandbox": "workspace:*",
     "@learnpro/scoring": "workspace:*",
     "@learnpro/shared": "workspace:*",
+    "bullmq": "^5.76.6",
     "drizzle-orm": "^0.36.4",
     "fastify": "^5.2.0",
     "ioredis": "^5.10.1",

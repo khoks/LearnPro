@@ -21,8 +21,8 @@ const FORBIDDEN_PHRASES = [
 ];
 
 describe("ASSIGN_PROBLEM_SYSTEM_PROMPT — STORY-042", () => {
-  it("is versioned with the v3 tag", () => {
-    expect(ASSIGN_PROBLEM_PROMPT_VERSION).toBe("assign-problem-v3");
+  it("is versioned with the v4 tag (STORY-033)", () => {
+    expect(ASSIGN_PROBLEM_PROMPT_VERSION).toBe("assign-problem-v4");
   });
 
   it("contains the previous_got_help walk-through phrasing", () => {
@@ -68,5 +68,48 @@ describe("buildAssignProblemUserPrompt — STORY-042", () => {
       previous_got_help: false,
     });
     expect(out).toContain("previous_got_help: false");
+  });
+
+  // STORY-033 — the prompt builder threads the latest cross-episode insights into the opener.
+  it("renders '(none)' when previous_insights is empty / omitted", () => {
+    const out = buildAssignProblemUserPrompt({
+      problem_name: "Two sum",
+      problem_language: "python",
+      problem_statement: "find indices",
+      difficulty_tier: "easy",
+      why_this_difficulty: "cold-start",
+      previous_got_help: false,
+    });
+    expect(out).toContain("previous_insights: (none)");
+  });
+
+  it("renders the insight bullets when previous_insights is supplied", () => {
+    const out = buildAssignProblemUserPrompt({
+      problem_name: "Two sum",
+      problem_language: "python",
+      problem_statement: "find indices",
+      difficulty_tier: "easy",
+      why_this_difficulty: "cold-start",
+      previous_got_help: false,
+      previous_insights: [
+        "user reaches for `for` when comprehensions would be cleaner",
+        "edge cases consistently take an extra attempt",
+      ],
+    });
+    expect(out).toContain("previous_insights:");
+    expect(out).toContain("- user reaches for `for` when comprehensions would be cleaner");
+    expect(out).toContain("- edge cases consistently take an extra attempt");
+  });
+});
+
+describe("ASSIGN_PROBLEM_SYSTEM_PROMPT — STORY-033 insights guidance", () => {
+  it("documents the previous_insights field + the at-most-one rule", () => {
+    expect(ASSIGN_PROBLEM_SYSTEM_PROMPT).toContain("previous_insights");
+    expect(ASSIGN_PROBLEM_SYSTEM_PROMPT.toLowerCase()).toContain("at most one");
+  });
+
+  it("instructs the tutor to frame insights as observations, never accusations", () => {
+    expect(ASSIGN_PROBLEM_SYSTEM_PROMPT.toLowerCase()).toContain("observation");
+    expect(ASSIGN_PROBLEM_SYSTEM_PROMPT.toLowerCase()).toContain("never accus");
   });
 });

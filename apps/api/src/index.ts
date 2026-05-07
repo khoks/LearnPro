@@ -98,6 +98,12 @@ import { buildDbTodayPlanDeps, registerTodayPlanRoutes } from "./today-plan.js";
 import { registerTutorRoutes, type TutorAgentFactory } from "./tutor.js";
 import { buildDrizzleTutorFactory } from "./tutor-factory.js";
 import {
+  buildBullConnectionFromEnv,
+  buildProfileInsightsCron,
+  enqueueProfileInsightsJob,
+} from "./profile-insights-cron.js";
+import { registerProfileInsightsRoutes } from "./profile-insights.js";
+import {
   SESSION_PLAN_PROMPT_VERSION,
   SESSION_PLAN_SYSTEM_PROMPT,
   buildSessionPlanUserPrompt,
@@ -196,6 +202,13 @@ export interface BuildServerOptions {
   llmModeDb?: import("@learnpro/db").LearnProDb;
   ollamaBaseUrl?: string;
   ollamaModel?: string;
+  // STORY-033 — optional session-end hook fed straight into the tutor route. Production wires
+  // the BullMQ enqueue helper (`enqueueProfileInsightsJob`); tests inject a fake to assert the
+  // call shape. When undefined, the tutor route's hook is also undefined and no enqueue runs.
+  onEpisodeFinish?: import("./tutor.js").RegisterTutorRoutesOptions["onEpisodeFinish"];
+  // STORY-033 — optional DB handle for the `GET /v1/profile-insights` route. Same wiring
+  // pattern as the others; production shares the single `db` instance via defaultsFromEnv.
+  profileInsightsDb?: import("@learnpro/db").LearnProDb;
 }
 
 // Default impl when no store is provided — drops events on the floor. Useful for tests and
@@ -396,6 +409,7 @@ export function buildServer(opts: BuildServerOptions = {}) {
       sessionResolver,
       redactor,
       ...(opts.gotHelpStore ? { gotHelpStore: opts.gotHelpStore } : {}),
+      ...(opts.onEpisodeFinish ? { onEpisodeFinish: opts.onEpisodeFinish } : {}),
     });
   }
 
@@ -490,6 +504,12 @@ export function buildServer(opts: BuildServerOptions = {}) {
     });
   }
 
+  // STORY-033 — `GET /v1/profile-insights` exposes the user's latest cross-episode insights +
+  // telemetry. Same injection pattern as the others; tests inject a fake DB.
+  if (opts.profileInsightsDb) {
+    registerProfileInsightsRoutes(app, { db: opts.profileInsightsDb, sessionResolver });
+  }
+
   // STORY-060 deferred AC — friendly 429 mapping for the per-user daily token budget. Any handler
   // that calls into the LLM provider can throw `TokenBudgetExceededError`; this hook catches it
   // before Fastify's default 500 path so the playground can render the friendly message AC from
@@ -542,6 +562,8 @@ function defaultsFromEnv(): {
   llmModeDb?: import("@learnpro/db").LearnProDb;
   ollamaBaseUrl?: string;
   ollamaModel?: string;
+  onEpisodeFinish?: BuildServerOptions["onEpisodeFinish"];
+  profileInsightsDb?: import("@learnpro/db").LearnProDb;
 } {
   const exportRateLimiter = buildExportRateLimiterFromEnv(process.env);
   const url = process.env["DATABASE_URL"];
@@ -636,6 +658,21 @@ function defaultsFromEnv(): {
     ollamaBaseUrl: process.env["OLLAMA_BASE_URL"] ?? DEFAULT_OLLAMA_BASE_URL,
     ollamaModel: process.env["OLLAMA_MODEL"] ?? DEFAULT_OLLAMA_MODEL,
     ...(exportRateLimiter ? { exportRateLimiter } : {}),
+    // STORY-033 — async profile-update agent. Build the BullMQ cron from REDIS_URL (returns null
+    // when unset, in which case the enqueue helper is a soft no-op). Wire the session-end hook
+    // through the tutor route so a successful `finish()` pushes a synthesis job onto the queue
+    // — never blocking the user's close response.
+    ...(() => {
+      const connection = buildBullConnectionFromEnv(process.env);
+      const cron = connection ? buildProfileInsightsCron({ db, llm, connection }) : null;
+      const onEpisodeFinish: BuildServerOptions["onEpisodeFinish"] = async (input) => {
+        await enqueueProfileInsightsJob(
+          { user_id: input.user_id, episode_id: input.episode_id },
+          { cron, log: (msg, meta) => console.warn(`[profile-insights] ${msg}`, meta) },
+        );
+      };
+      return { onEpisodeFinish, profileInsightsDb: db };
+    })(),
   };
 }
 

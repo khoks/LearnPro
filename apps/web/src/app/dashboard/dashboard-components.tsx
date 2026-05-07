@@ -213,6 +213,84 @@ export function HonestSessionsCard(props: HonestSessionsCardProps): ReactElement
   );
 }
 
+export interface ProfileInsight {
+  id: string;
+  text: string;
+  concept_tags: string[];
+  referenced_count: number;
+}
+
+export interface ProfileInsightsCardProps {
+  // Latest 3 (or fewer) cross-episode insights, newest first. Empty array → empty state.
+  insights: ReadonlyArray<ProfileInsight>;
+}
+
+// STORY-033 — coach-voice cross-episode insights surface. Renders the latest 3 observations the
+// async profile-update agent synthesized over the user's last 30 days of episodes. Anti-dark-
+// pattern: never accusatory; framed as "what I've noticed across your sessions". Empty state
+// is a soft prompt, not pressure ("a few more sessions and the system will start spotting
+// cross-session patterns").
+export function ProfileInsightsCard(props: ProfileInsightsCardProps): ReactElement {
+  const { insights } = props;
+  const headline =
+    insights.length === 0
+      ? "Patterns will show up here after a few sessions."
+      : "What I've noticed across your sessions";
+  return (
+    <section
+      data-testid="profile-insights-card"
+      aria-labelledby="profile-insights-card-label"
+      style={{ ...cardBaseStyle }}
+    >
+      <div
+        id="profile-insights-card-label"
+        style={{
+          fontSize: "0.85rem",
+          color: "#666",
+          textTransform: "uppercase",
+          letterSpacing: 0.5,
+        }}
+      >
+        Across your sessions
+      </div>
+      <div style={{ fontSize: "1.05rem", fontWeight: 600, marginTop: "0.35rem" }}>{headline}</div>
+      {insights.length === 0 ? (
+        <div style={{ fontSize: "0.9rem", color: "#666", marginTop: "0.5rem", lineHeight: 1.45 }}>
+          Once you&apos;ve finished a few problems, the system will quietly summarize patterns it
+          spots — to share with the tutor next time, not to grade you.
+        </div>
+      ) : (
+        <ul
+          data-testid="profile-insights-card-list"
+          style={{
+            margin: "0.6rem 0 0",
+            padding: 0,
+            listStyle: "none",
+            display: "grid",
+            gap: "0.5rem",
+          }}
+        >
+          {insights.slice(0, 3).map((insight) => (
+            <li
+              key={insight.id}
+              data-testid={`profile-insight-${insight.id}`}
+              style={{
+                fontSize: "0.95rem",
+                color: "#333",
+                lineHeight: 1.45,
+                paddingLeft: "0.6rem",
+                borderLeft: "3px solid #b3d4ff",
+              }}
+            >
+              {insight.text}
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
 export interface TrackProgressBarProps {
   trackName: string;
   trackSlug: string;

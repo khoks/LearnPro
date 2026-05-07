@@ -18,6 +18,7 @@ export {
 
 export type {
   AssignProblemDeps,
+  AssignProblemInsight,
   GiveHintDeps,
   GradeDeps,
   GradeRubric,
@@ -157,3 +158,17 @@ export {
   loadEpisodeProblemRow,
   type BuildDrizzleAgentDepsOptions,
 } from "./drizzle-deps.js";
+
+export {
+  MIN_EPISODES_FOR_SYNTHESIS,
+  ProfileInsightSchema,
+  ProfileInsightsResultSchema,
+  containsForbiddenPhrase as containsForbiddenInsightPhrase,
+  detectReferencedInsightIds,
+  parseInsightsResponse,
+  runProfileInsightsAgent,
+  type ProfileInsightOutput,
+  type ProfileInsightsAgentInput,
+  type ProfileInsightsAgentOutput,
+  type ProfileInsightsResult,
+} from "./profile-insights.js";

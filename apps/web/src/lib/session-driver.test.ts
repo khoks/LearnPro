@@ -29,6 +29,7 @@ const assignBody: AssignProblemOutput = {
   started_at: 1_700_000_000_000,
   due_concepts_count: null,
   review_session_suggested: false,
+  previous_insights: [],
 };
 
 const passingGrade: GradeOutput = {

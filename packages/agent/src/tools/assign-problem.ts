@@ -7,7 +7,12 @@ import {
 } from "@learnpro/scoring";
 import type { DifficultyTier } from "@learnpro/scoring";
 import type { ProblemDef } from "@learnpro/problems";
-import type { AssignProblemDeps, ProblemCatalogEntry, RecentEpisode } from "../ports.js";
+import type {
+  AssignProblemDeps,
+  AssignProblemInsight,
+  ProblemCatalogEntry,
+  RecentEpisode,
+} from "../ports.js";
 import { difficultyToTier } from "../state.js";
 
 export const AssignProblemInputSchema = z.object({
@@ -49,6 +54,16 @@ export const AssignProblemOutputSchema = z.object({
   due_concepts_count: z.number().int().min(0).nullable(),
   // STORY-031 — derived: true when due_concepts_count >= 3.
   review_session_suggested: z.boolean(),
+  // STORY-033 — latest cross-episode insights surfaced for the tutor's opener. The actual
+  // prompt-building lives outside this tool; we just surface the texts (and ids, for the
+  // post-opener reference-tracking bump). Empty when no insights are available or the deps
+  // adapter doesn't wire the `loadLatestInsights` port.
+  previous_insights: z.array(
+    z.object({
+      id: z.string().uuid(),
+      text: z.string().min(1),
+    }),
+  ),
 });
 export type AssignProblemOutput = z.infer<typeof AssignProblemOutputSchema>;
 
@@ -62,6 +77,9 @@ export interface CreateAssignProblemToolOptions {
   difficulty_config?: DifficultyHeuristicConfig;
   // Default starting difficulty when there is no episode history at all.
   cold_start_tier?: DifficultyTier;
+  // STORY-033 — how many insights to surface in the assign output (capped at 3 per the
+  // synthesis agent's hard cap). Defaults to 3 when omitted.
+  insight_limit?: number;
 }
 
 export class NoEligibleProblemError extends Error {
@@ -127,6 +145,16 @@ export function createAssignProblemTool(opts: CreateAssignProblemToolOptions): A
       const dueCount = due === null ? null : due.length;
       const reviewSuggested = dueCount !== null && dueCount >= 3;
 
+      // STORY-033 — surface the user's latest 1-3 cross-episode insights so the tutor's opener
+      // can reference them. Best-effort: when the deps adapter doesn't wire `loadLatestInsights`,
+      // the array is empty.
+      const insights: AssignProblemInsight[] = opts.deps.loadLatestInsights
+        ? await opts.deps.loadLatestInsights({
+            user_id: input.user_id,
+            limit: opts.insight_limit ?? 3,
+          })
+        : [];
+
       return {
         episode_id: created.episode_id,
         problem_id: candidate.problem_id,
@@ -137,6 +165,7 @@ export function createAssignProblemTool(opts: CreateAssignProblemToolOptions): A
         started_at: created.started_at,
         due_concepts_count: dueCount,
         review_session_suggested: reviewSuggested,
+        previous_insights: insights,
       };
     },
   };

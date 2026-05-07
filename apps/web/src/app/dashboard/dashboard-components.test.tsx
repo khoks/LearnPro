@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import {
   DueReviewsCard,
   HonestSessionsCard,
+  ProfileInsightsCard,
   StreakCard,
   TrackProgressBar,
   XpCard,
@@ -25,6 +26,7 @@ function html(
     | typeof TrackProgressBar
     | typeof DueReviewsCard
     | typeof HonestSessionsCard
+    | typeof ProfileInsightsCard
   >,
 ): string {
   if (node === null) return "";
@@ -292,5 +294,71 @@ describe("HonestSessionsCard — STORY-042", () => {
     for (const n of [0, 1, 2, 9, 27]) {
       assertNoForbiddenPhrases(html(<HonestSessionsCard count={n} />));
     }
+  });
+});
+
+describe("ProfileInsightsCard — STORY-033", () => {
+  const I1 = {
+    id: "11111111-1111-4111-8111-111111111111",
+    text: "user reaches for `for` when comprehensions would be cleaner",
+    concept_tags: ["loops"],
+    referenced_count: 0,
+  };
+  const I2 = {
+    id: "22222222-2222-4222-8222-222222222222",
+    text: "edge cases consistently take an extra attempt",
+    concept_tags: ["edge-cases"],
+    referenced_count: 1,
+  };
+  const I3 = {
+    id: "33333333-3333-4333-8333-333333333333",
+    text: "the learner warms up before pushing harder",
+    concept_tags: [],
+    referenced_count: 0,
+  };
+
+  it("renders a soft empty state when there are no insights yet", () => {
+    const out = html(<ProfileInsightsCard insights={[]} />);
+    expect(out).toContain("Across your sessions");
+    expect(out).toContain("Patterns will show up here after a few sessions");
+    expect(out).toContain("not to grade you");
+  });
+
+  it("renders the insight texts as a list when supplied", () => {
+    const out = html(<ProfileInsightsCard insights={[I1, I2]} />);
+    expect(out).toContain("What I&#x27;ve noticed across your sessions");
+    expect(out).toContain("user reaches for");
+    expect(out).toContain("comprehensions would be cleaner");
+    expect(out).toContain("edge cases consistently take an extra attempt");
+  });
+
+  it("caps at 3 insights", () => {
+    const out = html(
+      <ProfileInsightsCard
+        insights={[
+          I1,
+          I2,
+          I3,
+          { ...I1, id: "44444444-4444-4444-8444-444444444444", text: "fourth obs" },
+        ]}
+      />,
+    );
+    expect(out).not.toContain("fourth obs");
+  });
+
+  it("never accuses, moralizes, or surfaces a ratio (anti-dark-pattern)", () => {
+    const out = html(<ProfileInsightsCard insights={[I1, I2, I3]} />);
+    assertNoForbiddenPhrases(out);
+    const lower = out.toLowerCase();
+    expect(lower).not.toContain("you struggle");
+    expect(lower).not.toContain("you fail");
+    expect(lower).not.toContain("grade you");
+    expect(lower).not.toContain("rank");
+  });
+
+  it("contains no forbidden dark-pattern phrases at any size", () => {
+    assertNoForbiddenPhrases(html(<ProfileInsightsCard insights={[]} />));
+    assertNoForbiddenPhrases(html(<ProfileInsightsCard insights={[I1]} />));
+    assertNoForbiddenPhrases(html(<ProfileInsightsCard insights={[I1, I2, I3]} />));
   });
 });
