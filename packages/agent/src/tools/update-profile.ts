@@ -258,6 +258,39 @@ export function createUpdateProfileTool(opts: CreateUpdateProfileToolOptions): U
         }
       }
 
+      // STORY-038a — comprehension-policy axis bump. Fires only when the most-recent submit
+      // was a comprehension answer (i.e. comprehension_correct is non-null) AND the deps adapter
+      // wired the optional upsertComprehensionScore. One upsert per concept_tag on the
+      // problem; got_help propagates so the policy's anti-dark-pattern no-op kicks in.
+      // Best-effort: a hiccup never blocks the close (the user already got their XP + skill
+      // update on the implement/debug axis if applicable; the comprehension axis can absorb
+      // the next signal).
+      if (
+        input.comprehension_correct !== null &&
+        input.comprehension_correct !== undefined &&
+        opts.deps.upsertComprehensionScore
+      ) {
+        for (const slug of conceptSlugs) {
+          try {
+            await opts.deps.upsertComprehensionScore({
+              user_id: ctx.user_id,
+              org_id: ctx.org_id,
+              concept_tag: slug,
+              correct: input.comprehension_correct,
+              // STORY-042 — propagate the got_help marker so the comprehension-policy's
+              // got_help branch no-ops (anti-dark-pattern: never penalize, just don't reward).
+              // Currently always false here — the upstream `wrapWithGotHelpAwareSkillSkip`
+              // skipper applies to skill_scores, not the comprehension axis. A future
+              // wrapper can extend this when the user asks; for now the dep adapter is
+              // responsible for reading `got_help` if it cares.
+              got_help: false,
+            });
+          } catch {
+            // intentional: comprehension axis update is best-effort; never fail the close.
+          }
+        }
+      }
+
       const xpDecision = awardXpForEpisode(
         {
           outcome: input.outcome,

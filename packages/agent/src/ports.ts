@@ -265,6 +265,20 @@ export interface UpdateProfileDeps {
   // surface the "N more due" delta in the tool's output. Cheap call (capped at 50 in DB
   // helper). When unwired, the tool returns null for due_reviews_count.
   countDueConcepts?(input: { user_id: string }): Promise<number>;
+
+  // STORY-038a — per-(user, concept_tag) comprehension-policy EWMA upsert. Optional: when wired,
+  // updateProfile fires it once per concept_tag on the most-recent comprehension submission's
+  // verdict. Mirrors the bug-finding-policy upsert pattern (STORY-037a). When unwired, the
+  // comprehension axis simply doesn't update — a partial deployment that hasn't migrated the
+  // backing table can still process comprehension submissions; the verdict surfaces in the
+  // GradeOutput, the EWMA just doesn't move.
+  upsertComprehensionScore?(input: {
+    user_id: string;
+    org_id: string;
+    concept_tag: string;
+    correct: boolean;
+    got_help: boolean;
+  }): Promise<void>;
 }
 
 // Structural shape of the persisted FSRS card state. Lives here (not imported from

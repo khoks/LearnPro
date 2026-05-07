@@ -992,3 +992,135 @@ describe("createUpdateProfileTool: STORY-034 grader rubric → skill bonus", () 
     }
   });
 });
+
+
+// STORY-038a — comprehension-policy axis bump on close. Fires once per concept_tag on the
+// problem when (a) the most-recent submit was a comprehension answer (input.comprehension_correct
+// is non-null) AND (b) the deps adapter wired upsertComprehensionScore.
+describe("createUpdateProfileTool: STORY-038a comprehension-policy axis bump", () => {
+  it("calls upsertComprehensionScore once per concept_tag on a passed comprehension submission", async () => {
+    const upsertCalls: Array<{
+      user_id: string;
+      org_id: string;
+      concept_tag: string;
+      correct: boolean;
+      got_help: boolean;
+    }> = [];
+    const baseDeps = fakeDeps({});
+    const tool = createUpdateProfileTool({
+      deps: {
+        ...baseDeps,
+        async upsertComprehensionScore(input) {
+          upsertCalls.push(input);
+        },
+      },
+    });
+    await tool.run({
+      episode_id: EPISODE_ID,
+      outcome: "passed",
+      passed: true,
+      reveal_clicked: false,
+      submit_count: 1,
+      hints_used: 0,
+      finished_at_ms: 1700000060000,
+      comprehension_correct: true,
+    });
+    // The comprehension axis is keyed by concept_tag (text), not concept_id, so it doesn't
+    // depend on resolveConceptIds — all 3 tags from pdef() get an upsert (the third tag
+    // would be missing from the concept_id map but the comprehension axis doesn't use that).
+    expect(upsertCalls).toHaveLength(3);
+    expect(upsertCalls[0]?.correct).toBe(true);
+    expect(upsertCalls[1]?.correct).toBe(true);
+    expect(upsertCalls.every((c) => c.got_help === false)).toBe(true);
+  });
+
+  it("propagates comprehension_correct=false through to the policy upsert", async () => {
+    const upsertCalls: Array<{ correct: boolean }> = [];
+    const baseDeps = fakeDeps({});
+    const tool = createUpdateProfileTool({
+      deps: {
+        ...baseDeps,
+        async upsertComprehensionScore(input) {
+          upsertCalls.push({ correct: input.correct });
+        },
+      },
+    });
+    await tool.run({
+      episode_id: EPISODE_ID,
+      outcome: "failed",
+      passed: false,
+      reveal_clicked: false,
+      submit_count: 1,
+      hints_used: 0,
+      finished_at_ms: 1700000060000,
+      comprehension_correct: false,
+    });
+    expect(upsertCalls.every((c) => c.correct === false)).toBe(true);
+  });
+
+  it("does not call upsertComprehensionScore on an implement/debug close (comprehension_correct=null)", async () => {
+    const upsertCalls: number[] = [];
+    const baseDeps = fakeDeps({});
+    const tool = createUpdateProfileTool({
+      deps: {
+        ...baseDeps,
+        async upsertComprehensionScore() {
+          upsertCalls.push(1);
+        },
+      },
+    });
+    await tool.run({
+      episode_id: EPISODE_ID,
+      outcome: "passed",
+      passed: true,
+      reveal_clicked: false,
+      submit_count: 1,
+      hints_used: 0,
+      finished_at_ms: 1700000060000,
+      // No comprehension_correct field — implement/debug close.
+    });
+    expect(upsertCalls).toHaveLength(0);
+  });
+
+  it("no-ops when the deps adapter doesn't wire upsertComprehensionScore", async () => {
+    const baseDeps = fakeDeps({});
+    const tool = createUpdateProfileTool({ deps: baseDeps });
+    // No throw — the close completes normally even when the dep is unwired.
+    const out = await tool.run({
+      episode_id: EPISODE_ID,
+      outcome: "passed",
+      passed: true,
+      reveal_clicked: false,
+      submit_count: 1,
+      hints_used: 0,
+      finished_at_ms: 1700000060000,
+      comprehension_correct: true,
+    });
+    expect(out.episode_id).toBe(EPISODE_ID);
+  });
+
+  it("upsert hiccup is best-effort — close still records (skill_updates + XP grant fire)", async () => {
+    const baseDeps = fakeDeps({});
+    const tool = createUpdateProfileTool({
+      deps: {
+        ...baseDeps,
+        async upsertComprehensionScore() {
+          throw new Error("comprehension axis boom");
+        },
+      },
+    });
+    const out = await tool.run({
+      episode_id: EPISODE_ID,
+      outcome: "passed",
+      passed: true,
+      reveal_clicked: false,
+      submit_count: 1,
+      hints_used: 0,
+      finished_at_ms: 1700000060000,
+      comprehension_correct: true,
+    });
+    expect(out.episode_id).toBe(EPISODE_ID);
+    // XP still granted (the close completed despite the upsert hiccup).
+    expect(baseDeps.xpCalls).toHaveLength(1);
+  });
+});
