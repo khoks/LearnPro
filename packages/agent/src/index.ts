@@ -102,6 +102,13 @@ export {
 } from "./comprehension-grade.js";
 
 export {
+  buildComprehensionCommentary,
+  forbiddenPhrasesForCommentary,
+  type ComprehensionCommentary,
+  type ComprehensionCommentaryInput,
+} from "./comprehension-commentary.js";
+
+export {
   GRADER_BONUS_CLAMP,
   GRADER_BONUS_PER_DIMENSION,
   UpdateProfileEpisodeMissingError,
