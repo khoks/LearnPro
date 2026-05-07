@@ -13,14 +13,7 @@ import {
   listCheatsheetsForUser,
   updateCheatsheetMarkdown,
 } from "./cheatsheets.js";
-import {
-  cheatsheets,
-  episodes,
-  organizations,
-  problems,
-  tracks,
-  users,
-} from "./schema.js";
+import { cheatsheets, episodes, organizations, problems, tracks, users } from "./schema.js";
 
 const DATABASE_URL = process.env["DATABASE_URL"];
 
@@ -87,10 +80,7 @@ describe("CheatsheetEpisodesCoveredSchema", () => {
   });
 
   it("accepts a list of UUIDs", () => {
-    const ids = [
-      "11111111-1111-4111-8111-111111111111",
-      "22222222-2222-4222-8222-222222222222",
-    ];
+    const ids = ["11111111-1111-4111-8111-111111111111", "22222222-2222-4222-8222-222222222222"];
     expect(CheatsheetEpisodesCoveredSchema.parse(ids)).toEqual(ids);
   });
 });

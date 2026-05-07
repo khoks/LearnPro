@@ -14,11 +14,7 @@ import {
   type CheatsheetView,
   type LearnProDb,
 } from "@learnpro/db";
-import {
-  cheatsheetAgent,
-  entriesToMarkdown,
-  type CheatsheetAgentResult,
-} from "@learnpro/agent";
+import { cheatsheetAgent, entriesToMarkdown, type CheatsheetAgentResult } from "@learnpro/agent";
 import type { LLMProvider } from "@learnpro/llm";
 import type { CheatsheetEpisodeInput } from "@learnpro/prompts";
 import type { SessionResolver } from "./session.js";
@@ -37,9 +33,10 @@ export interface CheatsheetEpisodeFetcher {
   // surfaces a 400 if none survive. Implementations live in apps/api wiring; tests inject a
   // fake. Importantly, the fetcher MUST scope by user_id so a stolen episode_id can't leak
   // anyone else's session.
-  fetch(input: { user_id: string; episode_ids: ReadonlyArray<string> }): Promise<
-    ReadonlyArray<CheatsheetEpisodeInput>
-  >;
+  fetch(input: {
+    user_id: string;
+    episode_ids: ReadonlyArray<string>;
+  }): Promise<ReadonlyArray<CheatsheetEpisodeInput>>;
 }
 
 export interface CheatsheetRouteOptions {
@@ -67,10 +64,7 @@ const PostBodySchema = z.object({
   episode_ids: z.array(z.string().uuid()).min(1).max(20),
 });
 
-export function registerCheatsheetRoutes(
-  app: FastifyInstance,
-  opts: CheatsheetRouteOptions,
-): void {
+export function registerCheatsheetRoutes(app: FastifyInstance, opts: CheatsheetRouteOptions): void {
   const { db, llm, episodeFetcher, sessionResolver } = opts;
 
   app.get("/v1/cheatsheets", async (req, reply) => {
@@ -136,9 +130,7 @@ export function registerCheatsheetRoutes(
     // Idempotency check: if a cheatsheet already covers this exact episode set, return it.
     const existing = await findCheatsheetForEpisodes(db, session.user_id, sortedEpisodeIds);
     if (existing) {
-      return reply
-        .code(200)
-        .send({ cheatsheet: serializeCheatsheet(existing), generated: false });
+      return reply.code(200).send({ cheatsheet: serializeCheatsheet(existing), generated: false });
     }
 
     const episodes = await episodeFetcher.fetch({
@@ -175,9 +167,7 @@ export function registerCheatsheetRoutes(
       entries: agentResult.entries,
       markdown_content: markdown,
     });
-    return reply
-      .code(201)
-      .send({ cheatsheet: serializeCheatsheet(view), generated: true });
+    return reply.code(201).send({ cheatsheet: serializeCheatsheet(view), generated: true });
   });
 
   // POST /v1/cheatsheets/:id/export — returns the markdown content as a download. The
@@ -185,27 +175,21 @@ export function registerCheatsheetRoutes(
   // delegates the actual PDF generation to jspdf in the browser. Returning markdown keeps
   // this endpoint server-side simple AND lets the caller swap the rendering layer (PDF /
   // print stylesheet / .md download) without an API change.
-  app.post<{ Params: { id: string } }>(
-    "/v1/cheatsheets/:id/export",
-    async (req, reply) => {
-      const session = await sessionResolver(req);
-      if (!session) return reply.code(401).send({ error: "unauthorized" });
-      const idParse = IdParamSchema.safeParse(req.params.id);
-      if (!idParse.success) {
-        return reply.code(400).send({ error: "invalid_request", message: "id must be a uuid" });
-      }
-      const view = await getCheatsheetForUser(db, idParse.data, session.user_id);
-      if (!view) return reply.code(404).send({ error: "cheatsheet_not_found" });
-      return reply
-        .code(200)
-        .header("content-type", "text/markdown; charset=utf-8")
-        .header(
-          "content-disposition",
-          `attachment; filename="learnpro-cheatsheet-${view.id}.md"`,
-        )
-        .send(view.markdown_content);
-    },
-  );
+  app.post<{ Params: { id: string } }>("/v1/cheatsheets/:id/export", async (req, reply) => {
+    const session = await sessionResolver(req);
+    if (!session) return reply.code(401).send({ error: "unauthorized" });
+    const idParse = IdParamSchema.safeParse(req.params.id);
+    if (!idParse.success) {
+      return reply.code(400).send({ error: "invalid_request", message: "id must be a uuid" });
+    }
+    const view = await getCheatsheetForUser(db, idParse.data, session.user_id);
+    if (!view) return reply.code(404).send({ error: "cheatsheet_not_found" });
+    return reply
+      .code(200)
+      .header("content-type", "text/markdown; charset=utf-8")
+      .header("content-disposition", `attachment; filename="learnpro-cheatsheet-${view.id}.md"`)
+      .send(view.markdown_content);
+  });
 }
 
 function serializeCheatsheet(view: CheatsheetView): {

@@ -81,7 +81,8 @@ const sampleEntries = [
   {
     concept: "Hash-map lookup",
     definition: "Trade space for time when scanning a sequence for a paired value.",
-    code_example: "seen = {}\nfor i, x in enumerate(nums):\n    if target - x in seen: return [seen[target - x], i]",
+    code_example:
+      "seen = {}\nfor i, x in enumerate(nums):\n    if target - x in seen: return [seen[target - x], i]",
     gotcha: "Insert AFTER the lookup, otherwise a single-element pair can match itself.",
   },
   {
@@ -142,11 +143,7 @@ describe("parseCheatsheetResponse", () => {
   it("drops malformed individual entries but keeps valid ones", () => {
     const out = parseCheatsheetResponse(
       JSON.stringify({
-        entries: [
-          sampleEntries[0],
-          { concept: "x" /* missing fields */ },
-          sampleEntries[1],
-        ],
+        entries: [sampleEntries[0], { concept: "x" /* missing fields */ }, sampleEntries[1]],
       }),
     );
     expect(out?.entries).toHaveLength(2);

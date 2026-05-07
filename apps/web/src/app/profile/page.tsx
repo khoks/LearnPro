@@ -34,7 +34,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
     limit: 50,
   });
   const selected =
-    selectedId !== null ? cheatsheets.find((c) => c.id === selectedId) ?? null : null;
+    selectedId !== null ? (cheatsheets.find((c) => c.id === selectedId) ?? null) : null;
 
   return (
     <main
@@ -49,8 +49,8 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
       <header style={{ marginBottom: "1.5rem" }}>
         <h1 style={{ margin: 0, fontSize: 22 }}>Your profile</h1>
         <p style={{ margin: "0.5rem 0 0", color: "#555", fontSize: 14 }}>
-          Re-read what stuck. Each cheatsheet is a snapshot of one of your sessions — keep
-          them, edit them, print them.
+          Re-read what stuck. Each cheatsheet is a snapshot of one of your sessions — keep them,
+          edit them, print them.
         </p>
       </header>
 
@@ -103,7 +103,7 @@ function CheatsheetList({
           const date = c.created_at.toISOString().slice(0, 10);
           const title =
             c.entries.length > 0
-              ? c.entries[0]?.concept ?? `Session — ${date}`
+              ? (c.entries[0]?.concept ?? `Session — ${date}`)
               : `Session — ${date}`;
           return (
             <li
@@ -122,8 +122,7 @@ function CheatsheetList({
               >
                 <div style={{ fontSize: 14, fontWeight: 500 }}>{title}</div>
                 <div style={{ fontSize: 12, color: "#777" }}>
-                  {date} · {c.entries.length}{" "}
-                  {c.entries.length === 1 ? "entry" : "entries"}
+                  {date} · {c.entries.length} {c.entries.length === 1 ? "entry" : "entries"}
                 </div>
               </Link>
             </li>

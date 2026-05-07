@@ -111,8 +111,7 @@ function buildApp(opts: {
   episodeFetcher?: CheatsheetEpisodeFetcher;
   withCheatsheetSurface?: boolean;
 }) {
-  const cheatsheetEpisodeFetcher =
-    opts.episodeFetcher ?? fakeFetcher([sampleEpisodeInput()]);
+  const cheatsheetEpisodeFetcher = opts.episodeFetcher ?? fakeFetcher([sampleEpisodeInput()]);
   const surfaceWired = opts.withCheatsheetSurface !== false;
   return buildServer({
     sessionResolver: opts.sessionResolver ?? NULL_SESSION,
@@ -149,16 +148,18 @@ const sampleEntries = [
   },
 ];
 
-function fakeView(overrides: Partial<{
-  id: string;
-  user_id: string;
-  org_id: string;
-  episodes_covered: string[];
-  entries: typeof sampleEntries;
-  markdown_content: string;
-  created_at: Date;
-  updated_at: Date;
-}> = {}) {
+function fakeView(
+  overrides: Partial<{
+    id: string;
+    user_id: string;
+    org_id: string;
+    episodes_covered: string[];
+    entries: typeof sampleEntries;
+    markdown_content: string;
+    created_at: Date;
+    updated_at: Date;
+  }> = {},
+) {
   return {
     id: CHEATSHEET_ID,
     user_id: USER_ID,

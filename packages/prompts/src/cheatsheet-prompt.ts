@@ -93,7 +93,8 @@ export function buildCheatsheetUserPrompt(opts: CheatsheetPromptOptions): string
   for (const e of opts.episodes) {
     const tags = e.concept_tags.length > 0 ? e.concept_tags.join(", ") : "(none)";
     const outcome = e.final_outcome ?? "in_progress";
-    const hint_phrase = e.hints_used > 0 ? `${e.hints_used} hint${e.hints_used === 1 ? "" : "s"}` : "no hints";
+    const hint_phrase =
+      e.hints_used > 0 ? `${e.hints_used} hint${e.hints_used === 1 ? "" : "s"}` : "no hints";
     lines.push(
       `- ${e.problem_slug} (${outcome}, ${hint_phrase}, ${e.language}, difficulty=${e.difficulty}) — concepts: ${tags}`,
     );

@@ -145,7 +145,10 @@ export function CheatsheetTab({
     try {
       // The PDF rendering is fully client-side. We pass the user's current draft (which
       // may include unsaved edits) so the printed copy matches what they see in the editor.
-      downloadCheatsheetPdf(draftMarkdown || cheatsheet.markdown_content, buildFilename(cheatsheet));
+      downloadCheatsheetPdf(
+        draftMarkdown || cheatsheet.markdown_content,
+        buildFilename(cheatsheet),
+      );
       setState({ kind: "idle" });
     } catch (err) {
       setState({
@@ -274,8 +277,8 @@ export function CheatsheetTab({
       />
 
       <p style={{ marginTop: "0.5rem", color: "#666", fontSize: 12 }}>
-        Edits are saved when you press <strong>Save edits</strong>. The PDF export uses your
-        current draft.
+        Edits are saved when you press <strong>Save edits</strong>. The PDF export uses your current
+        draft.
       </p>
     </section>
   );

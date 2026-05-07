@@ -50,9 +50,7 @@ export interface CheatsheetAgentInput {
   model?: string;
 }
 
-export async function cheatsheetAgent(
-  input: CheatsheetAgentInput,
-): Promise<CheatsheetAgentResult> {
+export async function cheatsheetAgent(input: CheatsheetAgentInput): Promise<CheatsheetAgentResult> {
   const max_entries = clampMaxEntries(input.max_entries ?? DEFAULT_CHEATSHEET_MAX_ENTRIES);
 
   if (input.episodes.length === 0) {
@@ -86,9 +84,7 @@ export async function cheatsheetAgent(
 // Lenient parser — strips fenced blocks, accepts a top-level `entries` array, drops malformed
 // individual entries rather than failing the whole batch. Returns null only when the shape is
 // hopelessly off (no JSON at all).
-export function parseCheatsheetResponse(
-  text: string,
-): { entries: CheatsheetEntry[] } | null {
+export function parseCheatsheetResponse(text: string): { entries: CheatsheetEntry[] } | null {
   const stripped = text
     .trim()
     .replace(/^```(?:json)?\s*/i, "")
