@@ -66,6 +66,7 @@ import {
   registerCheatsheetRoutes,
   type CheatsheetEpisodeFetcher,
 } from "./cheatsheet.js";
+import { registerProblemVariantsRoutes } from "./problem-variants.js";
 import {
   loadExportWindowMs,
   noDbExporter,
@@ -220,6 +221,10 @@ export interface BuildServerOptions {
   // `defaultsFromEnv()`.
   cheatsheetDb?: import("@learnpro/db").LearnProDb;
   cheatsheetEpisodeFetcher?: CheatsheetEpisodeFetcher;
+  // STORY-039 — DB handle for the LLM-generated problem-variants route. When supplied,
+  // registers `POST /v1/problem-variants`. Tests inject a fake DB; production wires the
+  // same `db` instance via `defaultsFromEnv()`.
+  problemVariantsDb?: import("@learnpro/db").LearnProDb;
 }
 
 // Default impl when no store is provided — drops events on the floor. Useful for tests and
@@ -532,6 +537,16 @@ export function buildServer(opts: BuildServerOptions = {}) {
     });
   }
 
+  // STORY-039 — LLM-generated problem-variants route. Wired only when a DB is supplied;
+  // defaultsFromEnv forwards the same `db` instance the rest of the API uses.
+  if (opts.problemVariantsDb) {
+    registerProblemVariantsRoutes(app, {
+      db: opts.problemVariantsDb,
+      llm,
+      sessionResolver,
+    });
+  }
+
   // STORY-060 deferred AC — friendly 429 mapping for the per-user daily token budget. Any handler
   // that calls into the LLM provider can throw `TokenBudgetExceededError`; this hook catches it
   // before Fastify's default 500 path so the playground can render the friendly message AC from
@@ -588,6 +603,7 @@ function defaultsFromEnv(): {
   profileInsightsDb?: import("@learnpro/db").LearnProDb;
   cheatsheetDb?: import("@learnpro/db").LearnProDb;
   cheatsheetEpisodeFetcher?: CheatsheetEpisodeFetcher;
+  problemVariantsDb?: import("@learnpro/db").LearnProDb;
 } {
   const exportRateLimiter = buildExportRateLimiterFromEnv(process.env);
   const url = process.env["DATABASE_URL"];
@@ -683,6 +699,7 @@ function defaultsFromEnv(): {
     ollamaModel: process.env["OLLAMA_MODEL"] ?? DEFAULT_OLLAMA_MODEL,
     cheatsheetDb: db,
     cheatsheetEpisodeFetcher: buildDbCheatsheetEpisodeFetcher(db),
+    problemVariantsDb: db,
     ...(exportRateLimiter ? { exportRateLimiter } : {}),
     // STORY-033 — async profile-update agent. Build the BullMQ cron from REDIS_URL (returns null
     // when unset, in which case the enqueue helper is a soft no-op). Wire the session-end hook
