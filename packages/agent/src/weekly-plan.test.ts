@@ -2,12 +2,15 @@ import { describe, expect, it } from "vitest";
 import {
   buildWeeklyPlan,
   computeWeeklyDampeningReason,
+  MIN_CONCEPTS_FOR_LLM_THEME,
   reasoningForDailyConcept,
   SUPPRESSED_REPLAN_ONE_DAY_WEEKLY,
   SUPPRESSED_REPLAN_WEEKEND_WEEKLY,
   WeeklyPlanSchema,
   type WeeklyPlanConceptGraph,
   type WeeklyPlanRecentEpisode,
+  type WeeklyPlanThemeGenerator,
+  type WeeklyPlanThemeGeneratorInput,
 } from "./weekly-plan.js";
 
 const USER_ID = "11111111-1111-4111-8111-111111111111";
@@ -84,8 +87,8 @@ function passEp(slug: string, when: Date): WeeklyPlanRecentEpisode {
 }
 
 describe("buildWeeklyPlan — empty / no-graph state", () => {
-  it("returns an empty theme when the graph has no concepts on the requested track", () => {
-    const plan = buildWeeklyPlan({
+  it("returns an empty theme when the graph has no concepts on the requested track", async () => {
+    const plan = await buildWeeklyPlan({
       user_id: USER_ID,
       track_slug: "nonexistent-track",
       today: WEDNESDAY_NOON,
@@ -100,8 +103,8 @@ describe("buildWeeklyPlan — empty / no-graph state", () => {
     expect(plan.due_reviews_count).toBe(0);
   });
 
-  it("validates against WeeklyPlanSchema (Zod boundary) for an empty graph", () => {
-    const plan = buildWeeklyPlan({
+  it("validates against WeeklyPlanSchema (Zod boundary) for an empty graph", async () => {
+    const plan = await buildWeeklyPlan({
       user_id: USER_ID,
       track_slug: "nonexistent-track",
       today: WEDNESDAY_NOON,
@@ -113,8 +116,8 @@ describe("buildWeeklyPlan — empty / no-graph state", () => {
     expect(parsed.success).toBe(true);
   });
 
-  it("emits an ISO yyyy-mm-dd week_start_date in UTC", () => {
-    const plan = buildWeeklyPlan({
+  it("emits an ISO yyyy-mm-dd week_start_date in UTC", async () => {
+    const plan = await buildWeeklyPlan({
       user_id: USER_ID,
       track_slug: TRACK_SLUG,
       today: WEDNESDAY_NOON,
@@ -126,8 +129,8 @@ describe("buildWeeklyPlan — empty / no-graph state", () => {
     expect(plan.week_start_date).toBe("2026-04-27");
   });
 
-  it("respects weekStartsOn=7 (Sunday) for the week_start_date", () => {
-    const plan = buildWeeklyPlan({
+  it("respects weekStartsOn=7 (Sunday) for the week_start_date", async () => {
+    const plan = await buildWeeklyPlan({
       user_id: USER_ID,
       track_slug: TRACK_SLUG,
       today: WEDNESDAY_NOON,
@@ -142,8 +145,8 @@ describe("buildWeeklyPlan — empty / no-graph state", () => {
 });
 
 describe("buildWeeklyPlan — theme picker over knowledge graph", () => {
-  it("picks the topologically-first unpassed concept as the theme on cold start", () => {
-    const plan = buildWeeklyPlan({
+  it("picks the topologically-first unpassed concept as the theme on cold start", async () => {
+    const plan = await buildWeeklyPlan({
       user_id: USER_ID,
       track_slug: TRACK_SLUG,
       today: WEDNESDAY_NOON,
@@ -159,8 +162,8 @@ describe("buildWeeklyPlan — theme picker over knowledge graph", () => {
     expect(plan.theme_concepts.length).toBeLessThanOrEqual(5);
   });
 
-  it("walks past concepts the user has already passed", () => {
-    const plan = buildWeeklyPlan({
+  it("walks past concepts the user has already passed", async () => {
+    const plan = await buildWeeklyPlan({
       user_id: USER_ID,
       track_slug: TRACK_SLUG,
       today: WEDNESDAY_NOON,
@@ -179,8 +182,8 @@ describe("buildWeeklyPlan — theme picker over knowledge graph", () => {
     expect(plan.theme_concept_slug).toBe("python.basics.dicts");
   });
 
-  it("filters concepts not on the requested track", () => {
-    const plan = buildWeeklyPlan({
+  it("filters concepts not on the requested track", async () => {
+    const plan = await buildWeeklyPlan({
       user_id: USER_ID,
       track_slug: TRACK_SLUG,
       today: WEDNESDAY_NOON,
@@ -191,8 +194,8 @@ describe("buildWeeklyPlan — theme picker over knowledge graph", () => {
     expect(plan.theme_concepts).not.toContain("ts.basics.types");
   });
 
-  it("emits 7 day rows with day_index 0..6 in order", () => {
-    const plan = buildWeeklyPlan({
+  it("emits 7 day rows with day_index 0..6 in order", async () => {
+    const plan = await buildWeeklyPlan({
       user_id: USER_ID,
       track_slug: TRACK_SLUG,
       today: WEDNESDAY_NOON,
@@ -204,8 +207,8 @@ describe("buildWeeklyPlan — theme picker over knowledge graph", () => {
     expect(plan.daily_concepts.map((d) => d.day_index)).toEqual([0, 1, 2, 3, 4, 5, 6]);
   });
 
-  it("each daily concept has a reasoning string", () => {
-    const plan = buildWeeklyPlan({
+  it("each daily concept has a reasoning string", async () => {
+    const plan = await buildWeeklyPlan({
       user_id: USER_ID,
       track_slug: TRACK_SLUG,
       today: WEDNESDAY_NOON,
@@ -218,8 +221,8 @@ describe("buildWeeklyPlan — theme picker over knowledge graph", () => {
     }
   });
 
-  it("each daily concept references one of the theme_concepts", () => {
-    const plan = buildWeeklyPlan({
+  it("each daily concept references one of the theme_concepts", async () => {
+    const plan = await buildWeeklyPlan({
       user_id: USER_ID,
       track_slug: TRACK_SLUG,
       today: WEDNESDAY_NOON,
@@ -232,8 +235,8 @@ describe("buildWeeklyPlan — theme picker over knowledge graph", () => {
     }
   });
 
-  it("validates against WeeklyPlanSchema for a populated plan", () => {
-    const plan = buildWeeklyPlan({
+  it("validates against WeeklyPlanSchema for a populated plan", async () => {
+    const plan = await buildWeeklyPlan({
       user_id: USER_ID,
       track_slug: TRACK_SLUG,
       today: WEDNESDAY_NOON,
@@ -245,8 +248,8 @@ describe("buildWeeklyPlan — theme picker over knowledge graph", () => {
     expect(parsed.success).toBe(true);
   });
 
-  it("propagates due_reviews_count from the input", () => {
-    const plan = buildWeeklyPlan({
+  it("propagates due_reviews_count from the input", async () => {
+    const plan = await buildWeeklyPlan({
       user_id: USER_ID,
       track_slug: TRACK_SLUG,
       today: WEDNESDAY_NOON,
@@ -262,8 +265,8 @@ describe("buildWeeklyPlan — theme picker over knowledge graph", () => {
 });
 
 describe("buildWeeklyPlan — adaptive pace adjustments", () => {
-  it("annotates the plan with a 'behind' adjustment when fewer than 2 passes in last 7 days", () => {
-    const plan = buildWeeklyPlan({
+  it("annotates the plan with a 'behind' adjustment when fewer than 2 passes in last 7 days", async () => {
+    const plan = await buildWeeklyPlan({
       user_id: USER_ID,
       track_slug: TRACK_SLUG,
       today: WEDNESDAY_NOON,
@@ -274,14 +277,14 @@ describe("buildWeeklyPlan — adaptive pace adjustments", () => {
     expect(plan.dampening.adaptive_adjustment_reason).toMatch(/missed/i);
   });
 
-  it("annotates the plan with an 'accelerated' adjustment when 10+ passes in last 7 days", () => {
+  it("annotates the plan with an 'accelerated' adjustment when 10+ passes in last 7 days", async () => {
     const recent: WeeklyPlanRecentEpisode[] = [];
     for (let i = 0; i < 12; i++) {
       recent.push(
         passEp("python.basics.variables", new Date(WEDNESDAY_NOON.getTime() - (i * 86400_000) / 2)),
       );
     }
-    const plan = buildWeeklyPlan({
+    const plan = await buildWeeklyPlan({
       user_id: USER_ID,
       track_slug: TRACK_SLUG,
       today: WEDNESDAY_NOON,
@@ -294,14 +297,14 @@ describe("buildWeeklyPlan — adaptive pace adjustments", () => {
     expect(plan.theme_concepts.length).toBe(5);
   });
 
-  it("does not annotate when pace is on-pace (2-9 passes in last 7 days)", () => {
+  it("does not annotate when pace is on-pace (2-9 passes in last 7 days)", async () => {
     const recent: WeeklyPlanRecentEpisode[] = [];
     for (let i = 0; i < 5; i++) {
       recent.push(
         passEp("python.basics.variables", new Date(WEDNESDAY_NOON.getTime() - i * 86400_000)),
       );
     }
-    const plan = buildWeeklyPlan({
+    const plan = await buildWeeklyPlan({
       user_id: USER_ID,
       track_slug: TRACK_SLUG,
       today: WEDNESDAY_NOON,
@@ -312,14 +315,14 @@ describe("buildWeeklyPlan — adaptive pace adjustments", () => {
     expect(plan.dampening.adaptive_adjustment_reason).toBeUndefined();
   });
 
-  it("only counts passes within the last 7 days for pace classification", () => {
+  it("only counts passes within the last 7 days for pace classification", async () => {
     // 12 passes, but all >7 days ago — should classify as 'behind' (0 recent passes).
     const old = new Date(WEDNESDAY_NOON.getTime() - 30 * 86400_000);
     const recent: WeeklyPlanRecentEpisode[] = [];
     for (let i = 0; i < 12; i++) {
       recent.push(passEp("python.basics.variables", old));
     }
-    const plan = buildWeeklyPlan({
+    const plan = await buildWeeklyPlan({
       user_id: USER_ID,
       track_slug: TRACK_SLUG,
       today: WEDNESDAY_NOON,
@@ -332,9 +335,9 @@ describe("buildWeeklyPlan — adaptive pace adjustments", () => {
 });
 
 describe("buildWeeklyPlan — re-plan dampening", () => {
-  it("suppresses replan when the user missed only 1 day on a weekday", () => {
+  it("suppresses replan when the user missed only 1 day on a weekday", async () => {
     const planCreated = new Date("2026-04-28T10:00:00Z"); // Tuesday
-    const plan = buildWeeklyPlan({
+    const plan = await buildWeeklyPlan({
       user_id: USER_ID,
       track_slug: TRACK_SLUG,
       today: WEDNESDAY_NOON,
@@ -348,9 +351,9 @@ describe("buildWeeklyPlan — re-plan dampening", () => {
     expect(plan.dampening.suppressed_replan_reason).toBe(SUPPRESSED_REPLAN_ONE_DAY_WEEKLY);
   });
 
-  it("allows replan when the user missed 2 weekdays in a row", () => {
+  it("allows replan when the user missed 2 weekdays in a row", async () => {
     const planCreated = new Date("2026-04-27T10:00:00Z"); // Monday
-    const plan = buildWeeklyPlan({
+    const plan = await buildWeeklyPlan({
       user_id: USER_ID,
       track_slug: TRACK_SLUG,
       today: WEDNESDAY_NOON,
@@ -364,9 +367,9 @@ describe("buildWeeklyPlan — re-plan dampening", () => {
     expect(plan.dampening.suppressed_replan_reason).toBeUndefined();
   });
 
-  it("suppresses replan on a Saturday regardless of plan age", () => {
+  it("suppresses replan on a Saturday regardless of plan age", async () => {
     const planCreated = new Date("2026-04-25T10:00:00Z");
-    const plan = buildWeeklyPlan({
+    const plan = await buildWeeklyPlan({
       user_id: USER_ID,
       track_slug: TRACK_SLUG,
       today: SATURDAY_NOON,
@@ -380,9 +383,9 @@ describe("buildWeeklyPlan — re-plan dampening", () => {
     expect(plan.dampening.suppressed_replan_reason).toBe(SUPPRESSED_REPLAN_WEEKEND_WEEKLY);
   });
 
-  it("suppresses replan on a Sunday regardless of plan age", () => {
+  it("suppresses replan on a Sunday regardless of plan age", async () => {
     const planCreated = new Date("2026-04-25T10:00:00Z");
-    const plan = buildWeeklyPlan({
+    const plan = await buildWeeklyPlan({
       user_id: USER_ID,
       track_slug: TRACK_SLUG,
       today: SUNDAY_NOON,
@@ -396,9 +399,9 @@ describe("buildWeeklyPlan — re-plan dampening", () => {
     expect(plan.dampening.suppressed_replan_reason).toBe(SUPPRESSED_REPLAN_WEEKEND_WEEKLY);
   });
 
-  it("allows replan when episodes were done today (active user)", () => {
+  it("allows replan when episodes were done today (active user)", async () => {
     const planCreated = new Date("2026-04-28T10:00:00Z");
-    const plan = buildWeeklyPlan({
+    const plan = await buildWeeklyPlan({
       user_id: USER_ID,
       track_slug: TRACK_SLUG,
       today: WEDNESDAY_NOON,
@@ -412,9 +415,9 @@ describe("buildWeeklyPlan — re-plan dampening", () => {
     expect(plan.dampening.suppressed_replan_reason).toBeUndefined();
   });
 
-  it("does NOT set dampening on a non-regenerate read", () => {
+  it("does NOT set dampening on a non-regenerate read", async () => {
     const planCreated = new Date("2026-04-28T10:00:00Z");
-    const plan = buildWeeklyPlan({
+    const plan = await buildWeeklyPlan({
       user_id: USER_ID,
       track_slug: TRACK_SLUG,
       today: WEDNESDAY_NOON,
@@ -427,8 +430,8 @@ describe("buildWeeklyPlan — re-plan dampening", () => {
     expect(plan.dampening.suppressed_replan_reason).toBeUndefined();
   });
 
-  it("does NOT set dampening when there's no previous plan to suppress against", () => {
-    const plan = buildWeeklyPlan({
+  it("does NOT set dampening when there's no previous plan to suppress against", async () => {
+    const plan = await buildWeeklyPlan({
       user_id: USER_ID,
       track_slug: TRACK_SLUG,
       today: WEDNESDAY_NOON,
@@ -442,7 +445,7 @@ describe("buildWeeklyPlan — re-plan dampening", () => {
 });
 
 describe("buildWeeklyPlan — role bias", () => {
-  it("bubbles role-tagged candidates toward the front when target_role matches", () => {
+  it("bubbles role-tagged candidates toward the front when target_role matches", async () => {
     // We mark some passed concepts so the picker walks past variables/lists/for-loops and picks
     // among list-comprehensions / generators / dicts. dicts has tag 'data-modeling'; bias should
     // put it first.
@@ -451,7 +454,7 @@ describe("buildWeeklyPlan — role bias", () => {
       passEp("python.basics.lists", new Date("2026-04-28T11:00:00Z")),
       passEp("python.basics.for-loops", new Date("2026-04-28T12:00:00Z")),
     ];
-    const plan = buildWeeklyPlan({
+    const plan = await buildWeeklyPlan({
       user_id: USER_ID,
       track_slug: TRACK_SLUG,
       today: WEDNESDAY_NOON,
@@ -465,8 +468,8 @@ describe("buildWeeklyPlan — role bias", () => {
     expect(plan.theme_concepts[0]).toMatch(/list-comprehensions|dicts/);
   });
 
-  it("does not change ordering when no candidate matches the role", () => {
-    const plan = buildWeeklyPlan({
+  it("does not change ordering when no candidate matches the role", async () => {
+    const plan = await buildWeeklyPlan({
       user_id: USER_ID,
       track_slug: TRACK_SLUG,
       today: WEDNESDAY_NOON,
@@ -478,8 +481,8 @@ describe("buildWeeklyPlan — role bias", () => {
     expect(plan.theme_concept_slug).toBe("python.basics.variables");
   });
 
-  it("treats null target_role as no bias", () => {
-    const plan = buildWeeklyPlan({
+  it("treats null target_role as no bias", async () => {
+    const plan = await buildWeeklyPlan({
       user_id: USER_ID,
       track_slug: TRACK_SLUG,
       today: WEDNESDAY_NOON,
@@ -595,7 +598,7 @@ describe("reasoningForDailyConcept — coach-voice copy", () => {
 });
 
 describe("buildWeeklyPlan — scheme: cycle in graph falls back gracefully", () => {
-  it("does not throw when the graph contains a cycle", () => {
+  it("does not throw when the graph contains a cycle", async () => {
     const cyclic: WeeklyPlanConceptGraph = {
       concepts: [
         {
@@ -616,7 +619,7 @@ describe("buildWeeklyPlan — scheme: cycle in graph falls back gracefully", () 
         { from: "b", to: "a" },
       ],
     };
-    const plan = buildWeeklyPlan({
+    const plan = await buildWeeklyPlan({
       user_id: USER_ID,
       track_slug: TRACK_SLUG,
       today: WEDNESDAY_NOON,
@@ -629,9 +632,9 @@ describe("buildWeeklyPlan — scheme: cycle in graph falls back gracefully", () 
 });
 
 describe("buildWeeklyPlan — coach-voice copy across the whole plan", () => {
-  it("never emits forbidden phrases on theme / dampening / daily reasoning text", () => {
+  it("never emits forbidden phrases on theme / dampening / daily reasoning text", async () => {
     const forbidden = ["DON'T LOSE", "BURN", "🔥", "⚠️", "lose", "fading", "shame"];
-    const plan = buildWeeklyPlan({
+    const plan = await buildWeeklyPlan({
       user_id: USER_ID,
       track_slug: TRACK_SLUG,
       today: WEDNESDAY_NOON,
@@ -651,5 +654,211 @@ describe("buildWeeklyPlan — coach-voice copy across the whole plan", () => {
     for (const phrase of forbidden) {
       expect(allText).not.toContain(phrase);
     }
+  });
+});
+
+// === STORY-046c — themeGenerator integration ===
+
+function recordingThemeGenerator(returns: { theme: string } | null): WeeklyPlanThemeGenerator & {
+  calls: WeeklyPlanThemeGeneratorInput[];
+} {
+  const calls: WeeklyPlanThemeGeneratorInput[] = [];
+  const fn: WeeklyPlanThemeGenerator = async (input) => {
+    calls.push(input);
+    return returns;
+  };
+  return Object.assign(fn, { calls });
+}
+
+function throwingThemeGenerator(): WeeklyPlanThemeGenerator & {
+  calls: WeeklyPlanThemeGeneratorInput[];
+} {
+  const calls: WeeklyPlanThemeGeneratorInput[] = [];
+  const fn: WeeklyPlanThemeGenerator = async (input) => {
+    calls.push(input);
+    throw new Error("transient");
+  };
+  return Object.assign(fn, { calls });
+}
+
+describe("buildWeeklyPlan — themeGenerator integration (STORY-046c)", () => {
+  it("uses the LLM theme when generator returns a non-null theme + ≥3 concepts picked", async () => {
+    const gen = recordingThemeGenerator({ theme: "Building blocks of declarative Python" });
+    const plan = await buildWeeklyPlan({
+      user_id: USER_ID,
+      track_slug: TRACK_SLUG,
+      today: WEDNESDAY_NOON,
+      conceptGraph: makeFakeGraph(),
+      recentEpisodes: [],
+      dueReviews: [],
+      themeGenerator: gen,
+    });
+    expect(gen.calls).toHaveLength(1);
+    expect(plan.theme).toBe("Building blocks of declarative Python");
+    // The fallback would have been "Variables week" — assert we did NOT use it.
+    expect(plan.theme).not.toBe("Variables week");
+  });
+
+  it("falls back to the deterministic '<concept_name> week' when generator returns null", async () => {
+    const gen = recordingThemeGenerator(null);
+    const plan = await buildWeeklyPlan({
+      user_id: USER_ID,
+      track_slug: TRACK_SLUG,
+      today: WEDNESDAY_NOON,
+      conceptGraph: makeFakeGraph(),
+      recentEpisodes: [],
+      dueReviews: [],
+      themeGenerator: gen,
+    });
+    expect(gen.calls).toHaveLength(1);
+    expect(plan.theme).toBe("Variables week");
+  });
+
+  it("falls back when the generator throws", async () => {
+    const gen = throwingThemeGenerator();
+    const plan = await buildWeeklyPlan({
+      user_id: USER_ID,
+      track_slug: TRACK_SLUG,
+      today: WEDNESDAY_NOON,
+      conceptGraph: makeFakeGraph(),
+      recentEpisodes: [],
+      dueReviews: [],
+      themeGenerator: gen,
+    });
+    expect(gen.calls).toHaveLength(1);
+    expect(plan.theme).toBe("Variables week");
+  });
+
+  it("falls back when the generator returns an empty theme string", async () => {
+    const gen = recordingThemeGenerator({ theme: "   " });
+    const plan = await buildWeeklyPlan({
+      user_id: USER_ID,
+      track_slug: TRACK_SLUG,
+      today: WEDNESDAY_NOON,
+      conceptGraph: makeFakeGraph(),
+      recentEpisodes: [],
+      dueReviews: [],
+      themeGenerator: gen,
+    });
+    expect(plan.theme).toBe("Variables week");
+  });
+
+  it("does NOT call the generator when no generator is supplied (back-compat)", async () => {
+    const plan = await buildWeeklyPlan({
+      user_id: USER_ID,
+      track_slug: TRACK_SLUG,
+      today: WEDNESDAY_NOON,
+      conceptGraph: makeFakeGraph(),
+      recentEpisodes: [],
+      dueReviews: [],
+    });
+    // Default fallback shape, unchanged from STORY-046b.
+    expect(plan.theme).toBe("Variables week");
+  });
+
+  it("does NOT call the generator when fewer than MIN_CONCEPTS_FOR_LLM_THEME concepts are picked", async () => {
+    expect(MIN_CONCEPTS_FOR_LLM_THEME).toBe(3);
+    // Build a minimal graph with only 1 concept on the track. The picker selects 1 concept;
+    // since 1 < MIN_CONCEPTS_FOR_LLM_THEME (3), the generator must NOT be called.
+    const tinyGraph = {
+      concepts: [
+        {
+          slug: "py.basics.variables",
+          name: "Variables",
+          track_slugs: [TRACK_SLUG],
+          tags: [],
+        },
+      ],
+      edges: [],
+    };
+    const gen = recordingThemeGenerator({ theme: "Should not be used" });
+    const plan = await buildWeeklyPlan({
+      user_id: USER_ID,
+      track_slug: TRACK_SLUG,
+      today: WEDNESDAY_NOON,
+      conceptGraph: tinyGraph,
+      recentEpisodes: [],
+      dueReviews: [],
+      themeGenerator: gen,
+    });
+    expect(gen.calls).toHaveLength(0);
+    expect(plan.theme).toBe("Variables week");
+  });
+
+  it("passes the picked concepts (slug + name + tags) and target_role through to the generator", async () => {
+    const gen = recordingThemeGenerator({ theme: "Patterns and shapes" });
+    await buildWeeklyPlan({
+      user_id: USER_ID,
+      track_slug: TRACK_SLUG,
+      today: WEDNESDAY_NOON,
+      conceptGraph: makeFakeGraph(),
+      recentEpisodes: [],
+      dueReviews: [],
+      targetRole: "backend-engineer",
+      themeGenerator: gen,
+    });
+    expect(gen.calls).toHaveLength(1);
+    const input = gen.calls[0]!;
+    expect(input.concepts.length).toBeGreaterThanOrEqual(3);
+    // The first concept on cold-start is Variables.
+    expect(input.concepts[0]?.slug).toBe("python.basics.variables");
+    expect(input.concepts[0]?.name).toBe("Variables");
+    expect(input.target_role).toBe("backend-engineer");
+  });
+
+  it("preserves daily_concepts + theme_concepts shape regardless of whether generator was used", async () => {
+    const gen = recordingThemeGenerator({ theme: "Loops and lists rhythm" });
+    const planWithLLM = await buildWeeklyPlan({
+      user_id: USER_ID,
+      track_slug: TRACK_SLUG,
+      today: WEDNESDAY_NOON,
+      conceptGraph: makeFakeGraph(),
+      recentEpisodes: [],
+      dueReviews: [],
+      themeGenerator: gen,
+    });
+    const planWithoutLLM = await buildWeeklyPlan({
+      user_id: USER_ID,
+      track_slug: TRACK_SLUG,
+      today: WEDNESDAY_NOON,
+      conceptGraph: makeFakeGraph(),
+      recentEpisodes: [],
+      dueReviews: [],
+    });
+    expect(planWithLLM.theme_concept_slug).toBe(planWithoutLLM.theme_concept_slug);
+    expect(planWithLLM.theme_concepts).toEqual(planWithoutLLM.theme_concepts);
+    expect(planWithLLM.daily_concepts.length).toBe(planWithoutLLM.daily_concepts.length);
+    expect(planWithLLM.daily_concepts.map((d) => d.concept_slug)).toEqual(
+      planWithoutLLM.daily_concepts.map((d) => d.concept_slug),
+    );
+  });
+
+  it("does NOT call the generator on the empty-graph branch (zero concepts on track)", async () => {
+    const gen = recordingThemeGenerator({ theme: "Should not be used" });
+    const plan = await buildWeeklyPlan({
+      user_id: USER_ID,
+      track_slug: "nonexistent-track",
+      today: WEDNESDAY_NOON,
+      conceptGraph: makeFakeGraph(),
+      recentEpisodes: [],
+      dueReviews: [],
+      themeGenerator: gen,
+    });
+    expect(gen.calls).toHaveLength(0);
+    expect(plan.theme).toBe("");
+  });
+
+  it("trims whitespace from the LLM theme before assigning", async () => {
+    const gen = recordingThemeGenerator({ theme: "  Building blocks of declarative Python  " });
+    const plan = await buildWeeklyPlan({
+      user_id: USER_ID,
+      track_slug: TRACK_SLUG,
+      today: WEDNESDAY_NOON,
+      conceptGraph: makeFakeGraph(),
+      recentEpisodes: [],
+      dueReviews: [],
+      themeGenerator: gen,
+    });
+    expect(plan.theme).toBe("Building blocks of declarative Python");
   });
 });

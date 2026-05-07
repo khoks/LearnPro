@@ -9,9 +9,11 @@ import { topologicalOrder } from "@learnpro/db";
 //
 // Re-plan dampening rules mirror STORY-046's daily-replan: 1-day-miss / weekend → suppressed.
 //
-// LLM-generated theme names are intentionally NOT used here. v1 uses the dominant concept's
-// `name` field as the theme ("List comprehensions and generators week"). LLM-gen is a follow-up
-// story.
+// STORY-046c — `themeGenerator` (optional dep) upgrades the dominant-concept fallback to an
+// LLM-generated theme name. When supplied AND we have ≥3 theme concepts, the function awaits
+// the generator and uses its return as the `theme` field. Else (no generator wired, < 3
+// concepts, or generator returns null) the function falls back to the original
+// "<dominant_concept_name> week" shape.
 //
 // Inputs:
 //   - track_id, user_id, today
@@ -88,6 +90,33 @@ export interface WeeklyPlanDueReview {
   concept_slug: string;
 }
 
+// STORY-046c — themeGenerator dep contract. Pure async function: given the picked theme
+// concepts (slug + name + tags) and the user's optional target_role, returns a theme name
+// or null. Null = caller falls back to the deterministic "<concept_name> week" shape.
+//
+// The composer awaits this once per call (only on regenerate calls in production — read-side
+// renders skip the generator and use the cached theme on the previous plan). Cost gate is
+// owned by the route handler, not this dep contract.
+export interface WeeklyPlanThemeGeneratorInput {
+  concepts: ReadonlyArray<{
+    slug: string;
+    name: string;
+    tags?: ReadonlyArray<string>;
+  }>;
+  target_role?: string | null;
+}
+export interface WeeklyPlanThemeGeneratorOutput {
+  theme: string;
+}
+export type WeeklyPlanThemeGenerator = (
+  input: WeeklyPlanThemeGeneratorInput,
+) => Promise<WeeklyPlanThemeGeneratorOutput | null>;
+
+// Minimum number of theme concepts required to trigger the LLM theme generator. Below this,
+// the deterministic "<concept_name> week" fallback runs without an LLM call — a 1-2 concept
+// week doesn't have enough through-line for a generated theme to add value.
+export const MIN_CONCEPTS_FOR_LLM_THEME = 3;
+
 export interface BuildWeeklyPlanInput {
   user_id: string;
   track_slug: string;
@@ -110,6 +139,12 @@ export interface BuildWeeklyPlanInput {
   // Episodes done today (or this week's start day). Drives the active-user dampening branch
   // (regenerate when episodes_today > 0).
   episodesTodayCount?: number;
+  // STORY-046c — optional LLM-backed theme name generator. When supplied AND the picker
+  // selected ≥ MIN_CONCEPTS_FOR_LLM_THEME concepts, the composer awaits this and uses the
+  // returned theme. Null/error from the generator falls through to the deterministic
+  // "<concept_name> week" shape — the LLM theme is always a best-effort upgrade, never a
+  // dependency.
+  themeGenerator?: WeeklyPlanThemeGenerator;
 }
 
 export const SUPPRESSED_REPLAN_ONE_DAY_WEEKLY =
@@ -120,7 +155,7 @@ export const SUPPRESSED_REPLAN_WEEKEND_WEEKLY =
 const DEFAULT_THEME_CONCEPT_COUNT = 3;
 const MAX_THEME_CONCEPT_COUNT = 5;
 
-export function buildWeeklyPlan(input: BuildWeeklyPlanInput): WeeklyPlan {
+export async function buildWeeklyPlan(input: BuildWeeklyPlanInput): Promise<WeeklyPlan> {
   const {
     track_slug,
     today,
@@ -132,6 +167,7 @@ export function buildWeeklyPlan(input: BuildWeeklyPlanInput): WeeklyPlan {
     regenerate = false,
     previousPlanCreatedAt,
     episodesTodayCount = 0,
+    themeGenerator,
   } = input;
 
   const dampening: WeeklyPlanDampening = {};
@@ -211,7 +247,23 @@ export function buildWeeklyPlan(input: BuildWeeklyPlanInput): WeeklyPlan {
   const themeSlug = roleBiased[0]!;
   const themeConcept = conceptGraph.concepts.find((c) => c.slug === themeSlug);
   const themeName = themeConcept?.name ?? themeSlug;
-  const theme = `${themeName} week`;
+  const fallbackTheme = `${themeName} week`;
+
+  // STORY-046c — when an LLM theme generator is wired AND we have ≥ MIN_CONCEPTS_FOR_LLM_THEME
+  // theme concepts, ask it for a name. Any null / thrown / parse-rejected return falls through
+  // to the deterministic fallback. The route handler controls when to wire this (only on
+  // POST /v1/weekly-plan/replan; read-side GETs leave it undefined).
+  let theme = fallbackTheme;
+  if (themeGenerator !== undefined && roleBiased.length >= MIN_CONCEPTS_FOR_LLM_THEME) {
+    const generated = await maybeGenerateTheme({
+      themeGenerator,
+      slugs: roleBiased,
+      catalog: conceptGraph.concepts,
+      targetRole,
+    });
+    if (generated !== null) theme = generated;
+  }
+
   const dailyConcepts = composeDailySuggestions(roleBiased);
 
   // Adaptive-adjustment annotation. Mirrors AC: behind ≥2 weekdays / accelerated ≥2x. Pure
@@ -422,4 +474,33 @@ function weekStart(today: Date, weekStartsOn: number): Date {
   // Days to subtract to get back to target dow.
   const offset = (currentJs - jsTargetDow + 7) % 7;
   return new Date(d.getTime() - offset * 86400_000);
+}
+
+// STORY-046c — invokes the theme generator, swallows transient errors, returns null on any
+// failure so the caller falls back to the deterministic theme. Pure: doesn't mutate inputs.
+async function maybeGenerateTheme(input: {
+  themeGenerator: WeeklyPlanThemeGenerator;
+  slugs: ReadonlyArray<string>;
+  catalog: WeeklyPlanConceptGraph["concepts"];
+  targetRole: string | null;
+}): Promise<string | null> {
+  const concepts = input.slugs
+    .map((slug) => input.catalog.find((c) => c.slug === slug))
+    .filter((c): c is WeeklyPlanConceptGraph["concepts"][number] => c !== undefined)
+    .map((c) => {
+      const tags = c.tags;
+      return tags !== undefined ? { slug: c.slug, name: c.name, tags } : { slug: c.slug, name: c.name };
+    });
+  if (concepts.length === 0) return null;
+  try {
+    const out = await input.themeGenerator({
+      concepts,
+      target_role: input.targetRole,
+    });
+    if (out === null) return null;
+    const trimmed = out.theme.trim();
+    return trimmed.length === 0 ? null : trimmed;
+  } catch {
+    return null;
+  }
 }
