@@ -70,17 +70,11 @@ describe("DebugProblemPanel (STORY-037)", () => {
       document.body.appendChild(localContainer);
       const localRoot = createRoot(localContainer);
       act(() => {
-        localRoot.render(
-          <DebugProblemPanel
-            expectedBehavior="Test."
-            bugArchetype={archetype}
-          />,
-        );
+        localRoot.render(<DebugProblemPanel expectedBehavior="Test." bugArchetype={archetype} />);
       });
-      expect(
-        localContainer.textContent,
-        `archetype ${archetype} should map to ${regex}`,
-      ).toMatch(regex);
+      expect(localContainer.textContent, `archetype ${archetype} should map to ${regex}`).toMatch(
+        regex,
+      );
       act(() => localRoot.unmount());
       localContainer.remove();
       void local;
@@ -96,30 +90,21 @@ describe("DebugProblemPanel (STORY-037)", () => {
 
   it("explicitly tells the user the editor is pre-populated", () => {
     act(() => {
-      root.render(
-        <DebugProblemPanel expectedBehavior="Return n." bugArchetype="off_by_one" />,
-      );
+      root.render(<DebugProblemPanel expectedBehavior="Return n." bugArchetype="off_by_one" />);
     });
     expect(container.textContent?.toLowerCase()).toContain("pre-populated");
   });
 
   it("mentions hidden tests will run on submit", () => {
     act(() => {
-      root.render(
-        <DebugProblemPanel expectedBehavior="Return n." bugArchetype="off_by_one" />,
-      );
+      root.render(<DebugProblemPanel expectedBehavior="Return n." bugArchetype="off_by_one" />);
     });
     expect(container.textContent?.toLowerCase()).toMatch(/hidden tests.*submit/i);
   });
 
   it("uses coach-voice copy with no forbidden phrases (no FOMO / fire emoji / shouting)", () => {
     act(() => {
-      root.render(
-        <DebugProblemPanel
-          expectedBehavior="Return n."
-          bugArchetype="off_by_one"
-        />,
-      );
+      root.render(<DebugProblemPanel expectedBehavior="Return n." bugArchetype="off_by_one" />);
     });
     const text = container.textContent ?? "";
     for (const p of FORBIDDEN_PHRASES) {
@@ -129,12 +114,7 @@ describe("DebugProblemPanel (STORY-037)", () => {
 
   it("carries the data-testid hook for SessionLayout-level tests", () => {
     act(() => {
-      root.render(
-        <DebugProblemPanel
-          expectedBehavior="Return n."
-          bugArchetype="off_by_one"
-        />,
-      );
+      root.render(<DebugProblemPanel expectedBehavior="Return n." bugArchetype="off_by_one" />);
     });
     expect(container.querySelector('[data-testid="debug-problem-panel"]')).not.toBeNull();
   });

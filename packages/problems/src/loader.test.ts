@@ -137,9 +137,10 @@ describe("loadProblems — debug bank distribution (STORY-037)", () => {
   it("every debug problem carries a non-empty expected_behavior", () => {
     for (const p of [...pythonDebug, ...tsDebug]) {
       if (p.kind === "debug") {
-        expect(p.expected_behavior.trim().length, `${p.slug} expected_behavior empty`).toBeGreaterThan(
-          0,
-        );
+        expect(
+          p.expected_behavior.trim().length,
+          `${p.slug} expected_behavior empty`,
+        ).toBeGreaterThan(0);
       }
     }
   });
