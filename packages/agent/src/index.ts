@@ -157,3 +157,16 @@ export {
   loadEpisodeProblemRow,
   type BuildDrizzleAgentDepsOptions,
 } from "./drizzle-deps.js";
+
+export {
+  MIN_EPISODES_FOR_SYNTHESIS,
+  ProfileInsightSchema,
+  ProfileInsightsResultSchema,
+  containsForbiddenPhrase as containsForbiddenInsightPhrase,
+  parseInsightsResponse,
+  runProfileInsightsAgent,
+  type ProfileInsightOutput,
+  type ProfileInsightsAgentInput,
+  type ProfileInsightsAgentOutput,
+  type ProfileInsightsResult,
+} from "./profile-insights.js";
