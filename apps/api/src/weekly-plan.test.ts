@@ -1,10 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { buildServer } from "./index.js";
 import type { SessionResolver } from "./session.js";
-import {
-  buildWeeklyThemeGeneratorFromEnv,
-  type WeeklyPlanDeps,
-} from "./weekly-plan.js";
+import { buildWeeklyThemeGeneratorFromEnv, type WeeklyPlanDeps } from "./weekly-plan.js";
 import type {
   WeeklyPlanConceptGraph,
   WeeklyPlanDueReview,
@@ -340,7 +337,6 @@ describe("Routes are gated on weeklyPlanDeps presence (STORY-046b)", () => {
 });
 
 describe("buildWeeklyThemeGeneratorFromEnv — STORY-046c env flag", () => {
-
   // Use the same fake LLM shape from problem-variants tests — minimal LLMProvider impl.
   const fakeLLM = {
     name: "fake",
@@ -486,9 +482,7 @@ describe("STORY-046c — themeGenerator wiring on weekly-plan routes", () => {
     // calls the themeGenerator if wired AND ≥3 concepts. The cost gate is "only on POST,
     // not on GET" — dampening doesn't add a second gate. This test documents that.
     const yesterday = new Date(Date.now() - 86400_000);
-    const deps = fakeWeeklyDeps(
-      makeBaseState({ previousMarkerAt: yesterday, todaysEpisodes: 0 }),
-    );
+    const deps = fakeWeeklyDeps(makeBaseState({ previousMarkerAt: yesterday, todaysEpisodes: 0 }));
     const themeGen = recordingThemeGen({ theme: "Loops and lists rhythm" });
     const app = buildServer({
       weeklyPlanDeps: deps,

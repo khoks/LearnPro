@@ -80,7 +80,9 @@ export async function generateWeeklyTheme(
 
   const promptConcepts: WeeklyThemePromptConcept[] = input.concepts.map((c) => {
     const tags = c.tags;
-    return tags !== undefined ? { slug: c.slug, name: c.name, tags } : { slug: c.slug, name: c.name };
+    return tags !== undefined
+      ? { slug: c.slug, name: c.name, tags }
+      : { slug: c.slug, name: c.name };
   });
 
   const system = buildWeeklyThemeSystemPrompt();

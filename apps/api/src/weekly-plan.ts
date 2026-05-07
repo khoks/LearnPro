@@ -237,14 +237,18 @@ export interface BuildLLMThemeGeneratorOptions {
 // agent's `generateWeeklyTheme` to the buildWeeklyPlan dep contract — concept shape
 // passes through unchanged. Errors / null returns from the agent surface as null so
 // `buildWeeklyPlan` falls back to STORY-046b's deterministic theme.
-export function buildLLMThemeGenerator(opts: BuildLLMThemeGeneratorOptions): WeeklyPlanThemeGenerator {
+export function buildLLMThemeGenerator(
+  opts: BuildLLMThemeGeneratorOptions,
+): WeeklyPlanThemeGenerator {
   const { llm } = opts;
   return async (input) => {
     const result = await generateWeeklyTheme({
       llm,
       concepts: input.concepts.map((c) => {
         const tags = c.tags;
-        return tags !== undefined ? { slug: c.slug, name: c.name, tags } : { slug: c.slug, name: c.name };
+        return tags !== undefined
+          ? { slug: c.slug, name: c.name, tags }
+          : { slug: c.slug, name: c.name };
       }),
       target_role: input.target_role ?? null,
     });

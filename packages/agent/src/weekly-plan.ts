@@ -489,7 +489,9 @@ async function maybeGenerateTheme(input: {
     .filter((c): c is WeeklyPlanConceptGraph["concepts"][number] => c !== undefined)
     .map((c) => {
       const tags = c.tags;
-      return tags !== undefined ? { slug: c.slug, name: c.name, tags } : { slug: c.slug, name: c.name };
+      return tags !== undefined
+        ? { slug: c.slug, name: c.name, tags }
+        : { slug: c.slug, name: c.name };
     });
   if (concepts.length === 0) return null;
   try {
