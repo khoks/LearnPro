@@ -102,6 +102,15 @@ export {
 } from "./comprehension-grade.js";
 
 export {
+  DebugGradeResultSchema,
+  parseDebugGraderResponse,
+  runDebugGrader,
+  type DebugGradeInput,
+  type DebugGradeResult,
+  type InferredArchetype,
+} from "./debug-grade.js";
+
+export {
   buildComprehensionCommentary,
   forbiddenPhrasesForCommentary,
   type ComprehensionCommentary,

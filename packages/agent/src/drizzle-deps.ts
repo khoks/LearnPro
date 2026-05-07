@@ -18,12 +18,15 @@ import {
   submissions,
   tracks,
   updateConfidenceSignalRow,
+  upsertBugFindingScore,
   type LearnProDb,
 } from "@learnpro/db";
 import { gradeAgent } from "./grade.js";
+import { runDebugGrader, type DebugGradeResult } from "./debug-grade.js";
 import {
   ProblemDefSchema,
   buildHarnessForProblem,
+  isDebugProblem,
   parseVerdict,
   type ProblemDef,
 } from "@learnpro/problems";
@@ -342,13 +345,54 @@ export function buildGradeDrizzleDeps(opts: BuildDrizzleAgentDepsOptions): Grade
     async runGraderAgent(input) {
       // STORY-034 — split critique/grader. Wraps the pure `gradeAgent` so it sees the same LLM
       // provider as the rest of the wiring (telemetry sink + budget gate apply uniformly).
-      return gradeAgent({
+      const main = await gradeAgent({
         llm: opts.llm,
         episode: { episode_id: input.episode_id, user_id: input.user_id },
         code: input.user_code,
         problem: input.problem,
         test_results: input.test_results,
       });
+
+      // STORY-037a — for debug problems, additionally run the per-archetype bug-finding grader
+      // and persist the EWMA update. Best-effort: a hiccup in either the LLM call or the DB
+      // upsert never blocks the close — `gradeAgent`'s rubric is the floor, the debug verdict
+      // rides alongside.
+      if (isDebugProblem(input.problem)) {
+        let debugResult: DebugGradeResult | null = null;
+        try {
+          debugResult = await runDebugGrader({
+            llm: opts.llm,
+            user_id: input.user_id,
+            problem: input.problem,
+            user_fix: input.user_code,
+          });
+        } catch {
+          debugResult = null;
+        }
+        if (debugResult) {
+          try {
+            await upsertBugFindingScore(opts.db, {
+              user_id: input.user_id,
+              org_id: input.org_id,
+              bug_archetype: input.problem.bug_archetype,
+              signal: {
+                passed: input.test_results.length > 0
+                  && input.test_results.every((r) => r.passed),
+                named_bug: debugResult.named_bug,
+              },
+            });
+          } catch {
+            // intentional: bug-finding-score persistence is best-effort.
+          }
+          // Weave the debug verdict into the rubric reasoning so the persisted row reflects both
+          // axes. The downstream tutor commentary can paraphrase from this combined string.
+          return {
+            ...main,
+            reasoning: `${main.reasoning} ${debugResult.summary}`.trim(),
+          };
+        }
+      }
+      return main;
     },
     async persistGraderRubric(input) {
       // STORY-034 — persist the rubric to the episode row. Idempotent per submit (re-grading the
