@@ -421,6 +421,7 @@ function makeProfile(overrides: Partial<Profile> = {}): Profile {
     email_weekly_opt_in: false,
     email_weekly_day_of_week: 1,
     email_unsubscribe_token: null,
+    tutor_mode: "cloud",
     updated_at: new Date(0),
     ...overrides,
   };

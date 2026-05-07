@@ -188,6 +188,10 @@ export const profiles = pgTable("profiles", {
   email_weekly_opt_in: boolean("email_weekly_opt_in").notNull().default(false),
   email_weekly_day_of_week: integer("email_weekly_day_of_week").notNull().default(1),
   email_unsubscribe_token: text("email_unsubscribe_token"),
+  // STORY-036 — Tutor mode toggle. `cloud` = Anthropic Claude (default), `local` = Ollama,
+  // `auto-fallback` = try cloud first, fall back to local on cloud failure. The CHECK
+  // constraint limiting the column to the three documented modes lives in the migration.
+  tutor_mode: text("tutor_mode").notNull().default("cloud"),
   updated_at: updatedAt(),
 });
 

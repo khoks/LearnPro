@@ -15,9 +15,14 @@ import {
   ANTHROPIC_HAIKU,
   AnthropicSdkTransport,
   buildLLMProvider,
+  DEFAULT_OLLAMA_BASE_URL,
+  DEFAULT_OLLAMA_MODEL,
   InMemoryUsageStore,
+  LLMRouter,
   loadLLMConfigFromEnv,
+  OllamaTransport,
   TokenBudgetExceededError,
+  type GetTutorMode,
   type LLMProvider,
   type UsageStore,
 } from "@learnpro/llm";
@@ -55,6 +60,7 @@ import {
   type EmailTransport,
 } from "@learnpro/notifications/email";
 import { registerEmailDigestRoutes } from "./email-digest.js";
+import { registerLlmModeRoutes } from "./llm-mode.js";
 import {
   loadExportWindowMs,
   noDbExporter,
@@ -183,6 +189,13 @@ export interface BuildServerOptions {
   // pattern as quiet-hours / autonomy: tests inject a fake DB; production wires the same `db`
   // instance the rest of the API uses (via `defaultsFromEnv()`).
   emailDigestDb?: import("@learnpro/db").LearnProDb;
+  // STORY-036 — DB handle for the per-user `tutor_mode` toggle settings routes. When
+  // supplied, registers `GET / PUT /v1/settings/llm-mode`. Tests inject a fake DB;
+  // production wires the same `db` instance via `defaultsFromEnv()`. Optional override of
+  // the Ollama target the GET response surfaces (defaults to env vars / library defaults).
+  llmModeDb?: import("@learnpro/db").LearnProDb;
+  ollamaBaseUrl?: string;
+  ollamaModel?: string;
 }
 
 // Default impl when no store is provided — drops events on the floor. Useful for tests and
@@ -467,6 +480,16 @@ export function buildServer(opts: BuildServerOptions = {}) {
     registerEmailDigestRoutes(app, { db: opts.emailDigestDb, sessionResolver });
   }
 
+  // STORY-036 — per-user tutor_mode toggle routes. Same wiring pattern as the others.
+  if (opts.llmModeDb) {
+    registerLlmModeRoutes(app, {
+      db: opts.llmModeDb,
+      sessionResolver,
+      ...(opts.ollamaBaseUrl !== undefined && { ollamaBaseUrl: opts.ollamaBaseUrl }),
+      ...(opts.ollamaModel !== undefined && { ollamaModel: opts.ollamaModel }),
+    });
+  }
+
   // STORY-060 deferred AC — friendly 429 mapping for the per-user daily token budget. Any handler
   // that calls into the LLM provider can throw `TokenBudgetExceededError`; this hook catches it
   // before Fastify's default 500 path so the playground can render the friendly message AC from
@@ -516,6 +539,9 @@ function defaultsFromEnv(): {
   portfolio?: BuildServerOptions["portfolio"];
   exportRateLimiter?: RateLimiter;
   emailDigestDb?: import("@learnpro/db").LearnProDb;
+  llmModeDb?: import("@learnpro/db").LearnProDb;
+  ollamaBaseUrl?: string;
+  ollamaModel?: string;
 } {
   const exportRateLimiter = buildExportRateLimiterFromEnv(process.env);
   const url = process.env["DATABASE_URL"];
@@ -524,7 +550,11 @@ function defaultsFromEnv(): {
   }
   const { db } = createDb({ connectionString: url });
   const fetcher = drizzleExportFetcher(db);
-  const llm = defaultLLM();
+  // STORY-036 — wrap the cloud-default LLM with the per-user tutor-mode router. Each request
+  // looks up `profiles.tutor_mode`; cloud requests pass through to AnthropicSdkTransport
+  // unchanged (AC #6 — no regressions). `auto-fallback` tries cloud first then Ollama on
+  // failure. Ollama target reads from env vars; defaults match `@learnpro/llm`.
+  const llm = buildRoutedLLM(db);
   // STORY-023 — wire the dispatcher with both channels. Web Push is optional: when VAPID keys
   // are missing, the channel still exists in the dispatcher's list but its `send()` is a no-op
   // (no subscriptions will exist either, so it'd return `no_subscriptions` even if it tried).
@@ -602,8 +632,30 @@ function defaultsFromEnv(): {
       deleteAccount: (user_id) => deleteUserAccount(db, user_id),
     },
     emailDigestDb: db,
+    llmModeDb: db,
+    ollamaBaseUrl: process.env["OLLAMA_BASE_URL"] ?? DEFAULT_OLLAMA_BASE_URL,
+    ollamaModel: process.env["OLLAMA_MODEL"] ?? DEFAULT_OLLAMA_MODEL,
     ...(exportRateLimiter ? { exportRateLimiter } : {}),
   };
+}
+
+// STORY-036 — wraps the default cloud transport with an LLMRouter so requests can flow to
+// Ollama based on the per-user `tutor_mode` toggle. The Ollama transport is constructed
+// lazily (env-driven) so this stays a no-op for self-hosters who never opt into local mode.
+// Failures inside `getMode()` (e.g. DB hiccup) cleanly fall back to the cloud default — the
+// router's internal try/catch handles that branch. The same router is then handed to the
+// tutor factory + session-plan factory so every LLM call respects the user's preference.
+function buildRoutedLLM(db: import("@learnpro/db").LearnProDb): LLMProvider {
+  const cloud = defaultLLM();
+  const ollamaBaseUrl = process.env["OLLAMA_BASE_URL"] ?? DEFAULT_OLLAMA_BASE_URL;
+  const ollamaModel = process.env["OLLAMA_MODEL"] ?? DEFAULT_OLLAMA_MODEL;
+  const local = new OllamaTransport({ baseUrl: ollamaBaseUrl, defaultModel: ollamaModel });
+  const getMode: GetTutorMode = async (req) => {
+    if (!req.user_id) return "cloud";
+    const { getTutorMode } = await import("@learnpro/db");
+    return getTutorMode(db, req.user_id);
+  };
+  return new LLMRouter({ cloud, local, getMode, defaultMode: "cloud" });
 }
 
 // STORY-062 — pick the right rate limiter based on env. When REDIS_URL is set, build a

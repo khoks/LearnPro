@@ -113,6 +113,13 @@
       "when": 1779200000000,
       "tag": "0015_got_help",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1779300000000,
+      "tag": "0016_llm_mode",
+      "breakpoints": true
     }
   ]
 }
