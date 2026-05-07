@@ -185,3 +185,50 @@ function collectConceptTagsFromEpisodes(
   }
   return out;
 }
+
+// STORY-033 — telemetry helper for AC #5. Heuristic substring matcher: given an opener (the
+// tutor's assign-problem response text) and the list of insights surfaced into its prompt,
+// return the ids of insights whose `text` is referenced. The match is loose:
+//
+//   - Lowercased substring match.
+//   - Strip backticks + double quotes so "for" still matches when the opener says \`for\`.
+//   - To avoid false positives on tiny words ("a", "the"), require the insight text to be
+//     at least MIN_MATCH_LEN characters.
+//   - Try a 6-word substring of the insight (the most distinctive prefix) too — covers the
+//     common case where the tutor paraphrases instead of quoting verbatim.
+//
+// Best-effort: a missed reference just means we don't bump that row's counter; a false
+// positive bumps a row by 1, which is harmless. The dashboard's avg_referenced_count_per_insight
+// telemetry tolerates small noise.
+const MIN_MATCH_LEN = 12;
+const PARAPHRASE_PREFIX_WORDS = 6;
+
+export function detectReferencedInsightIds(
+  opener_text: string,
+  insights: ReadonlyArray<{ id: string; text: string }>,
+): string[] {
+  const opener = normalizeForMatch(opener_text);
+  const out: string[] = [];
+  for (const insight of insights) {
+    const candidate = normalizeForMatch(insight.text);
+    if (candidate.length < MIN_MATCH_LEN) continue;
+    if (opener.includes(candidate)) {
+      out.push(insight.id);
+      continue;
+    }
+    // Try the first N-word prefix as a paraphrase signal.
+    const prefix = candidate.split(/\s+/).slice(0, PARAPHRASE_PREFIX_WORDS).join(" ");
+    if (prefix.length >= MIN_MATCH_LEN && opener.includes(prefix)) {
+      out.push(insight.id);
+    }
+  }
+  return out;
+}
+
+function normalizeForMatch(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[`"']/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}

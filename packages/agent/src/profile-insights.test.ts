@@ -13,6 +13,7 @@ import type { ProfileInsightsEpisodeShape } from "@learnpro/prompts";
 import {
   MIN_EPISODES_FOR_SYNTHESIS,
   containsForbiddenPhrase,
+  detectReferencedInsightIds,
   parseInsightsResponse,
   runProfileInsightsAgent,
 } from "./profile-insights.js";
@@ -168,6 +169,55 @@ describe("containsForbiddenPhrase — STORY-033", () => {
     expect(
       containsForbiddenPhrase("mutability boundaries trip the learner across multiple problems"),
     ).toBe(false);
+  });
+});
+
+describe("detectReferencedInsightIds — STORY-033 telemetry", () => {
+  const A = {
+    id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+    text: "user reaches for `for` when comprehensions would be cleaner",
+  };
+  const B = {
+    id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+    text: "edge cases consistently take an extra attempt",
+  };
+
+  it("returns empty when the opener doesn't reference any insight", () => {
+    const ids = detectReferencedInsightIds(
+      "Today we'll work on a list problem. Start by reading the public examples.",
+      [A, B],
+    );
+    expect(ids).toEqual([]);
+  });
+
+  it("matches verbatim insight quotes", () => {
+    const ids = detectReferencedInsightIds(
+      "I noticed user reaches for `for` when comprehensions would be cleaner — let's keep an eye on that.",
+      [A, B],
+    );
+    expect(ids).toEqual([A.id]);
+  });
+
+  it("matches paraphrases via the prefix heuristic", () => {
+    const ids = detectReferencedInsightIds(
+      "I noticed edge cases consistently take an extra attempt across stack problems.",
+      [A, B],
+    );
+    expect(ids).toEqual([B.id]);
+  });
+
+  it("ignores tiny / non-distinctive insight text (defends against false positives)", () => {
+    const tiny = { id: "11111111-1111-4111-8111-111111111111", text: "the user" };
+    const ids = detectReferencedInsightIds("the user is now coding", [tiny]);
+    expect(ids).toEqual([]);
+  });
+
+  it("matches even when backticks differ between insight and opener", () => {
+    const ids = detectReferencedInsightIds(
+      'I noticed user reaches for "for" when comprehensions would be cleaner.',
+      [A],
+    );
+    expect(ids).toEqual([A.id]);
   });
 });
 

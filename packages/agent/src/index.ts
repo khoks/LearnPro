@@ -18,6 +18,7 @@ export {
 
 export type {
   AssignProblemDeps,
+  AssignProblemInsight,
   GiveHintDeps,
   GradeDeps,
   GradeRubric,
@@ -163,6 +164,7 @@ export {
   ProfileInsightSchema,
   ProfileInsightsResultSchema,
   containsForbiddenPhrase as containsForbiddenInsightPhrase,
+  detectReferencedInsightIds,
   parseInsightsResponse,
   runProfileInsightsAgent,
   type ProfileInsightOutput,

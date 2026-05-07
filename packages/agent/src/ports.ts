@@ -35,6 +35,23 @@ export interface AssignProblemDeps {
   // behaves identically to its pre-STORY-031 self. The deps adapter in apps/api wires this
   // through `getDueConcepts` + a concept-id -> slug mapping.
   loadDueConceptSlugs?(input: { user_id: string }): Promise<string[]>;
+
+  // STORY-033 — returns the latest 1-3 active cross-episode insights for the user. Optional:
+  // when omitted, the assigner skips the insight context surface entirely (no rows surfaced;
+  // no telemetry bumps). The deps adapter in apps/api wires this through @learnpro/db's
+  // `listLatestInsights`. Returns rows oldest-first (the prompt prefers chronological order).
+  loadLatestInsights?(input: { user_id: string; limit: number }): Promise<AssignProblemInsight[]>;
+
+  // STORY-033 — bumps `referenced_count` on an insight row. Best-effort: the tool calls this
+  // for each insight whose `text` is mentioned in the most-recent tutor opener. When omitted,
+  // the bump is silently skipped (the insight row stays at its existing count).
+  incrementInsightReferenced?(input: { insight_id: string }): Promise<void>;
+}
+
+// STORY-033 — minimal projection of a `profile_insights` row the assigner cares about.
+export interface AssignProblemInsight {
+  id: string;
+  text: string;
 }
 
 // Minimal projection of `episodes` rows the assigner needs.

@@ -9,6 +9,8 @@ import {
   getConfidenceSignal,
   getDueConcepts,
   getLatestActivePlan,
+  incrementReferenced as incrementInsightReferencedDb,
+  listLatestInsights,
   markItemCompleted,
   problems,
   recordReview,
@@ -153,6 +155,17 @@ export function buildAssignProblemDrizzleDeps(
         .from(concepts)
         .where(inArray(concepts.id, ids));
       return rows.map((r) => r.slug);
+    },
+    async loadLatestInsights(input) {
+      // STORY-033 — surface the user's latest cross-episode insights so the tutor's opener
+      // can reference them. Newest-first; the tool truncates to its `insight_limit`.
+      const rows = await listLatestInsights(opts.db, input.user_id, input.limit);
+      return rows.map((r) => ({ id: r.id, text: r.insight_text }));
+    },
+    async incrementInsightReferenced(input) {
+      // STORY-033 — bump the referenced_count for an insight after the tutor's opener has
+      // referenced it. The wrapper `incrementReferenced` short-circuits on a missing id.
+      await incrementInsightReferencedDb(opts.db, input.insight_id);
     },
   };
 }

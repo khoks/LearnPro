@@ -50,6 +50,7 @@ function fakeAssignOutput(): AssignProblemOutput {
     started_at: 1700000000000,
     due_concepts_count: null,
     review_session_suggested: false,
+    previous_insights: [],
   };
 }
 

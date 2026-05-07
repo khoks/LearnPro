@@ -505,3 +505,57 @@ describe("createAssignProblemTool: STORY-037 debug problem projection", () => {
     expect(out.problem.expected_behavior).toBeNull();
   });
 });
+
+// STORY-033 — assign-problem now surfaces the user's latest cross-episode insights so the
+// tutor's opener can reference them. The deps adapter's `loadLatestInsights` is optional;
+// when unwired the array is empty and behaviour matches the pre-STORY-033 path exactly.
+describe("createAssignProblemTool: STORY-033 insight context", () => {
+  it("surfaces an empty `previous_insights` when the deps adapter doesn't wire the port", async () => {
+    const catalog = [entry("alpha", 1)];
+    const deps = fakeDeps({ catalog });
+    const tool = createAssignProblemTool({ deps });
+    const out = await tool.run({ user_id: USER_ID, org_id: ORG_ID, track_id: TRACK_ID });
+    expect(out.previous_insights).toEqual([]);
+  });
+
+  it("surfaces the latest 1-3 insight rows when the deps wire `loadLatestInsights`", async () => {
+    const catalog = [entry("alpha", 1)];
+    let lastLimit = -1;
+    const deps: AssignProblemDeps = {
+      ...fakeDeps({ catalog }),
+      async loadLatestInsights(input) {
+        lastLimit = input.limit;
+        return [
+          {
+            id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+            text: "user reaches for `for` when comprehensions would be cleaner",
+          },
+          {
+            id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+            text: "edge cases consistently take an extra attempt",
+          },
+        ];
+      },
+    };
+    const tool = createAssignProblemTool({ deps });
+    const out = await tool.run({ user_id: USER_ID, org_id: ORG_ID, track_id: TRACK_ID });
+    expect(out.previous_insights).toHaveLength(2);
+    expect(out.previous_insights[0]?.text).toContain("comprehensions");
+    expect(lastLimit).toBe(3);
+  });
+
+  it("respects a custom insight_limit on the tool factory", async () => {
+    const catalog = [entry("alpha", 1)];
+    let lastLimit = -1;
+    const deps: AssignProblemDeps = {
+      ...fakeDeps({ catalog }),
+      async loadLatestInsights(input) {
+        lastLimit = input.limit;
+        return [];
+      },
+    };
+    const tool = createAssignProblemTool({ deps, insight_limit: 5 });
+    await tool.run({ user_id: USER_ID, org_id: ORG_ID, track_id: TRACK_ID });
+    expect(lastLimit).toBe(5);
+  });
+});
