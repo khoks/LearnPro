@@ -1,15 +1,8 @@
 import { and, eq, inArray, sql } from "drizzle-orm";
 import type { LearnProDb } from "./client.js";
 import { concepts, prerequisites, SELF_HOSTED_ORG_ID } from "./schema.js";
-import {
-  CONCEPTS_YAML_ROOT,
-  loadConceptsFromYaml,
-  type LoadedConcept,
-} from "./concepts-seed.js";
-import {
-  PREREQUISITES_YAML_PATH,
-  loadPrerequisitesFromYaml,
-} from "./prerequisites-seed.js";
+import { CONCEPTS_YAML_ROOT, loadConceptsFromYaml, type LoadedConcept } from "./concepts-seed.js";
+import { PREREQUISITES_YAML_PATH, loadPrerequisitesFromYaml } from "./prerequisites-seed.js";
 
 export interface SeedConceptsOptions {
   org_id?: string;

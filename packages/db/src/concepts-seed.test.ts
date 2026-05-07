@@ -1,9 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  CONCEPTS_YAML_ROOT,
-  loadConceptsFromYaml,
-  parseConceptYaml,
-} from "./concepts-seed.js";
+import { CONCEPTS_YAML_ROOT, loadConceptsFromYaml, parseConceptYaml } from "./concepts-seed.js";
 
 describe("concepts-seed: YAML loader", () => {
   it("loads at least 200 concepts from the canonical yaml root", () => {
@@ -12,7 +8,11 @@ describe("concepts-seed: YAML loader", () => {
   });
 
   it("rejects duplicate slugs across files", () => {
-    expect(() => parseConceptYaml(`concepts:\n  - slug: x\n    name: X\n    description: A.\n    default_difficulty: 1\n    tags: []\n    track_slugs: ['t']\n  - slug: x\n    name: X2\n    description: B.\n    default_difficulty: 1\n    tags: []\n    track_slugs: ['t']`)).not.toThrow(); // parseConceptYaml itself doesn't dedupe — that's loadConceptsFromYaml's job
+    expect(() =>
+      parseConceptYaml(
+        `concepts:\n  - slug: x\n    name: X\n    description: A.\n    default_difficulty: 1\n    tags: []\n    track_slugs: ['t']\n  - slug: x\n    name: X2\n    description: B.\n    default_difficulty: 1\n    tags: []\n    track_slugs: ['t']`,
+      ),
+    ).not.toThrow(); // parseConceptYaml itself doesn't dedupe — that's loadConceptsFromYaml's job
     // but duplicates within a single file are still produced; loader-level dedup is tested below
   });
 
@@ -51,7 +51,7 @@ describe("concepts-seed: YAML loader", () => {
   it("every concept slug uses dotted lowercase format", () => {
     const all = loadConceptsFromYaml({ rootDir: CONCEPTS_YAML_ROOT });
     for (const c of all) {
-      expect(c.slug).toMatch(/^[a-z][a-z0-9]*(?:[.\-][a-z0-9]+)*$/);
+      expect(c.slug).toMatch(/^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$/);
       expect(c.slug.toLowerCase()).toBe(c.slug);
     }
   });

@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-const KEBAB_DOTTED = /^[a-z][a-z0-9]*(?:[.\-][a-z0-9]+)*$/;
+const KEBAB_DOTTED = /^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$/;
 
 export const ConceptSlugSchema = z
   .string()
@@ -55,9 +55,7 @@ export function detectCycles(
   for (const slug of conceptSlugs) adj.set(slug, []);
   for (const edge of edges) {
     if (!known.has(edge.from)) {
-      throw new Error(
-        `prerequisite edge references unknown concept '${edge.from}' (in 'from')`,
-      );
+      throw new Error(`prerequisite edge references unknown concept '${edge.from}' (in 'from')`);
     }
     if (!known.has(edge.to)) {
       throw new Error(`prerequisite edge references unknown concept '${edge.to}' (in 'to')`);

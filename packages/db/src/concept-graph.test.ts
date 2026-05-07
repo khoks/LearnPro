@@ -98,11 +98,7 @@ describe("concept-graph: walkConceptGraph", () => {
   });
 
   it("returns [] when no path exists", () => {
-    expect(
-      walkConceptGraph("a", "b", [
-        { from: "c", to: "d" },
-      ]),
-    ).toEqual([]);
+    expect(walkConceptGraph("a", "b", [{ from: "c", to: "d" }])).toEqual([]);
   });
 
   it("walks a linear chain", () => {
@@ -132,11 +128,7 @@ describe("concept-graph: walkConceptGraph", () => {
       { from: "python.basics.functions", to: "python.basics.classes" },
       { from: "python.basics.classes", to: "python.advanced.metaclasses" },
     ];
-    const path = walkConceptGraph(
-      "python.basics.variables",
-      "python.advanced.metaclasses",
-      edges,
-    );
+    const path = walkConceptGraph("python.basics.variables", "python.advanced.metaclasses", edges);
     expect(path).toEqual([
       "python.basics.variables",
       "python.basics.functions",

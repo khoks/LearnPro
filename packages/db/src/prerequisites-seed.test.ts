@@ -1,12 +1,6 @@
 import { describe, expect, it } from "vitest";
-import {
-  CONCEPTS_YAML_ROOT,
-  loadConceptsFromYaml,
-} from "./concepts-seed.js";
-import {
-  PREREQUISITES_YAML_PATH,
-  loadPrerequisitesFromYaml,
-} from "./prerequisites-seed.js";
+import { CONCEPTS_YAML_ROOT, loadConceptsFromYaml } from "./concepts-seed.js";
+import { PREREQUISITES_YAML_PATH, loadPrerequisitesFromYaml } from "./prerequisites-seed.js";
 import { detectCycles, walkConceptGraph, topologicalOrder } from "./concept-graph.js";
 
 const conceptsCache = (() => {
@@ -42,9 +36,7 @@ describe("prerequisites-seed: knowledge graph integrity", () => {
     });
     const result = detectCycles([...conceptsCache.slugs], edges);
     if (result.hasCycle) {
-      throw new Error(
-        `cycle in production knowledge graph: ${result.cycle?.join(" -> ")}`,
-      );
+      throw new Error(`cycle in production knowledge graph: ${result.cycle?.join(" -> ")}`);
     }
     expect(result.hasCycle).toBe(false);
   });
@@ -67,11 +59,7 @@ describe("prerequisites-seed: knowledge graph integrity", () => {
     // The walker follows `from -> to` edges (advanced -> basics in the
     // depends-on direction). To go FROM an advanced concept BACK to
     // basics, we walk the natural edge direction.
-    const path = walkConceptGraph(
-      "python.advanced.metaclasses",
-      "python.basics.variables",
-      edges,
-    );
+    const path = walkConceptGraph("python.advanced.metaclasses", "python.basics.variables", edges);
     expect(path.length).toBeGreaterThan(2);
     expect(path[0]).toBe("python.advanced.metaclasses");
     expect(path.at(-1)).toBe("python.basics.variables");
@@ -84,11 +72,7 @@ describe("prerequisites-seed: knowledge graph integrity", () => {
       yamlPath: PREREQUISITES_YAML_PATH,
       knownConceptSlugs: conceptsCache.slugs,
     });
-    const path = walkConceptGraph(
-      "react.basics.effects",
-      "typescript.basics.functions",
-      edges,
-    );
+    const path = walkConceptGraph("react.basics.effects", "typescript.basics.functions", edges);
     expect(path.length).toBeGreaterThan(0);
     expect(path[0]).toBe("react.basics.effects");
     expect(path.at(-1)).toBe("typescript.basics.functions");
@@ -106,10 +90,7 @@ describe("prerequisites-seed: knowledge graph integrity", () => {
   });
 
   it("rejects a yaml that introduces a cycle", () => {
-    const cycleSlugs = new Set([
-      "a.x",
-      "b.x",
-    ]);
+    const cycleSlugs = new Set(["a.x", "b.x"]);
     expect(() =>
       loadPrerequisitesFromYaml({
         yamlPath: PREREQUISITES_YAML_PATH,
@@ -124,10 +105,7 @@ describe("prerequisites-seed: knowledge graph integrity", () => {
     const path = await import("node:path");
     const dir = mkdtempSync(path.join(tmpdir(), "prereq-bad-"));
     const file = path.join(dir, "p.yaml");
-    writeFileSync(
-      file,
-      `prerequisites:\n  - from: ghost.x\n    to: real.y\n`,
-    );
+    writeFileSync(file, `prerequisites:\n  - from: ghost.x\n    to: real.y\n`);
     expect(() =>
       loadPrerequisitesFromYaml({
         yamlPath: file,
@@ -142,10 +120,7 @@ describe("prerequisites-seed: knowledge graph integrity", () => {
     const path = await import("node:path");
     const dir = mkdtempSync(path.join(tmpdir(), "prereq-bad-"));
     const file = path.join(dir, "p.yaml");
-    writeFileSync(
-      file,
-      `prerequisites:\n  - from: real.x\n    to: ghost.y\n`,
-    );
+    writeFileSync(file, `prerequisites:\n  - from: real.x\n    to: ghost.y\n`);
     expect(() =>
       loadPrerequisitesFromYaml({
         yamlPath: file,
@@ -175,10 +150,7 @@ describe("prerequisites-seed: knowledge graph integrity", () => {
     const path = await import("node:path");
     const dir = mkdtempSync(path.join(tmpdir(), "prereq-dup-"));
     const file = path.join(dir, "p.yaml");
-    writeFileSync(
-      file,
-      `prerequisites:\n  - { from: a.x, to: b.y }\n  - { from: a.x, to: b.y }\n`,
-    );
+    writeFileSync(file, `prerequisites:\n  - { from: a.x, to: b.y }\n  - { from: a.x, to: b.y }\n`);
     expect(() =>
       loadPrerequisitesFromYaml({
         yamlPath: file,

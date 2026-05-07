@@ -19,9 +19,7 @@ export interface LoadPrerequisitesOptions {
   knownConceptSlugs: ReadonlySet<string>;
 }
 
-export function loadPrerequisitesFromYaml(
-  opts: LoadPrerequisitesOptions,
-): PrerequisiteEdgeYaml[] {
+export function loadPrerequisitesFromYaml(opts: LoadPrerequisitesOptions): PrerequisiteEdgeYaml[] {
   const yamlPath = opts.yamlPath ?? PREREQUISITES_YAML_PATH;
   const raw = readFileSync(yamlPath, "utf8");
   const parsed = parseYaml(raw);
@@ -43,9 +41,7 @@ export function loadPrerequisitesFromYaml(
       );
     }
     if (edge.from === edge.to) {
-      throw new Error(
-        `prerequisites yaml at ${yamlPath}: self-edge detected on '${edge.from}'`,
-      );
+      throw new Error(`prerequisites yaml at ${yamlPath}: self-edge detected on '${edge.from}'`);
     }
   }
 

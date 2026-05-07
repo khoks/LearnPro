@@ -58,10 +58,7 @@ describe("problem-bank tagging (STORY-032 AC #3)", () => {
 
   it("every problem has at least one concept_tag (AC #3)", () => {
     for (const p of problems) {
-      expect(
-        p.concept_tags.length,
-        `${p.filepath} has no concept_tags`,
-      ).toBeGreaterThanOrEqual(1);
+      expect(p.concept_tags.length, `${p.filepath} has no concept_tags`).toBeGreaterThanOrEqual(1);
     }
   });
 
