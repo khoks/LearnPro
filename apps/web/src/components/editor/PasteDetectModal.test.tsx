@@ -106,9 +106,7 @@ describe("PasteDetectModal", () => {
     const onMyCode = vi.fn();
     const ctx = buildPasteContext({ text: "x".repeat(50), current_content: "" });
     act(() => {
-      root.render(
-        <PasteDetectModal paste={ctx} onMyCode={onMyCode} onGotHelp={() => undefined} />,
-      );
+      root.render(<PasteDetectModal paste={ctx} onMyCode={onMyCode} onGotHelp={() => undefined} />);
     });
     act(() => {
       window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));

@@ -291,7 +291,6 @@ export function PlaygroundClient() {
   );
 }
 
-
 function ResultPanel({
   result,
   running,

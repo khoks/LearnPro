@@ -173,8 +173,4 @@ export {
   type DigestEpisodeRow,
   type DigestSkillSnapshotRow,
 } from "./email-digest-data.js";
-export {
-  countGotHelpEpisodes,
-  getEpisodeGotHelp,
-  markEpisodeGotHelp,
-} from "./got-help.js";
+export { countGotHelpEpisodes, getEpisodeGotHelp, markEpisodeGotHelp } from "./got-help.js";

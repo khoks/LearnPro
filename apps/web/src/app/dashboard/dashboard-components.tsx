@@ -183,11 +183,7 @@ export interface HonestSessionsCardProps {
 export function HonestSessionsCard(props: HonestSessionsCardProps): ReactElement {
   const { count } = props;
   const headline =
-    count === 0
-      ? "—"
-      : count === 1
-        ? "1 problem marked"
-        : `${count} problems marked`;
+    count === 0 ? "—" : count === 1 ? "1 problem marked" : `${count} problems marked`;
   const supporting =
     count === 0
       ? "When you mark a problem as “I got help,” it shows up here. No pressure to use it; the option is there if you want it."
