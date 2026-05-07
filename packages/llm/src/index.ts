@@ -16,6 +16,21 @@ export {
 } from "./anthropic-sdk-transport.js";
 export { OpenAIProvider } from "./openai.js";
 export { OllamaProvider } from "./ollama.js";
+export {
+  DEFAULT_OLLAMA_BASE_URL,
+  DEFAULT_OLLAMA_MODEL,
+  OllamaTransport,
+  parseToolJson,
+  type FetchLike,
+  type OllamaChatResponse,
+  type OllamaTransportOptions,
+} from "./adapters/ollama.js";
+export {
+  LLMRouter,
+  type GetTutorMode,
+  type LLMRouterOptions,
+  type TutorModeKind,
+} from "./llm-router.js";
 
 export {
   ANTHROPIC_HAIKU,

@@ -174,3 +174,13 @@ export {
   type DigestSkillSnapshotRow,
 } from "./email-digest-data.js";
 export { countGotHelpEpisodes, getEpisodeGotHelp, markEpisodeGotHelp } from "./got-help.js";
+export {
+  DEFAULT_TUTOR_MODE,
+  TutorModeSchema,
+  TutorModeSettingsSchema,
+  getTutorMode,
+  updateTutorMode,
+  type TutorMode,
+  type TutorModeSettings,
+  type UpdateTutorModeOptions,
+} from "./llm-mode.js";
