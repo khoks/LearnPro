@@ -22,7 +22,7 @@ import {
   type SandboxLanguage,
   type SandboxProvider,
   type SandboxRunChunk,
-  type SandboxRunRequest,
+  type SandboxRunRequestInput,
   type SandboxRunResponse,
   PistonHttpTransport,
   PistonSandboxProvider,
@@ -168,12 +168,12 @@ class HardenedStubSandboxProvider implements SandboxProvider {
     this.scenario = scenario;
   }
 
-  async run(_req: SandboxRunRequest): Promise<SandboxRunResponse> {
+  async run(_req: SandboxRunRequestInput): Promise<SandboxRunResponse> {
     const r = STUB_RESPONSES[this.scenario];
     return Promise.resolve(r);
   }
 
-  runStream(req: SandboxRunRequest, signal?: AbortSignal): AsyncIterable<SandboxRunChunk> {
+  runStream(req: SandboxRunRequestInput, signal?: AbortSignal): AsyncIterable<SandboxRunChunk> {
     return streamChunksFromRun(() => this.run(req), signal);
   }
 }
@@ -186,7 +186,10 @@ export interface RunBreakoutResult {
 }
 
 export async function runBreakout(scenario: BreakoutScenario): Promise<RunBreakoutResult> {
-  const req: SandboxRunRequest = {
+  // STORY-043 — the breakout harness keeps the legacy `code` shorthand intentionally; every
+  // breakout scenario is single-file by construction.  The shorthand is normalized into the
+  // multi-file form by `SandboxRunRequestSchema`'s preprocess.
+  const req = {
     language: scenario.language,
     code: scenario.code,
     time_limit_ms: scenario.time_limit_ms ?? 1_500,

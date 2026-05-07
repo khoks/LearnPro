@@ -8,6 +8,15 @@ import { OfflineBanner } from "../../components/pwa/OfflineBanner";
 import { PasteDetectModal } from "../../components/editor/PasteDetectModal";
 import { usePasteDetect } from "../../components/editor/use-paste-detect";
 import { attachPasteListener } from "../../components/editor/monaco-paste";
+import { FileTreeSidebar } from "../../components/editor/FileTreeSidebar";
+import {
+  initWorkspaceFileTree,
+  toSandboxFiles,
+  workspaceFileTreeReducer,
+  type WorkspaceFileTreeAction,
+  type WorkspaceFileTreeError,
+  type WorkspaceFileTreeState,
+} from "../../components/editor/file-tree-state";
 import { runSandbox, type RunSandboxResult } from "../../lib/run-sandbox";
 import { useInteractionCapture, type MonacoLikeEditor } from "../../lib/use-interaction-capture";
 import { useViewportSize } from "../../lib/use-viewport-size";
@@ -73,13 +82,44 @@ function planStateReducer(s: SessionPlanState, a: SessionPlanAction): SessionPla
   return planReducer(s, a);
 }
 
+// STORY-043 — workspace reducer thunk; same pattern as PlaygroundClient.
+function workspaceReducer(
+  state: WorkspaceFileTreeState,
+  action: WorkspaceFileTreeAction,
+): WorkspaceFileTreeState {
+  return workspaceFileTreeReducer(state, action).state;
+}
+
+// STORY-043 — per-language entry-file convention.  Mirrors `ENTRY_FILE_BY_LANGUAGE` in
+// @learnpro/sandbox; see PlaygroundClient for the same constant.
+const ENTRY_FILE_FOR: Record<"python" | "typescript", string> = {
+  python: "main.py",
+  typescript: "index.ts",
+};
+
+// Empty starter — used as a placeholder until the first assign lands.
+const EMPTY_WORKSPACE = initWorkspaceFileTree([{ path: "main.py", content: "" }]);
+
+// STORY-043 — derive the Monaco language id from a file's extension.
+function languageForPath(path: string, fallback: "python" | "typescript"): string {
+  if (path.endsWith(".py")) return "python";
+  if (path.endsWith(".ts") || path.endsWith(".tsx")) return "typescript";
+  if (path.endsWith(".json")) return "json";
+  if (path.endsWith(".md")) return "markdown";
+  return MONACO_LANGUAGE[fallback];
+}
+
 export interface SessionClientProps {
   trackId: string;
 }
 
 export function SessionClient({ trackId }: SessionClientProps) {
   const [state, dispatch] = useReducer(reducer, initialSessionState);
-  const [code, setCode] = useState<string>("");
+  // STORY-043 — workspace state.  Single-file problems (no `starter_workspace` on the
+  // assigned problem) seed a 1-file workspace so the legacy UX is unchanged.  Multi-file
+  // problems pre-populate the file tree with the authored scaffold on assign.
+  const [workspace, dispatchWorkspace] = useReducer(workspaceReducer, EMPTY_WORKSPACE);
+  const [workspaceError, setWorkspaceError] = useState<WorkspaceFileTreeError | null>(null);
   const [runResult, setRunResult] = useState<RunSandboxResult | null>(null);
   const [running, setRunning] = useState(false);
   // STORY-042 — per-submission "I got help on this one" toggle. Default OFF; flips ON when the
@@ -89,12 +129,27 @@ export function SessionClient({ trackId }: SessionClientProps) {
   const [planState, planDispatch] = useReducer(planStateReducer, initialPlanState);
   const capture = useInteractionCapture();
   const pasteDetect = usePasteDetect({ onGotHelp: () => setGotHelp(true) });
+  const activeFile = workspace.files.find((f) => f.path === workspace.active_path);
+  const code = activeFile?.content ?? "";
   const codeRef = useRef(code);
   useEffect(() => {
     codeRef.current = code;
   }, [code]);
   const assigningRef = useRef(false);
   const planFetchingRef = useRef(false);
+
+  const dispatchWorkspaceWithError = useCallback(
+    (action: WorkspaceFileTreeAction) => {
+      const result = workspaceFileTreeReducer(workspace, action);
+      if (result.error) {
+        setWorkspaceError(result.error);
+        return;
+      }
+      setWorkspaceError(null);
+      dispatchWorkspace(action);
+    },
+    [workspace],
+  );
 
   const loadOrCreatePlan = useCallback(async () => {
     if (planFetchingRef.current) return;
@@ -164,7 +219,32 @@ export function SessionClient({ trackId }: SessionClientProps) {
         e.type === "assign_succeeded",
     );
     if (succeeded) {
-      setCode(succeeded.assigned.problem.starter_code);
+      // STORY-043 — assigned problems may carry an authored `starter_workspace` (multi-file)
+      // OR a legacy `starter_code` string.  Seed the workspace either way.  When neither is
+      // present we fall back to a 1-file workspace with the language-default entry filename.
+      const problem = succeeded.assigned.problem as {
+        language: "python" | "typescript";
+        starter_code: string;
+        starter_workspace?: ReadonlyArray<{ path: string; content: string }>;
+        entry_file?: string;
+      };
+      const entryFile = problem.entry_file ?? ENTRY_FILE_FOR[problem.language];
+      if (problem.starter_workspace && problem.starter_workspace.length > 0) {
+        dispatchWorkspace({
+          type: "replace",
+          files: problem.starter_workspace.map((f) => ({ path: f.path, content: f.content })),
+          entry_file: entryFile,
+          active_path: entryFile,
+        });
+      } else {
+        dispatchWorkspace({
+          type: "replace",
+          files: [{ path: entryFile, content: problem.starter_code }],
+          entry_file: entryFile,
+          active_path: entryFile,
+        });
+      }
+      setWorkspaceError(null);
       setRunResult(null);
     }
   }, [trackId]);
@@ -190,7 +270,15 @@ export function SessionClient({ trackId }: SessionClientProps) {
     const language = state.assigned.problem.language;
     setRunning(true);
     setRunResult(null);
-    const r = await runSandbox({ language, code });
+    // STORY-043 — Run ships the full workspace.  Single-file workspaces (the default for
+    // legacy `starter_code` problems) materialize as a 1-file array, which the sandbox
+    // accepts identically to the legacy `code` shorthand.
+    const sb = toSandboxFiles(workspace);
+    const r = await runSandbox({
+      language,
+      files: sb.files,
+      entry_file: sb.entry_file,
+    });
     setRunResult(r);
     setRunning(false);
     if (r.ok) {
@@ -201,12 +289,19 @@ export function SessionClient({ trackId }: SessionClientProps) {
         payload: dur !== null ? { language, exit_code, duration_ms: dur } : { language, exit_code },
       });
     }
-  }, [state, code, capture]);
+  }, [state, workspace, capture]);
 
   const onSubmit = useCallback(async () => {
     if (state.phase !== "coding" && state.phase !== "grading") return;
     const episodeIdForSubmit = state.assigned.episode_id;
-    const { events } = await driveSubmit(state, code);
+    // STORY-043 — for multi-file workspaces, Submit ships the entry file's content as the
+    // single-file `code` payload.  The agent's grade tool still uses the single-file harness
+    // path; multi-file grade is a deferred follow-up (the validator has the multi-file
+    // harness builder in place, the agent doesn't yet).  Single-file workspaces (the default
+    // for legacy `starter_code` problems) submit the only file's content unchanged.
+    const entryContent =
+      workspace.files.find((f) => f.path === workspace.entry_file)?.content ?? code;
+    const { events } = await driveSubmit(state, entryContent);
     for (const ev of events) dispatch(ev);
     const succeeded = events.find(
       (e): e is Extract<SessionEvent, { type: "submit_succeeded" }> =>
@@ -221,7 +316,7 @@ export function SessionClient({ trackId }: SessionClientProps) {
         void persistGotHelp(episodeIdForSubmit, true);
       }
     }
-  }, [state, code, capture, gotHelp]);
+  }, [state, code, workspace, capture, gotHelp]);
 
   const onRequestHint = useCallback(async () => {
     if (state.phase !== "coding" && state.phase !== "grading") return;
@@ -256,10 +351,28 @@ export function SessionClient({ trackId }: SessionClientProps) {
 
   const onNext = useCallback(() => {
     setRunResult(null);
-    setCode("");
+    // STORY-043 — workspace reset to a 1-file empty buffer; the next assign will replace it
+    // with the new problem's `starter_workspace` (or single-file `starter_code`).
+    dispatchWorkspace({
+      type: "replace",
+      files: [{ path: "main.py", content: "" }],
+      entry_file: "main.py",
+    });
+    setWorkspaceError(null);
     setGotHelp(false);
     dispatch({ type: "reset" });
   }, []);
+
+  const onCodeChange = useCallback(
+    (next: string) => {
+      dispatchWorkspace({
+        type: "set_content",
+        path: workspace.active_path,
+        content: next,
+      });
+    },
+    [workspace.active_path],
+  );
 
   return (
     <>
@@ -276,7 +389,7 @@ export function SessionClient({ trackId }: SessionClientProps) {
         <SessionView
           state={state}
           code={code}
-          onCodeChange={setCode}
+          onCodeChange={onCodeChange}
           onEditorMount={onEditorMount}
           runResult={runResult}
           running={running}
@@ -288,6 +401,10 @@ export function SessionClient({ trackId }: SessionClientProps) {
           onDismissError={() => dispatch({ type: "dismiss_error" })}
           gotHelp={gotHelp}
           onGotHelpChange={setGotHelp}
+          workspace={workspace}
+          workspaceError={workspaceError}
+          onWorkspaceAction={dispatchWorkspaceWithError}
+          onClearWorkspaceError={() => setWorkspaceError(null)}
         />
       </SessionLayout>
       <PasteDetectModal
@@ -399,6 +516,11 @@ interface SessionViewProps {
   onDismissError: () => void;
   gotHelp: boolean;
   onGotHelpChange: (next: boolean) => void;
+  // STORY-043 — multi-file workspace state piped through.
+  workspace: WorkspaceFileTreeState;
+  workspaceError: WorkspaceFileTreeError | null;
+  onWorkspaceAction: (action: WorkspaceFileTreeAction) => void;
+  onClearWorkspaceError: () => void;
 }
 
 function SessionView(props: SessionViewProps) {
@@ -450,12 +572,28 @@ function ActiveSessionView(props: ActiveStateProps) {
         role="region"
         aria-label="Code editor"
         aria-describedby="session-editor-help"
-        style={{ display: "grid", gap: "0.4rem" }}
+        style={{
+          display: "grid",
+          gap: "0.4rem",
+          gridTemplateColumns: "220px minmax(0, 1fr)",
+        }}
       >
+        <FileTreeSidebar
+          state={props.workspace}
+          onSetActive={(p) => props.onWorkspaceAction({ type: "set_active", path: p })}
+          onCreate={(p) => props.onWorkspaceAction({ type: "create", path: p })}
+          onRename={(from, to) => props.onWorkspaceAction({ type: "rename", from, to })}
+          onDelete={(p) => props.onWorkspaceAction({ type: "delete", path: p })}
+          onSetEntry={(p) => props.onWorkspaceAction({ type: "set_entry", path: p })}
+          error={props.workspaceError}
+          onClearError={props.onClearWorkspaceError}
+          disabled={editorDisabled}
+        />
         <div style={{ border: "1px solid #ccc", borderRadius: 4, overflow: "hidden" }}>
           <Editor
             height="360px"
-            language={MONACO_LANGUAGE[language]}
+            language={languageForPath(props.workspace.active_path, language)}
+            path={props.workspace.active_path}
             value={props.code}
             theme="vs-dark"
             onChange={(v) => props.onCodeChange(v ?? "")}

@@ -147,7 +147,12 @@ describe("POST /v1/sandbox/run/stream (STORY-059)", () => {
       payload: { language: "typescript", code: "console.log(1)" },
     });
     expect(sandbox.lastReq?.language).toBe("typescript");
-    expect(sandbox.lastReq?.code).toBe("console.log(1)");
+    // STORY-043 — the parsed shape normalizes `code: "..."` shorthand to `files[]`.
+    const files = (
+      sandbox.lastReq as unknown as { files?: Array<{ path: string; content: string }> }
+    )?.files;
+    expect(files?.[0]?.content).toBe("console.log(1)");
+    expect(files?.[0]?.path).toBe("index.ts");
     // Default values from the Zod schema must be applied.
     expect(sandbox.lastReq?.time_limit_ms).toBeGreaterThan(0);
     expect(sandbox.lastReq?.memory_limit_mb).toBeGreaterThan(0);

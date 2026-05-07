@@ -1,0 +1,60 @@
+slug: workspace-math-module
+name: Import sum from a sibling math module
+language: typescript
+difficulty: 3
+track: typescript-fundamentals
+concept_tags:
+  - modules
+  - imports
+  - functions
+expected_median_time_to_solve_ms: 240000
+statement: |
+  Two-file workspace.
+
+  `math.ts` exposes a `sum(a, b)` helper. Implement `solve(a, b)` in
+  `index.ts` that imports `sum` and returns `sum(a, b) * 2`.
+starter_code: |
+  import { sum } from "./math.js";
+
+
+  function solve(a: number, b: number): number {
+      // TODO
+      return 0;
+  }
+starter_workspace:
+  - path: math.ts
+    content: |
+      export function sum(a: number, b: number): number {
+          return a + b;
+      }
+  - path: index.ts
+    content: |
+      import { sum } from "./math.js";
+
+
+      function solve(a: number, b: number): number {
+          // TODO
+          return 0;
+      }
+entry_file: index.ts
+reference_solution: |
+  import { sum } from "./math.js";
+
+
+  export function solve(a: number, b: number): number {
+      return sum(a, b) * 2;
+  }
+public_examples:
+  - input: [1, 2]
+    expected: 6
+  - input: [0, 0]
+    expected: 0
+hidden_tests:
+  - input: [3, 4]
+    expected: 14
+  - input: [-1, 1]
+    expected: 0
+  - input: [10, 5]
+    expected: 30
+  - input: [-5, -5]
+    expected: -20

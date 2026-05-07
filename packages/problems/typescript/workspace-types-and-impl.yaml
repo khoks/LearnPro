@@ -1,0 +1,71 @@
+slug: workspace-types-and-impl
+name: Split types and implementation across files
+language: typescript
+difficulty: 3
+track: typescript-fundamentals
+concept_tags:
+  - modules
+  - types
+  - interfaces
+expected_median_time_to_solve_ms: 300000
+statement: |
+  Three-file workspace.
+
+  `types.ts` declares the shape of `User` (`id: number`, `name: string`).
+  `format.ts` exports a `formatUser(u)` helper that returns `"<id>:<name>"`.
+  Implement `solve(users)` in `index.ts` that imports both and returns the
+  formatted strings as a `string[]`.
+starter_code: |
+  import type { User } from "./types.js";
+  import { formatUser } from "./format.js";
+
+
+  function solve(users: User[]): string[] {
+      // TODO
+      return [];
+  }
+starter_workspace:
+  - path: types.ts
+    content: |
+      export interface User {
+          id: number;
+          name: string;
+      }
+  - path: format.ts
+    content: |
+      import type { User } from "./types.js";
+
+      export function formatUser(u: User): string {
+          return u.id + ":" + u.name;
+      }
+  - path: index.ts
+    content: |
+      import type { User } from "./types.js";
+      import { formatUser } from "./format.js";
+
+
+      function solve(users: User[]): string[] {
+          // TODO
+          return [];
+      }
+entry_file: index.ts
+reference_solution: |
+  import type { User } from "./types.js";
+  import { formatUser } from "./format.js";
+
+
+  export function solve(users: User[]): string[] {
+      return users.map(formatUser);
+  }
+public_examples:
+  - input: [[{ "id": 1, "name": "alice" }]]
+    expected: ["1:alice"]
+  - input: [[]]
+    expected: []
+hidden_tests:
+  - input: [[{ "id": 0, "name": "z" }, { "id": 2, "name": "b" }]]
+    expected: ["0:z", "2:b"]
+  - input: [[{ "id": -1, "name": "neg" }]]
+    expected: ["-1:neg"]
+  - input: [[{ "id": 99, "name": "" }]]
+    expected: ["99:"]

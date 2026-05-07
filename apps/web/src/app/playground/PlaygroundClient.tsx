@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useReducer, useState } from "react";
 import dynamic from "next/dynamic";
 import type { SandboxLanguage, SandboxRunResponse } from "@learnpro/sandbox";
 import { OfflineBanner } from "../../components/pwa/OfflineBanner";
@@ -9,6 +9,15 @@ import { StatusBadge } from "../../components/status-badge";
 import { PasteDetectModal } from "../../components/editor/PasteDetectModal";
 import { usePasteDetect } from "../../components/editor/use-paste-detect";
 import { attachPasteListener } from "../../components/editor/monaco-paste";
+import { FileTreeSidebar } from "../../components/editor/FileTreeSidebar";
+import {
+  initWorkspaceFileTree,
+  toSandboxFiles,
+  workspaceFileTreeReducer,
+  type WorkspaceFileTreeAction,
+  type WorkspaceFileTreeError,
+  type WorkspaceFileTreeState,
+} from "../../components/editor/file-tree-state";
 import { runSandbox, type RunSandboxResult } from "../../lib/run-sandbox";
 import { runSandboxStream } from "../../lib/run-sandbox-stream";
 import { useInteractionCapture, type MonacoLikeEditor } from "../../lib/use-interaction-capture";
@@ -43,6 +52,14 @@ const STARTERS: Record<SandboxLanguage, string> = {
   typescript: "console.log('hello from typescript')\n",
 };
 
+// STORY-043 — per-language entry-file convention.  Mirrors `ENTRY_FILE_BY_LANGUAGE` from
+// @learnpro/sandbox; duplicating the constant in the client avoids an import that would
+// drag the whole sandbox bundle in.
+const ENTRY_FILE: Record<SandboxLanguage, string> = {
+  python: "main.py",
+  typescript: "index.ts",
+};
+
 const MONACO_LANGUAGE: Record<SandboxLanguage, string> = {
   python: "python",
   typescript: "typescript",
@@ -53,9 +70,34 @@ export interface StreamingState {
   stderr: string[];
 }
 
+function reduceWorkspace(
+  state: WorkspaceFileTreeState,
+  action: WorkspaceFileTreeAction,
+): WorkspaceFileTreeState {
+  return workspaceFileTreeReducer(state, action).state;
+}
+
+// STORY-043 — derive the Monaco language id from a file's extension.  Falls back to the
+// session's selected language when the extension is unknown (e.g. .txt scratch files).
+function languageForPath(path: string, fallback: SandboxLanguage): string {
+  if (path.endsWith(".py")) return "python";
+  if (path.endsWith(".ts") || path.endsWith(".tsx")) return "typescript";
+  if (path.endsWith(".json")) return "json";
+  if (path.endsWith(".md")) return "markdown";
+  return MONACO_LANGUAGE[fallback];
+}
+
 export function PlaygroundClient() {
   const [language, setLanguage] = useState<SandboxLanguage>("python");
-  const [code, setCode] = useState<string>(STARTERS.python);
+  // STORY-043 — workspace state replaces the single `code` ref.  By default the workspace
+  // contains exactly one file (per-language entry filename) so the single-file UX is
+  // unchanged for the common case.  Users can add files via the FileTreeSidebar.
+  const [workspace, dispatchWorkspace] = useReducer(reduceWorkspace, null, () =>
+    initWorkspaceFileTree([{ path: ENTRY_FILE.python, content: STARTERS.python }], {
+      entry_file: ENTRY_FILE.python,
+    }),
+  );
+  const [workspaceError, setWorkspaceError] = useState<WorkspaceFileTreeError | null>(null);
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState<RunSandboxResult | null>(null);
   const [streamOutput, setStreamOutput] = useState(false);
@@ -63,17 +105,50 @@ export function PlaygroundClient() {
   const [voiceOptIn, setVoiceOptIn] = useState(false);
   const capture = useInteractionCapture();
   const pasteDetect = usePasteDetect();
+  const activeFile = workspace.files.find((f) => f.path === workspace.active_path);
+  const code = activeFile?.content ?? "";
   const codeRef = React.useRef(code);
   React.useEffect(() => {
     codeRef.current = code;
   }, [code]);
 
+  const dispatchWithError = useCallback(
+    (action: WorkspaceFileTreeAction) => {
+      const result = workspaceFileTreeReducer(workspace, action);
+      if (result.error) {
+        setWorkspaceError(result.error);
+        return;
+      }
+      setWorkspaceError(null);
+      dispatchWorkspace(action);
+    },
+    [workspace],
+  );
+
   const onLanguageChange = useCallback((next: SandboxLanguage) => {
     setLanguage(next);
-    setCode(STARTERS[next]);
     setResult(null);
     setStreamState(null);
+    setWorkspaceError(null);
+    // STORY-043 — flip the workspace to a fresh single-file scaffold for the new language so
+    // the user doesn't end up with a `main.py` open while running TypeScript.
+    dispatchWorkspace({
+      type: "replace",
+      files: [{ path: ENTRY_FILE[next], content: STARTERS[next] }],
+      entry_file: ENTRY_FILE[next],
+    });
   }, []);
+
+  const onCodeChange = useCallback(
+    (next: string) => {
+      dispatchWorkspace({
+        type: "set_content",
+        path: workspace.active_path,
+        content: next,
+      });
+    },
+    [workspace.active_path],
+  );
 
   const onEditorMount = useCallback(
     (editor: unknown) => {
@@ -90,11 +165,19 @@ export function PlaygroundClient() {
     setRunning(true);
     setResult(null);
     setStreamState(null);
+    // STORY-043 — Run always ships the full workspace.  Single-file workspaces (the default)
+    // get materialized as `[{ path: main.py | index.ts, content: <code> }]`, which the
+    // sandbox accepts directly.
+    const sb = toSandboxFiles(workspace);
     if (streamOutput) {
       const live: StreamingState = { stdout: [], stderr: [] };
       setStreamState({ ...live });
       let finalResult: RunSandboxResult | null = null;
-      for await (const ev of runSandboxStream({ language, code })) {
+      for await (const ev of runSandboxStream({
+        language,
+        files: sb.files,
+        entry_file: sb.entry_file,
+      })) {
         if (!ev.ok) {
           finalResult = {
             ok: false,
@@ -141,7 +224,11 @@ export function PlaygroundClient() {
       }
       return;
     }
-    const r = await runSandbox({ language, code });
+    const r = await runSandbox({
+      language,
+      files: sb.files,
+      entry_file: sb.entry_file,
+    });
     setResult(r);
     setRunning(false);
     if (r.ok) {
@@ -154,7 +241,7 @@ export function PlaygroundClient() {
         payload: dur !== null ? { language, exit_code, duration_ms: dur } : { language, exit_code },
       });
     }
-  }, [language, code, capture, streamOutput]);
+  }, [language, workspace, capture, streamOutput]);
 
   const status = useMemo(() => statusFor(result), [result]);
   const { breakpoint } = useViewportSize();
@@ -190,7 +277,11 @@ export function PlaygroundClient() {
         <button
           type="button"
           onClick={onRun}
-          disabled={running || code.trim().length === 0}
+          disabled={
+            running ||
+            (workspace.files.find((f) => f.path === workspace.entry_file)?.content.trim().length ??
+              0) === 0
+          }
           aria-busy={running}
           style={{
             padding: "0.5rem 1rem",
@@ -255,29 +346,46 @@ export function PlaygroundClient() {
         role="region"
         aria-label="Code editor"
         aria-describedby="playground-editor-help"
-        style={{ display: "grid", gap: "0.4rem" }}
+        style={{
+          display: "grid",
+          gap: "0.4rem",
+          gridTemplateColumns: isNarrow ? "minmax(0, 1fr)" : "220px minmax(0, 1fr)",
+        }}
       >
-        <div style={{ border: "1px solid #ccc", borderRadius: 4, overflow: "hidden" }}>
-          <Editor
-            height="360px"
-            language={MONACO_LANGUAGE[language]}
-            value={code}
-            theme="vs-dark"
-            onChange={(v) => setCode(v ?? "")}
-            onMount={onEditorMount}
-            options={{
-              minimap: { enabled: false },
-              fontSize: 14,
-              scrollBeyondLastLine: false,
-              tabFocusMode: false,
-              ariaLabel: "Code editor",
-            }}
-          />
+        <FileTreeSidebar
+          state={workspace}
+          onSetActive={(p) => dispatchWithError({ type: "set_active", path: p })}
+          onCreate={(p) => dispatchWithError({ type: "create", path: p })}
+          onRename={(from, to) => dispatchWithError({ type: "rename", from, to })}
+          onDelete={(p) => dispatchWithError({ type: "delete", path: p })}
+          onSetEntry={(p) => dispatchWithError({ type: "set_entry", path: p })}
+          error={workspaceError}
+          onClearError={() => setWorkspaceError(null)}
+        />
+        <div style={{ display: "grid", gap: "0.4rem" }}>
+          <div style={{ border: "1px solid #ccc", borderRadius: 4, overflow: "hidden" }}>
+            <Editor
+              height="360px"
+              language={languageForPath(workspace.active_path, language)}
+              path={workspace.active_path}
+              value={code}
+              theme="vs-dark"
+              onChange={(v) => onCodeChange(v ?? "")}
+              onMount={onEditorMount}
+              options={{
+                minimap: { enabled: false },
+                fontSize: 14,
+                scrollBeyondLastLine: false,
+                tabFocusMode: false,
+                ariaLabel: "Code editor",
+              }}
+            />
+          </div>
+          <p id="playground-editor-help" style={{ margin: 0, fontSize: 12, color: "#666" }}>
+            Keyboard: <kbd>Esc</kbd> exits the editor focus trap; <kbd>Shift</kbd> + <kbd>F10</kbd>{" "}
+            opens the context menu. Editing: <code>{workspace.active_path}</code>.
+          </p>
         </div>
-        <p id="playground-editor-help" style={{ margin: 0, fontSize: 12, color: "#666" }}>
-          Keyboard: <kbd>Esc</kbd> exits the editor focus trap; <kbd>Shift</kbd> + <kbd>F10</kbd>{" "}
-          opens the context menu.
-        </p>
       </section>
 
       <ResultPanel result={result} running={running} streamState={streamState} />

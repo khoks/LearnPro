@@ -403,3 +403,110 @@ describe("ComprehensionFormatSchema (STORY-038)", () => {
     expect(ComprehensionFormatSchema.safeParse("complexity").success).toBe(false);
   });
 });
+
+// STORY-043 — multi-file starter workspace.  Optional field on the implement variant; when
+// supplied, the editor pre-populates with this file tree instead of `starter_code`.  The
+// loader still requires `starter_code` (backward compat) so a single-file fallback is always
+// available.
+describe("ImplementProblemDef.starter_workspace (STORY-043)", () => {
+  const WITH_WORKSPACE = {
+    ...VALID_PROBLEM,
+    starter_workspace: [
+      { path: "lib/util.py", content: "def helper():\n    pass\n" },
+      { path: "main.py", content: "from lib.util import helper\nhelper()\n" },
+    ],
+    entry_file: "main.py",
+  };
+
+  it("parses a problem with a 2-file starter workspace", () => {
+    const result = ProblemDefSchema.safeParse(WITH_WORKSPACE);
+    expect(result.success).toBe(true);
+    if (result.success && result.data.kind === "implement") {
+      expect(result.data.starter_workspace).toHaveLength(2);
+      expect(result.data.entry_file).toBe("main.py");
+    }
+  });
+
+  it("permits omitting starter_workspace (single-file fallback)", () => {
+    const { starter_workspace: _ws, entry_file: _e, ...rest } = WITH_WORKSPACE;
+    void _ws;
+    void _e;
+    const result = ProblemDefSchema.safeParse(rest);
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects duplicate paths in starter_workspace", () => {
+    const result = ProblemDefSchema.safeParse({
+      ...WITH_WORKSPACE,
+      starter_workspace: [
+        { path: "main.py", content: "x=1\n" },
+        { path: "main.py", content: "x=2\n" },
+      ],
+      entry_file: "main.py",
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects entry_file values not present in starter_workspace", () => {
+    const result = ProblemDefSchema.safeParse({
+      ...WITH_WORKSPACE,
+      entry_file: "missing.py",
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects path traversal in starter_workspace", () => {
+    const result = ProblemDefSchema.safeParse({
+      ...WITH_WORKSPACE,
+      starter_workspace: [
+        { path: "../etc/passwd", content: "" },
+        { path: "main.py", content: "pass\n" },
+      ],
+      entry_file: "main.py",
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("permits empty content (e.g. an empty __init__.py)", () => {
+    const result = ProblemDefSchema.safeParse({
+      ...WITH_WORKSPACE,
+      starter_workspace: [
+        { path: "lib/__init__.py", content: "" },
+        { path: "main.py", content: "import lib\n" },
+      ],
+      entry_file: "main.py",
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects starter_workspace on debug-kind problems (kind discriminator)", () => {
+    // Debug-kind problems don't surface `starter_workspace` in the schema. Adding the key
+    // should fail because the `debug` variant doesn't declare it (Zod's discriminatedUnion
+    // is strict by default about variant-specific keys).
+    const debugProblem = {
+      ...VALID_PROBLEM,
+      kind: "debug",
+      bug_archetype: "off_by_one",
+      expected_behavior: "Should return n*2.",
+      starter_workspace: [{ path: "main.py", content: "pass\n" }],
+    };
+    const result = DebugProblemDefSchema.safeParse(debugProblem);
+    if (result.success) {
+      // Zod doesn't auto-strip unknown keys when superRefine is in play, so we additionally
+      // assert that the key isn't present in the parsed value.
+      expect((result.data as { starter_workspace?: unknown }).starter_workspace).toBeUndefined();
+    }
+  });
+});
+
+describe("ImplementProblemDefSchema directly accepts starter_workspace", () => {
+  it("parses an implement-kind problem with a workspace via the variant schema", () => {
+    const result = ImplementProblemDefSchema.safeParse({
+      ...VALID_PROBLEM,
+      kind: "implement",
+      starter_workspace: [{ path: "main.py", content: "pass\n" }],
+      entry_file: "main.py",
+    });
+    expect(result.success).toBe(true);
+  });
+});

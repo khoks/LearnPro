@@ -3,19 +3,25 @@ import { SandboxLanguageNotSupportedError, SandboxRequestError } from "./errors.
 import type { SandboxProvider } from "./provider.js";
 import { NullSandboxTelemetrySink } from "./telemetry.js";
 import {
+  ENTRY_FILE_BY_LANGUAGE,
   SandboxRunRequestSchema,
   type SandboxKilledBy,
   type SandboxLanguage,
   type SandboxRunChunk,
-  type SandboxRunRequest,
+  type SandboxRunRequestInput,
   type SandboxRunResponse,
   type SandboxTelemetrySink,
+  type SandboxWorkspaceFile,
 } from "./types.js";
 
 export interface PistonExecuteParams {
   language: string;
   version: string;
   files: Array<{ name: string; content: string }>;
+  // Piston runs the first file by default, but multi-file workspaces need an explicit entry
+  // (Piston's `args` map their `compile`/`run` step to a specific file).  We reorder `files`
+  // so the entry is the FIRST element — that's the cross-version-compatible way to pin the
+  // entry point, since Piston versions differ on whether they honour `entry_file` at all.
   stdin?: string;
   run_timeout?: number;
   run_memory_limit?: number;
@@ -52,9 +58,21 @@ export interface PistonLanguageSpec {
   filename: string;
 }
 
+// STORY-043 — `filename` is the per-language entry-file convention.  Single-file requests
+// (legacy `code` shorthand) get this filename; multi-file requests pin their own entry via
+// `entry_file` in the request.  Adding a language?  Update ENTRY_FILE_BY_LANGUAGE in types.ts
+// in the same commit so the two stay in sync.
 export const DEFAULT_PISTON_LANGUAGES: Record<SandboxLanguage, PistonLanguageSpec> = {
-  python: { pistonLanguage: "python", pistonVersion: "3.10.0", filename: "main.py" },
-  typescript: { pistonLanguage: "typescript", pistonVersion: "5.0.3", filename: "main.ts" },
+  python: {
+    pistonLanguage: "python",
+    pistonVersion: "3.10.0",
+    filename: ENTRY_FILE_BY_LANGUAGE.python,
+  },
+  typescript: {
+    pistonLanguage: "typescript",
+    pistonVersion: "5.0.3",
+    filename: ENTRY_FILE_BY_LANGUAGE.typescript,
+  },
 };
 
 export interface PistonSandboxProviderOptions {
@@ -82,21 +100,28 @@ export class PistonSandboxProvider implements SandboxProvider {
   // STORY-059 — streaming variant. Calls `run()` once (Piston is request/response) and
   // re-emits the result as newline-delimited chunks via the shared `streamChunksFromRun`
   // helper. Telemetry is emitted exactly once (inside the underlying `run()`).
-  runStream(req: SandboxRunRequest, signal?: AbortSignal): AsyncIterable<SandboxRunChunk> {
+  runStream(req: SandboxRunRequestInput, signal?: AbortSignal): AsyncIterable<SandboxRunChunk> {
     return streamChunksFromRun(() => this.run(req), signal);
   }
 
-  async run(rawReq: SandboxRunRequest): Promise<SandboxRunResponse> {
+  async run(rawReq: SandboxRunRequestInput): Promise<SandboxRunResponse> {
     const req = SandboxRunRequestSchema.parse(rawReq);
     const spec = this.languages[req.language];
     if (!spec) {
       throw new SandboxLanguageNotSupportedError(this.name, req.language);
     }
     const start = this.now();
+    // STORY-043 — multi-file workspace.  The entry file is the one named by
+    // `req.entry_file`, falling back to the per-language convention.  We reorder so the
+    // entry is first (Piston runs the first file by default) and ship every other file
+    // alongside, allowing native module resolution: Python's `import` resolves from the
+    // working dir, and ts-node-style runners pick up sibling .ts files via relative imports.
+    const entryName = req.entry_file ?? spec.filename;
+    const orderedFiles = orderEntryFirst(req.files, entryName);
     const params: PistonExecuteParams = {
       language: spec.pistonLanguage,
       version: spec.pistonVersion,
-      files: [{ name: spec.filename, content: req.code }],
+      files: orderedFiles.map((f) => ({ name: f.path, content: f.content })),
       run_timeout: req.time_limit_ms,
       run_memory_limit: req.memory_limit_mb * 1024 * 1024,
     };
@@ -208,6 +233,20 @@ interface ClassifyArgs {
   durationMs: number;
   totalRawBytes: number;
   outputLimit: number;
+}
+
+// STORY-043 — Piston runs the first file by default.  Reorder so the entry file is at index
+// 0 if it isn't already; non-entry files keep their original order so authors can rely on a
+// stable layout for their workspace YAML.  When the entry isn't found we ship the files
+// untouched (validation already rejects entry_file values not in files[]).
+function orderEntryFirst(
+  files: ReadonlyArray<SandboxWorkspaceFile>,
+  entryPath: string,
+): ReadonlyArray<SandboxWorkspaceFile> {
+  const entryIdx = files.findIndex((f) => f.path === entryPath);
+  if (entryIdx <= 0) return files;
+  const rest = files.filter((_, i) => i !== entryIdx);
+  return [files[entryIdx]!, ...rest];
 }
 
 function classifyKilledBy(a: ClassifyArgs): SandboxKilledBy | null {

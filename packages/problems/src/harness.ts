@@ -62,6 +62,35 @@ export function buildHarnessForProblem(
   return buildHarness({ language: def.language, solve_code, test });
 }
 
+// STORY-043 — multi-file harness. When a problem ships a `starter_workspace`, the harness
+// must include the AUXILIARY files (everything that isn't the entry file) alongside the
+// solve code so cross-file imports resolve.  Caller wires these into Piston's `files[]`.
+//
+// Returns the entry harness code + the list of auxiliary files exactly as authored. The
+// solver-under-test (def.reference_solution OR the user's submission) replaces the entry
+// file's content.
+export interface MultiFileHarnessResult {
+  entry_path: string;
+  entry_content: string;
+  auxiliary_files: ReadonlyArray<{ path: string; content: string }>;
+}
+
+export function buildMultiFileHarnessForProblem(
+  def: ProblemDef,
+  solve_code: string,
+  test: HiddenTest,
+): MultiFileHarnessResult | null {
+  if (def.kind !== "implement" || !def.starter_workspace) return null;
+  const entryPath = def.entry_file ?? (def.language === "python" ? "main.py" : "index.ts");
+  const entryContent = buildHarness({ language: def.language, solve_code, test });
+  const aux = def.starter_workspace.filter((f) => f.path !== entryPath);
+  return {
+    entry_path: entryPath,
+    entry_content: entryContent,
+    auxiliary_files: aux.map((f) => ({ path: f.path, content: f.content })),
+  };
+}
+
 function buildPythonHarness(solve_code: string, test: HiddenTest): string {
   const inputJson = JSON.stringify(test.input);
   const expectedJson = JSON.stringify(test.expected);

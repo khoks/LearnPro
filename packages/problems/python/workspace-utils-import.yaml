@@ -1,0 +1,58 @@
+slug: workspace-utils-import
+name: Import a helper from a sibling module
+language: python
+difficulty: 4
+track: python-fundamentals
+concept_tags:
+  - modules
+  - imports
+  - functions
+expected_median_time_to_solve_ms: 240000
+statement: |
+  Two-file workspace.
+
+  `lib/utils.py` exposes a helper `square(n)`. Implement `solve(n)` in
+  `main.py` that imports `square` and returns `square(n) + 1`.
+
+  Touching `lib/utils.py` is allowed but not required.
+starter_code: |
+  from lib.utils import square
+
+
+  def solve(n):
+      pass
+starter_workspace:
+  - path: lib/__init__.py
+    content: ""
+  - path: lib/utils.py
+    content: |
+      def square(n):
+          return n * n
+  - path: main.py
+    content: |
+      from lib.utils import square
+
+
+      def solve(n):
+          pass
+entry_file: main.py
+reference_solution: |
+  from lib.utils import square
+
+
+  def solve(n):
+      return square(n) + 1
+public_examples:
+  - input: [3]
+    expected: 10
+  - input: [0]
+    expected: 1
+hidden_tests:
+  - input: [1]
+    expected: 2
+  - input: [2]
+    expected: 5
+  - input: [-3]
+    expected: 10
+  - input: [10]
+    expected: 101

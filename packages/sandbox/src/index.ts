@@ -30,6 +30,7 @@ export {
   DEFAULT_MEMORY_LIMIT_MB,
   DEFAULT_OUTPUT_LIMIT_BYTES,
   DEFAULT_TIME_LIMIT_MS,
+  ENTRY_FILE_BY_LANGUAGE,
   SandboxExitChunkSchema,
   SandboxKilledBySchema,
   SandboxLanguageSchema,
@@ -39,6 +40,7 @@ export {
   SandboxStderrChunkSchema,
   SandboxStdoutChunkSchema,
   SandboxTelemetryEventSchema,
+  SandboxWorkspaceFileSchema,
   type SandboxExitChunk,
   type SandboxKilledBy,
   type SandboxLanguage,
@@ -50,6 +52,7 @@ export {
   type SandboxStdoutChunk,
   type SandboxTelemetryEvent,
   type SandboxTelemetrySink,
+  type SandboxWorkspaceFile,
 } from "./types.js";
 
 export { chunksFromResponse, streamChunksFromRun } from "./chunker.js";
