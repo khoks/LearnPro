@@ -529,6 +529,48 @@ describe("POST /v1/tutor/episodes/:id/finish (STORY-011)", () => {
     expect(res.statusCode).toBe(404);
     await app.close();
   });
+
+  // STORY-033 — the onEpisodeFinish hook is called with the (user_id, org_id, episode_id) shape
+  // after a successful finish(). Production wires this to the profile-insights BullMQ enqueue.
+  it("calls the onEpisodeFinish hook with the (user_id, episode_id) shape", async () => {
+    const calls: Array<{ user_id: string; org_id: string; episode_id: string }> = [];
+    const app = buildServer({
+      tutorAgentFactory: makeFactory(),
+      sessionResolver: userSession(USER_ID),
+      onEpisodeFinish: async (input) => {
+        calls.push(input);
+      },
+    });
+    const res = await app.inject({
+      method: "POST",
+      url: `/v1/tutor/episodes/${EPISODE_ID}/finish`,
+      payload: { outcome: "abandoned" },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(calls).toHaveLength(1);
+    expect(calls[0]?.user_id).toBe(USER_ID);
+    expect(calls[0]?.episode_id).toBe(EPISODE_ID);
+    await app.close();
+  });
+
+  // STORY-033 — hook errors must be swallowed so a misbehaving queue can't block the user's
+  // close response. The route still returns 200 + the close payload.
+  it("swallows hook errors (route stays 200)", async () => {
+    const app = buildServer({
+      tutorAgentFactory: makeFactory(),
+      sessionResolver: userSession(USER_ID),
+      onEpisodeFinish: async () => {
+        throw new Error("queue exploded");
+      },
+    });
+    const res = await app.inject({
+      method: "POST",
+      url: `/v1/tutor/episodes/${EPISODE_ID}/finish`,
+      payload: { outcome: "abandoned" },
+    });
+    expect(res.statusCode).toBe(200);
+    await app.close();
+  });
 });
 
 // Sanity check that IllegalTransitionError is wired through the global handler when thrown from

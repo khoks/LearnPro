@@ -87,6 +87,16 @@ export interface RegisterTutorRoutesOptions {
   // `episodes.got_help` for honest-self-mark submissions. Tests can omit this — the route returns
   // 503 until the dependency is wired (so the surface fails closed, never silently).
   gotHelpStore?: GotHelpStore;
+  // STORY-033 — optional session-end hook. Fired after a successful `finish()` close. The
+  // production wiring forwards (user_id, episode_id) to the profile-insights BullMQ queue so
+  // the async synthesis agent runs out-of-band; tests inject a fake to assert the call shape.
+  // Errors thrown by the hook are swallowed (logged via req.log) so a misbehaving side-channel
+  // never blocks the user-facing close response.
+  onEpisodeFinish?(input: {
+    user_id: string;
+    org_id: string;
+    episode_id: string;
+  }): Promise<void>;
 }
 
 export function registerTutorRoutes(app: FastifyInstance, opts: RegisterTutorRoutesOptions): void {
@@ -226,6 +236,20 @@ export function registerTutorRoutes(app: FastifyInstance, opts: RegisterTutorRou
         finishArgs.reveal_clicked = parsed.data.reveal_clicked;
       }
       const out = await factoryResult.session.finish(finishArgs);
+      // STORY-033 — fire the session-end hook (best-effort). Production wires this to the
+      // profile-insights enqueue path; tests inject a fake. Hook errors are swallowed so a
+      // misbehaving queue can never block the user's close response.
+      if (opts.onEpisodeFinish) {
+        try {
+          await opts.onEpisodeFinish({
+            user_id: session.user_id,
+            org_id: session.org_id,
+            episode_id: req.params.id,
+          });
+        } catch (err) {
+          req.log.warn({ err }, "onEpisodeFinish hook failed (non-fatal)");
+        }
+      }
       return reply.code(200).send(out);
     } catch (err) {
       return mapToolError(reply, err);

@@ -56,7 +56,13 @@ class FakeLLM implements LLMProvider {
     return { vector: [0], model: "fake", usage: {} };
   }
   async toolCall(_req: ToolCallRequest): Promise<ToolCallResponse> {
-    return { invocations: [], usage: { input_tokens: 0, output_tokens: 0 } };
+    return {
+      text: "",
+      tool_calls: [],
+      model: "fake",
+      finish_reason: "end_turn",
+      usage: { input_tokens: 0, output_tokens: 0 },
+    };
   }
 }
 
