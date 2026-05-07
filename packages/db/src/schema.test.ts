@@ -19,6 +19,7 @@ import {
   ORG_SCOPED_TABLES,
   organizations,
   portfolio_pushes,
+  prerequisites,
   problems,
   profiles,
   SELF_HOSTED_ORG_ID,
@@ -557,5 +558,49 @@ describe("schema: concept_reviews (STORY-031)", () => {
   it("concept_reviews is included in both ALL_TABLES and ORG_SCOPED_TABLES", () => {
     expect(ALL_TABLES).toContain(concept_reviews);
     expect(ORG_SCOPED_TABLES as readonly unknown[]).toContain(concept_reviews);
+  });
+});
+
+describe("schema: knowledge graph (STORY-032)", () => {
+  it("concepts carries the four story-required nullable columns", () => {
+    const cols = getTableColumns(concepts);
+    expect(cols.description).toBeDefined();
+    expect(cols.description?.notNull).toBe(false);
+    expect(cols.default_difficulty).toBeDefined();
+    expect(cols.default_difficulty?.notNull).toBe(false);
+    expect(cols.tags).toBeDefined();
+    expect(cols.tags?.getSQLType()).toBe("jsonb");
+    expect(cols.tags?.notNull).toBe(false);
+    expect(cols.track_slugs).toBeDefined();
+    expect(cols.track_slugs?.getSQLType()).toBe("jsonb");
+    expect(cols.track_slugs?.notNull).toBe(false);
+  });
+
+  it("prerequisites has id / org_id / from_concept_id / to_concept_id / created_at", () => {
+    const cols = getTableColumns(prerequisites);
+    expect(cols.id?.primary).toBe(true);
+    expect(cols.org_id?.notNull).toBe(true);
+    expect(cols.from_concept_id?.notNull).toBe(true);
+    expect(cols.to_concept_id?.notNull).toBe(true);
+    expect(cols.created_at?.notNull).toBe(true);
+  });
+
+  it("prerequisites declares a unique (org_id, from_concept_id, to_concept_id) index", () => {
+    const config = getTableConfig(prerequisites);
+    const uniq = config.indexes.find((i) => i.config.name === "prerequisites_edge_uniq");
+    expect(uniq, "prerequisites edge unique index missing").toBeDefined();
+    expect(uniq?.config.unique).toBe(true);
+  });
+
+  it("prerequisites declares from_idx + to_idx for traversal queries", () => {
+    const config = getTableConfig(prerequisites);
+    const names = config.indexes.map((i) => i.config.name);
+    expect(names).toContain("prerequisites_from_idx");
+    expect(names).toContain("prerequisites_to_idx");
+  });
+
+  it("prerequisites is included in both ALL_TABLES and ORG_SCOPED_TABLES", () => {
+    expect(ALL_TABLES).toContain(prerequisites);
+    expect(ORG_SCOPED_TABLES as readonly unknown[]).toContain(prerequisites);
   });
 });
