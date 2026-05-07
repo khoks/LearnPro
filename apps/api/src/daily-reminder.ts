@@ -15,9 +15,16 @@ import {
   WebPushChannel,
   type NotificationChannel,
 } from "@learnpro/notifications";
+import {
+  EmailChannel,
+  NoopEmailTransport,
+  ResendTransport,
+  type EmailTransport,
+} from "@learnpro/notifications/email";
 import { profiles, users } from "@learnpro/db";
 import { and, eq, isNotNull } from "drizzle-orm";
 import { buildWebPushSender, configureVapid, type WebPushConfig } from "./notifications-vapid.js";
+import { runDailyEmailDigest } from "./email-digest-cron.js";
 
 // STORY-023 — daily-reminder script. Wired to system cron in self-hosted deployments
 // (`pnpm --filter @learnpro/api daily-reminder`). Iterates every user with a configured
@@ -92,6 +99,10 @@ async function main(): Promise<void> {
       configureVapid(vapid);
       channels.push(new WebPushChannel({ db, sender: buildWebPushSender() }));
     }
+    // STORY-045 — EmailChannel always sits in the dispatcher chain. Production wires Resend
+    // when LEARNPRO_EMAIL_PROVIDER=resend + RESEND_API_KEY are set; otherwise the noop transport
+    // makes every send a non-fatal no-op.
+    channels.push(new EmailChannel({ transport: pickEmailTransport() }));
     // STORY-024 — wrap with quiet-hours filtering. Dispatches inside the user's window get
     // serialized into deferred_notifications and a separate cron drains the table.
     const { dispatcher } = dispatcherWithQuietHours({
@@ -111,9 +122,35 @@ async function main(): Promise<void> {
     console.log(
       `[daily-reminder] dispatched to ${outcomes.length} users; ${delivered} had ≥1 channel deliver`,
     );
+
+    // STORY-045 — fire the daily email digest off the same cron. Recipients are filtered by
+    // `email_daily_opt_in=true`; the dispatcher's channel filter restricts dispatch to email
+    // only so the bell-icon panel + Web Push aren't double-sent.
+    const digestOutcomes = await runDailyEmailDigest({
+      db,
+      dispatcher,
+      unsubscribeBaseUrl: process.env["LEARNPRO_PUBLIC_BASE_URL"] ?? "https://learnpro.local",
+    });
+    const digestDelivered = digestOutcomes.filter((o) => o.any_delivered).length;
+    console.log(
+      `[daily-digest] dispatched to ${digestOutcomes.length} opted-in users; ${digestDelivered} delivered`,
+    );
   } finally {
     await pool.end();
   }
+}
+
+function pickEmailTransport(): EmailTransport {
+  const provider = (process.env["LEARNPRO_EMAIL_PROVIDER"] ?? "noop").toLowerCase();
+  if (provider === "resend") {
+    const apiKey = process.env["RESEND_API_KEY"];
+    const defaultFrom = process.env["LEARNPRO_EMAIL_FROM"];
+    if (!apiKey || !defaultFrom) {
+      return new NoopEmailTransport();
+    }
+    return new ResendTransport({ apiKey, defaultFrom });
+  }
+  return new NoopEmailTransport();
 }
 
 const argv1 = process.argv[1] ?? "";

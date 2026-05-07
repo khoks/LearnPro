@@ -417,6 +417,10 @@ function makeProfile(overrides: Partial<Profile> = {}): Profile {
     confidence_signal: null,
     github_portfolio_repo: null,
     github_auto_push_enabled: false,
+    email_daily_opt_in: false,
+    email_weekly_opt_in: false,
+    email_weekly_day_of_week: 1,
+    email_unsubscribe_token: null,
     updated_at: new Date(0),
     ...overrides,
   };
