@@ -129,6 +129,46 @@ describe("apps/api", () => {
     await app.close();
   });
 
+  // STORY-043 — multi-file workspace requests via the explicit `files[]` shape.
+  it("POST /sandbox/run accepts a multi-file workspace request (STORY-043)", async () => {
+    const sandbox = new FakeSandbox();
+    const app = buildServer({ sandbox });
+    const res = await app.inject({
+      method: "POST",
+      url: "/sandbox/run",
+      payload: {
+        language: "python",
+        files: [
+          { path: "lib/util.py", content: "def helper(): pass\n" },
+          { path: "main.py", content: "from lib.util import helper\nprint('ok')\n" },
+        ],
+        entry_file: "main.py",
+      },
+    });
+    expect(res.statusCode).toBe(200);
+    const filesSentToProvider = (
+      sandbox.lastReq as unknown as { files?: Array<{ path: string; content: string }> }
+    )?.files;
+    expect(filesSentToProvider).toHaveLength(2);
+    const main = filesSentToProvider?.find((f) => f.path === "main.py");
+    expect(main?.content).toContain("from lib.util import helper");
+    await app.close();
+  });
+
+  it("POST /sandbox/run rejects malformed multi-file requests (path traversal) with 400", async () => {
+    const app = buildServer({ sandbox: new FakeSandbox() });
+    const res = await app.inject({
+      method: "POST",
+      url: "/sandbox/run",
+      payload: {
+        language: "python",
+        files: [{ path: "../etc/passwd", content: "" }],
+      },
+    });
+    expect(res.statusCode).toBe(400);
+    await app.close();
+  });
+
   it("POST /sandbox/run accepts language=typescript (STORY-008)", async () => {
     const sandbox = new FakeSandbox((req) => ({
       stdout: "ts ok\n",
