@@ -226,9 +226,5 @@ export function detectReferencedInsightIds(
 }
 
 function normalizeForMatch(text: string): string {
-  return text
-    .toLowerCase()
-    .replace(/[`"']/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
+  return text.toLowerCase().replace(/[`"']/g, "").replace(/\s+/g, " ").trim();
 }

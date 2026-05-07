@@ -122,9 +122,7 @@ describe("parseInsightsResponse — STORY-033", () => {
   });
 
   it("strips ```json fences before parsing", () => {
-    const r = parseInsightsResponse(
-      "```json\n" + JSON.stringify({ insights: [] }) + "\n```",
-    );
+    const r = parseInsightsResponse("```json\n" + JSON.stringify({ insights: [] }) + "\n```");
     expect(r).not.toBeNull();
     expect(r?.insights).toEqual([]);
   });
@@ -138,9 +136,7 @@ describe("parseInsightsResponse — STORY-033", () => {
   });
 
   it("returns null when an insight is missing required fields", () => {
-    const r = parseInsightsResponse(
-      JSON.stringify({ insights: [{ concept_tags: ["x"] }] }),
-    );
+    const r = parseInsightsResponse(JSON.stringify({ insights: [{ concept_tags: ["x"] }] }));
     expect(r).toBeNull();
   });
 });
@@ -271,9 +267,7 @@ describe("runProfileInsightsAgent — STORY-033", () => {
     expect(out.insights).toHaveLength(1);
     expect(out.insights[0]?.text).toContain("comprehensions");
     expect(out.insights[0]?.concept_tags).toEqual(["arrays"]);
-    expect(out.insights[0]?.episodes_referenced).toEqual([
-      "11111111-1111-4111-8111-111111111111",
-    ]);
+    expect(out.insights[0]?.episodes_referenced).toEqual(["11111111-1111-4111-8111-111111111111"]);
   });
 
   it("strips concept tags the model invented (not in any input episode)", async () => {
@@ -316,9 +310,7 @@ describe("runProfileInsightsAgent — STORY-033", () => {
       user_id: "u1",
       recent_episodes: SAMPLE_EPISODES,
     });
-    expect(out.insights[0]?.episodes_referenced).toEqual([
-      "11111111-1111-4111-8111-111111111111",
-    ]);
+    expect(out.insights[0]?.episodes_referenced).toEqual(["11111111-1111-4111-8111-111111111111"]);
   });
 
   it("filters out insights containing forbidden phrases", async () => {

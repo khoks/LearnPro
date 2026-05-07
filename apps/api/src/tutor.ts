@@ -92,11 +92,7 @@ export interface RegisterTutorRoutesOptions {
   // the async synthesis agent runs out-of-band; tests inject a fake to assert the call shape.
   // Errors thrown by the hook are swallowed (logged via req.log) so a misbehaving side-channel
   // never blocks the user-facing close response.
-  onEpisodeFinish?(input: {
-    user_id: string;
-    org_id: string;
-    episode_id: string;
-  }): Promise<void>;
+  onEpisodeFinish?(input: { user_id: string; org_id: string; episode_id: string }): Promise<void>;
 }
 
 export function registerTutorRoutes(app: FastifyInstance, opts: RegisterTutorRoutesOptions): void {

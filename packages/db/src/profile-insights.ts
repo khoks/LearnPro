@@ -232,10 +232,7 @@ export async function deleteExpiredInsights(
   const r = await db
     .delete(profile_insights)
     .where(
-      and(
-        sql`${profile_insights.expires_at} IS NOT NULL`,
-        lt(profile_insights.expires_at, now),
-      ),
+      and(sql`${profile_insights.expires_at} IS NOT NULL`, lt(profile_insights.expires_at, now)),
     )
     .returning({ id: profile_insights.id });
   return { deleted: r.length };

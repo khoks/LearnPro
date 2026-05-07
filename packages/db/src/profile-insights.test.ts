@@ -12,14 +12,7 @@ import {
   listEpisodesForSynthesis,
   listLatestInsights,
 } from "./profile-insights.js";
-import {
-  episodes,
-  organizations,
-  problems,
-  profile_insights,
-  tracks,
-  users,
-} from "./schema.js";
+import { episodes, organizations, problems, profile_insights, tracks, users } from "./schema.js";
 
 const DATABASE_URL = process.env["DATABASE_URL"];
 

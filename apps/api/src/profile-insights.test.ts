@@ -43,7 +43,11 @@ async function buildApp(opts: { authed: boolean }) {
   registerProfileInsightsRoutes(app, {
     db: {} as unknown as import("@learnpro/db").LearnProDb,
     sessionResolver: opts.authed
-      ? async () => ({ user_id: "11111111-1111-4111-8111-111111111111", org_id: "self", email: "x@y" })
+      ? async () => ({
+          user_id: "11111111-1111-4111-8111-111111111111",
+          org_id: "self",
+          email: "x@y",
+        })
       : async () => null,
   });
   return app;
@@ -75,7 +79,12 @@ describe("registerProfileInsightsRoutes — STORY-033", () => {
     const res = await app.inject({ method: "GET", url: "/v1/profile-insights" });
     expect(res.statusCode).toBe(200);
     const body = res.json() as {
-      insights: Array<{ id: string; text: string; concept_tags: string[]; referenced_count: number }>;
+      insights: Array<{
+        id: string;
+        text: string;
+        concept_tags: string[];
+        referenced_count: number;
+      }>;
       active_count: number;
       avg_referenced_count_per_insight: number;
     };

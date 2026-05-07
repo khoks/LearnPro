@@ -158,9 +158,7 @@ async function loadProfileInsightsForDashboard(): Promise<ProfileInsight[]> {
       cache: "no-store",
     });
     if (!res.ok) return [];
-    const json = (await res.json().catch(() => null)) as
-      | { insights: ProfileInsight[] }
-      | null;
+    const json = (await res.json().catch(() => null)) as { insights: ProfileInsight[] } | null;
     return json?.insights ?? [];
   } catch {
     return [];

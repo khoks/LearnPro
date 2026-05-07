@@ -632,8 +632,12 @@ export const profile_insights = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     insight_text: text("insight_text").notNull(),
-    episodes_covered: jsonb("episodes_covered").notNull().default(sql`'[]'::jsonb`),
-    concept_tags: jsonb("concept_tags").notNull().default(sql`'[]'::jsonb`),
+    episodes_covered: jsonb("episodes_covered")
+      .notNull()
+      .default(sql`'[]'::jsonb`),
+    concept_tags: jsonb("concept_tags")
+      .notNull()
+      .default(sql`'[]'::jsonb`),
     referenced_count: integer("referenced_count").notNull().default(0),
     created_at: createdAt(),
     expires_at: timestamp("expires_at", { withTimezone: true }),
