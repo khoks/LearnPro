@@ -1,5 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { ProblemDefSchema, ConceptTagSchema, ProblemSlugSchema } from "./schema.js";
+import {
+  BugArchetypeSchema,
+  ConceptTagSchema,
+  DebugProblemDefSchema,
+  ImplementProblemDefSchema,
+  ProblemDefSchema,
+  ProblemKindSchema,
+  ProblemSlugSchema,
+  isDebugProblem,
+  isImplementProblem,
+} from "./schema.js";
 
 const VALID_PROBLEM = {
   slug: "is-even",
@@ -122,5 +132,120 @@ describe("ProblemSlugSchema", () => {
 
   it("rejects underscores", () => {
     expect(ProblemSlugSchema.safeParse("two_sum").success).toBe(false);
+  });
+});
+
+// STORY-037 — discriminated union: implement vs. debug.
+describe("ProblemDefSchema (STORY-037 kind discriminator)", () => {
+  it("normalizes a legacy YAML without `kind` to kind=implement", () => {
+    const result = ProblemDefSchema.safeParse(VALID_PROBLEM);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.kind).toBe("implement");
+      expect(isImplementProblem(result.data)).toBe(true);
+      expect(isDebugProblem(result.data)).toBe(false);
+    }
+  });
+
+  it("accepts an explicit kind=implement", () => {
+    const result = ProblemDefSchema.safeParse({ ...VALID_PROBLEM, kind: "implement" });
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data.kind).toBe("implement");
+  });
+
+  it("accepts a debug problem with bug_archetype + expected_behavior", () => {
+    const debug = {
+      ...VALID_PROBLEM,
+      kind: "debug",
+      bug_archetype: "off_by_one",
+      expected_behavior: "Return whether n is even.",
+    };
+    const result = ProblemDefSchema.safeParse(debug);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.kind).toBe("debug");
+      expect(isDebugProblem(result.data)).toBe(true);
+      if (isDebugProblem(result.data)) {
+        expect(result.data.bug_archetype).toBe("off_by_one");
+        expect(result.data.expected_behavior).toBe("Return whether n is even.");
+      }
+    }
+  });
+
+  it("rejects a debug problem missing bug_archetype", () => {
+    const debug = { ...VALID_PROBLEM, kind: "debug", expected_behavior: "do the thing" };
+    expect(ProblemDefSchema.safeParse(debug).success).toBe(false);
+  });
+
+  it("rejects a debug problem missing expected_behavior", () => {
+    const debug = { ...VALID_PROBLEM, kind: "debug", bug_archetype: "off_by_one" };
+    expect(ProblemDefSchema.safeParse(debug).success).toBe(false);
+  });
+
+  it("rejects an unknown kind value", () => {
+    const result = ProblemDefSchema.safeParse({ ...VALID_PROBLEM, kind: "comprehension" });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects an unknown bug_archetype on a debug problem", () => {
+    const debug = {
+      ...VALID_PROBLEM,
+      kind: "debug",
+      bug_archetype: "fencepost_error",
+      expected_behavior: "do the thing",
+    };
+    expect(ProblemDefSchema.safeParse(debug).success).toBe(false);
+  });
+
+  it("ImplementProblemDefSchema accepts only kind=implement", () => {
+    expect(
+      ImplementProblemDefSchema.safeParse({ ...VALID_PROBLEM, kind: "implement" }).success,
+    ).toBe(true);
+    expect(
+      ImplementProblemDefSchema.safeParse({
+        ...VALID_PROBLEM,
+        kind: "debug",
+        bug_archetype: "off_by_one",
+        expected_behavior: "do the thing",
+      }).success,
+    ).toBe(false);
+  });
+
+  it("DebugProblemDefSchema rejects an implement-shaped object", () => {
+    expect(DebugProblemDefSchema.safeParse({ ...VALID_PROBLEM, kind: "implement" }).success).toBe(
+      false,
+    );
+  });
+});
+
+describe("BugArchetypeSchema", () => {
+  it("accepts every catalogued archetype", () => {
+    for (const a of [
+      "off_by_one",
+      "mutation_in_iteration",
+      "reference_equality",
+      "async_race",
+      "late_binding",
+      "shadowing",
+      "type_coercion",
+      "default_arg_mutability",
+    ] as const) {
+      expect(BugArchetypeSchema.safeParse(a).success).toBe(true);
+    }
+  });
+
+  it("rejects free-text", () => {
+    expect(BugArchetypeSchema.safeParse("misc-bug").success).toBe(false);
+  });
+});
+
+describe("ProblemKindSchema", () => {
+  it("accepts the two MVP kinds", () => {
+    expect(ProblemKindSchema.safeParse("implement").success).toBe(true);
+    expect(ProblemKindSchema.safeParse("debug").success).toBe(true);
+  });
+
+  it("rejects future-but-not-yet kinds", () => {
+    expect(ProblemKindSchema.safeParse("comprehension").success).toBe(false);
   });
 });

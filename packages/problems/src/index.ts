@@ -1,17 +1,27 @@
 export const PACKAGE_NAME = "@learnpro/problems";
 
 export {
+  BugArchetypeSchema,
   ConceptTagSchema,
+  DebugProblemDefSchema,
   HiddenTestSchema,
+  ImplementProblemDefSchema,
   ProblemDefSchema,
   ProblemDifficultySchema,
+  ProblemKindSchema,
   ProblemLanguageSchema,
   ProblemSlugSchema,
   PublicExampleSchema,
   TestCaseValueSchema,
+  isDebugProblem,
+  isImplementProblem,
+  type BugArchetype,
+  type DebugProblemDef,
   type HiddenTest,
+  type ImplementProblemDef,
   type ProblemDef,
   type ProblemDifficulty,
+  type ProblemKind,
   type ProblemLanguage,
   type PublicExample,
 } from "./schema.js";
