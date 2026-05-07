@@ -270,15 +270,11 @@ describe("createGradeTool", () => {
   });
 });
 
-
 // STORY-038a — comprehension dispatch fan-out. The grade tool now detects
 // `episode.problem.kind === "comprehension"` and routes to `gradeComprehension` via the
 // optional `comprehensionDeps` instead of running hidden tests. Implement+debug episodes
 // continue to take the existing path; comprehension episodes don't run hidden tests at all.
-import {
-  ComprehensionDepsNotWiredError,
-  GradeInputShapeMismatchError,
-} from "./grade.js";
+import { ComprehensionDepsNotWiredError, GradeInputShapeMismatchError } from "./grade.js";
 import type { ComprehensionGradeDeps, ComprehensionProblemDefShape } from "../ports.js";
 
 function comprehensionMcProblem(): ComprehensionProblemDefShape & {
@@ -427,9 +423,9 @@ describe("createGradeTool: STORY-038a comprehension dispatch", () => {
       }),
     };
     const tool = createGradeTool({ deps: baseDeps, comprehensionDeps: compDeps });
-    await expect(
-      tool.run({ episode_id: EPISODE_ID, code: "print('hi')" }),
-    ).rejects.toBeInstanceOf(GradeInputShapeMismatchError);
+    await expect(tool.run({ episode_id: EPISODE_ID, code: "print('hi')" })).rejects.toBeInstanceOf(
+      GradeInputShapeMismatchError,
+    );
   });
 
   it("throws GradeInputShapeMismatchError when implement episode is sent `comprehension_answer`", async () => {

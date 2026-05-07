@@ -323,7 +323,9 @@ export interface UpdateProfileEpisodeContext {
 // when absent the tool throws ComprehensionDepsNotWiredError so a comprehension YAML can never
 // silently no-op on a server that didn't wire the LLM provider.
 export interface ComprehensionGradeDeps {
-  gradeComprehensionAnswer(input: ComprehensionGradeDepsInput): Promise<ComprehensionGradeDepsResult>;
+  gradeComprehensionAnswer(
+    input: ComprehensionGradeDepsInput,
+  ): Promise<ComprehensionGradeDepsResult>;
 }
 
 export interface ComprehensionGradeDepsInput {

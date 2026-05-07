@@ -993,7 +993,6 @@ describe("createUpdateProfileTool: STORY-034 grader rubric → skill bonus", () 
   });
 });
 
-
 // STORY-038a — comprehension-policy axis bump on close. Fires once per concept_tag on the
 // problem when (a) the most-recent submit was a comprehension answer (input.comprehension_correct
 // is non-null) AND (b) the deps adapter wired upsertComprehensionScore.
