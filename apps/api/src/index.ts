@@ -79,6 +79,7 @@ import { buildWebPushSender, configureVapid, type WebPushConfig } from "./notifi
 import { registerNotificationsRoutes } from "./notifications.js";
 import { registerQuietHoursRoutes } from "./quiet-hours.js";
 import { registerAutonomyRoutes } from "./autonomy.js";
+import { registerBugFindingScoresRoutes } from "./bug-finding-scores.js";
 import { registerSpacedRepetitionRoutes } from "./spaced-repetition.js";
 import { registerInstallEligibleRoutes } from "./install-eligible.js";
 import { registerPortfolioRoutes } from "./portfolio.js";
@@ -167,6 +168,10 @@ export interface BuildServerOptions {
   // route; tests inject a fake DB. Production wiring shares the same `db` instance the rest of
   // the API uses (via `defaultsFromEnv()`).
   autonomyDb?: import("@learnpro/db").LearnProDb;
+  // STORY-037a — DB handle for `GET /v1/bug-finding-scores`. Same wiring pattern as the others;
+  // tests inject a fake DB. Production wiring shares the same `db` instance via
+  // `defaultsFromEnv()`. Returns the user's per-archetype EWMA for the dashboard.
+  bugFindingScoresDb?: import("@learnpro/db").LearnProDb;
   // STORY-056 — PII redactor. Wired into every free-text ingestion path: voice transcripts on
   // POST /v1/interactions, user + LLM messages on POST /v1/onboarding/turn, code submissions on
   // POST /v1/tutor/episodes/:id/submit. Tests inject `inertRedactor`; production wires
@@ -472,6 +477,15 @@ export function buildServer(opts: BuildServerOptions = {}) {
     registerAutonomyRoutes(app, { db: opts.autonomyDb, sessionResolver });
   }
 
+  // STORY-037a — `GET /v1/bug-finding-scores` exposes the user's per-archetype EWMA. Same
+  // wiring pattern as autonomy.
+  if (opts.bugFindingScoresDb) {
+    registerBugFindingScoresRoutes(app, {
+      db: opts.bugFindingScoresDb,
+      sessionResolver,
+    });
+  }
+
   // STORY-021 — career-aware recommendation. Looks up the user's `target_role`, runs it through
   // `@learnpro/profile`'s role library, joins the recommended track slugs against the `tracks`
   // table. Wired only when a db is supplied; the /recommended page proxies to this endpoint.
@@ -587,6 +601,7 @@ function defaultsFromEnv(): {
   sessionPlanFactory?: SessionPlanFactory;
   quietHoursDb?: import("@learnpro/db").LearnProDb;
   autonomyDb?: import("@learnpro/db").LearnProDb;
+  bugFindingScoresDb?: import("@learnpro/db").LearnProDb;
   redactor?: PiiRedactor;
   dataControls?: DataControlsAdapters;
   recommendationDb?: import("@learnpro/db").LearnProDb;
@@ -682,6 +697,7 @@ function defaultsFromEnv(): {
     sessionPlanFactory: buildDefaultSessionPlanFactory({ db, llm }),
     quietHoursDb: db,
     autonomyDb: db,
+    bugFindingScoresDb: db,
     recommendationDb: db,
     spacedRepetitionDb: db,
     installEligibleDb: db,
