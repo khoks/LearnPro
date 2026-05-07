@@ -1,0 +1,526 @@
+concepts:
+  - slug: python.basics.variables
+    name: Variables and assignment
+    description: |
+      A variable is a name bound to a value via the `=` operator. Python is
+      dynamically typed — you do not declare a type up front; the interpreter
+      tracks the type of the value at runtime.
+    default_difficulty: 1
+    tags: [fundamentals, syntax]
+    track_slugs: [python-fundamentals]
+
+  - slug: python.basics.numbers
+    name: Numeric types
+    description: |
+      Python's core numeric types are `int`, `float`, and `complex`. Integers
+      are arbitrary-precision; floats follow IEEE 754 doubles; division with
+      `/` is always float, integer-division uses `//`.
+    default_difficulty: 1
+    tags: [fundamentals, types]
+    track_slugs: [python-fundamentals]
+
+  - slug: python.basics.strings
+    name: Strings
+    description: |
+      Strings are immutable sequences of Unicode code points. Build with
+      single, double, or triple quotes; concatenate with `+`; format with
+      f-strings. Common methods: `.lower`, `.upper`, `.split`, `.join`.
+    default_difficulty: 1
+    tags: [fundamentals, types, sequences]
+    track_slugs: [python-fundamentals]
+
+  - slug: python.basics.booleans
+    name: Booleans and truthiness
+    description: |
+      `True` and `False` are the canonical boolean literals. Python treats
+      empty containers, zero numerics, and `None` as falsy in boolean
+      contexts. The `bool()` function makes the coercion explicit.
+    default_difficulty: 1
+    tags: [fundamentals, types]
+    track_slugs: [python-fundamentals]
+
+  - slug: python.basics.none
+    name: None and optional values
+    description: |
+      `None` is Python's null. Compare with `is None` (never `== None`) and
+      use it as a sentinel for "no value" or "uninitialised". A function with
+      no explicit return implicitly returns `None`.
+    default_difficulty: 1
+    tags: [fundamentals, types]
+    track_slugs: [python-fundamentals]
+
+  - slug: python.basics.operators
+    name: Operators and precedence
+    description: |
+      Arithmetic (`+ - * / // % **`), comparison (`== != < > <= >=`),
+      logical (`and or not`), membership (`in`, `not in`), and identity
+      (`is`, `is not`). Precedence follows mathematics; parenthesise when
+      in doubt.
+    default_difficulty: 1
+    tags: [fundamentals, syntax]
+    track_slugs: [python-fundamentals]
+
+  - slug: python.basics.input-output
+    name: print and input
+    description: |
+      `print(*objects, sep=' ', end='\n')` writes to stdout; `input(prompt)`
+      reads one line from stdin and returns a string. For real I/O, prefer
+      the `sys.stdin` / `sys.stdout` interfaces.
+    default_difficulty: 1
+    tags: [fundamentals, io]
+    track_slugs: [python-fundamentals]
+
+  - slug: python.basics.control-flow
+    name: if / elif / else
+    description: |
+      Conditional branching uses `if`, optional `elif` chains, and `else`.
+      The condition expression is evaluated for truthiness; indentation
+      defines the block.
+    default_difficulty: 1
+    tags: [fundamentals, control-flow]
+    track_slugs: [python-fundamentals]
+
+  - slug: python.basics.for-loops
+    name: for loops
+    description: |
+      `for x in iterable:` walks any iterable — list, tuple, dict, str,
+      generator. Use `range(start, stop, step)` for index loops, `enumerate`
+      to get index + value, `zip` to walk multiple iterables in lockstep.
+    default_difficulty: 1
+    tags: [fundamentals, control-flow, iteration]
+    track_slugs: [python-fundamentals]
+
+  - slug: python.basics.while-loops
+    name: while loops
+    description: |
+      `while condition:` runs the body until the condition turns falsy.
+      `break` exits early, `continue` skips to the next iteration. The
+      `else` clause runs only if the loop exits normally (no break).
+    default_difficulty: 1
+    tags: [fundamentals, control-flow, iteration]
+    track_slugs: [python-fundamentals]
+
+  - slug: python.basics.lists
+    name: Lists
+    description: |
+      An ordered, mutable sequence. Build with `[1, 2, 3]`, index with
+      `xs[i]`, slice with `xs[a:b]`, grow with `.append` / `.extend`,
+      remove with `.pop` / `.remove`. Lists carry no type constraints
+      on their elements.
+    default_difficulty: 1
+    tags: [fundamentals, types, sequences]
+    track_slugs: [python-fundamentals]
+
+  - slug: python.basics.tuples
+    name: Tuples
+    description: |
+      An ordered, immutable sequence written `(1, 2, 3)`. Useful for
+      fixed-shape records, multiple-return-value functions, and dictionary
+      keys (which must be hashable). Unpacking with `a, b = t` is idiomatic.
+    default_difficulty: 1
+    tags: [fundamentals, types, sequences]
+    track_slugs: [python-fundamentals]
+
+  - slug: python.basics.dicts
+    name: Dictionaries
+    description: |
+      Hash-mapped key-value pairs written `{k: v}`. Lookup is `O(1)` average.
+      Iteration walks keys; use `.items` for pairs, `.values` for values.
+      Insertion order is preserved (since Python 3.7).
+    default_difficulty: 2
+    tags: [fundamentals, types, hashing]
+    track_slugs: [python-fundamentals]
+
+  - slug: python.basics.sets
+    name: Sets
+    description: |
+      Unordered, hashable, no-duplicates collections. Built with `{1, 2}`
+      or `set()`. Support union (`|`), intersection (`&`), difference (`-`)
+      operations. Useful for de-duplication and membership tests.
+    default_difficulty: 2
+    tags: [fundamentals, types, hashing]
+    track_slugs: [python-fundamentals]
+
+  - slug: python.basics.indexing-slicing
+    name: Indexing and slicing
+    description: |
+      Sequences support positive indexing from 0, negative from -1 (last).
+      Slicing `xs[start:stop:step]` returns a new sequence; out-of-range
+      slices clip silently. Strings, lists, and tuples all use the same
+      protocol.
+    default_difficulty: 2
+    tags: [fundamentals, sequences]
+    track_slugs: [python-fundamentals]
+
+  - slug: python.basics.string-formatting
+    name: f-strings and formatting
+    description: |
+      f-strings (`f"{x:.2f}"`) embed expressions into a string at runtime.
+      `str.format` is the older alternative. Format spec syntax controls
+      width, precision, alignment, padding, and number representations.
+    default_difficulty: 2
+    tags: [strings, syntax]
+    track_slugs: [python-fundamentals]
+
+  - slug: python.basics.functions
+    name: Functions
+    description: |
+      Define with `def name(params):`. Parameters can have defaults,
+      `*args` collects extra positionals, `**kwargs` extra keywords.
+      `return` exits and yields a value; without one, the function
+      returns `None`.
+    default_difficulty: 2
+    tags: [fundamentals, functions]
+    track_slugs: [python-fundamentals]
+
+  - slug: python.basics.lambdas
+    name: Lambda expressions
+    description: |
+      `lambda args: expr` creates a small anonymous function. Reserve them
+      for inline use with `map`, `filter`, `sorted`, `key=`. For anything
+      with multiple statements, use `def` instead.
+    default_difficulty: 2
+    tags: [functions, expressions]
+    track_slugs: [python-fundamentals]
+
+  - slug: python.basics.scoping
+    name: Variable scope (LEGB)
+    description: |
+      Names resolve in the order Local, Enclosing, Global, Built-in. Inner
+      functions can read enclosing names; mutating one requires `nonlocal`.
+      `global` is for module-level names.
+    default_difficulty: 3
+    tags: [functions, scope]
+    track_slugs: [python-fundamentals]
+
+  - slug: python.basics.closures
+    name: Closures
+    description: |
+      A nested function that references names from its enclosing scope
+      "captures" them. The captured names live as long as the inner
+      function — useful for factory functions and partial application.
+    default_difficulty: 3
+    tags: [functions, scope, closures]
+    track_slugs: [python-fundamentals]
+
+  - slug: python.basics.modules
+    name: Modules and imports
+    description: |
+      A module is a `.py` file. `import x`, `from x import y`, and
+      `import x as z` bring names into your namespace. Modules are
+      cached after the first import; reload only via `importlib.reload`.
+    default_difficulty: 2
+    tags: [packaging, imports]
+    track_slugs: [python-fundamentals]
+
+  - slug: python.basics.packages
+    name: Packages
+    description: |
+      A package is a directory of modules with an `__init__.py`. Sub-packages
+      nest. `python -m package` runs `__main__`. Use `__all__` to control
+      what `from package import *` brings in.
+    default_difficulty: 2
+    tags: [packaging, imports]
+    track_slugs: [python-fundamentals]
+
+  - slug: python.basics.exceptions
+    name: Exceptions
+    description: |
+      Raise with `raise ExceptionType(msg)`, catch with `try/except`. The
+      `else` block runs on success; `finally` always runs. Catch the
+      narrowest type you actually expect; never bare-`except:`.
+    default_difficulty: 2
+    tags: [error-handling, control-flow]
+    track_slugs: [python-fundamentals]
+
+  - slug: python.basics.custom-exceptions
+    name: Custom exception classes
+    description: |
+      Subclass `Exception` (or a more specific class) to define a custom
+      error type. Add fields the caller can read in the `except` branch;
+      keep the type hierarchy flat unless you have a real reason.
+    default_difficulty: 3
+    tags: [error-handling, classes]
+    track_slugs: [python-fundamentals]
+
+  - slug: python.basics.list-comprehensions
+    name: List comprehensions
+    description: |
+      `[expr for x in xs if cond]` builds a list in a single readable
+      expression. Nested comprehensions are supported but harder to read;
+      prefer a generator + `list()` past two levels.
+    default_difficulty: 2
+    tags: [iteration, expressions]
+    track_slugs: [python-fundamentals]
+
+  - slug: python.basics.dict-comprehensions
+    name: Dict and set comprehensions
+    description: |
+      `{k: v for ...}` and `{x for ...}` mirror list comprehensions for
+      dicts and sets. Useful for inverting a dict, deduplicating a stream,
+      or building an index.
+    default_difficulty: 2
+    tags: [iteration, expressions, hashing]
+    track_slugs: [python-fundamentals]
+
+  - slug: python.basics.generators
+    name: Generator functions
+    description: |
+      A function that uses `yield` returns a generator. Each `next()` call
+      runs the body until the next `yield`. Generators are lazy — they hold
+      one value at a time, so they scale to streams.
+    default_difficulty: 3
+    tags: [iteration, generators]
+    track_slugs: [python-fundamentals]
+
+  - slug: python.basics.generator-expressions
+    name: Generator expressions
+    description: |
+      `(expr for x in xs)` produces a generator without the function-def
+      ceremony. Pass them to `sum`, `any`, `all`, `max` to avoid building
+      an intermediate list.
+    default_difficulty: 3
+    tags: [iteration, generators, expressions]
+    track_slugs: [python-fundamentals]
+
+  - slug: python.basics.iterators
+    name: Iterators and the iterator protocol
+    description: |
+      An iterable returns an iterator from `iter()`; the iterator returns
+      values from `next()` until `StopIteration`. `for` loops drive this
+      protocol; you rarely call `next` by hand.
+    default_difficulty: 3
+    tags: [iteration, protocols]
+    track_slugs: [python-fundamentals]
+
+  - slug: python.basics.classes
+    name: Classes
+    description: |
+      `class Name:` declares a class. `__init__` is the constructor;
+      `self` is the instance. Methods are functions defined inside the
+      class body; their first argument is the instance.
+    default_difficulty: 2
+    tags: [oop, classes]
+    track_slugs: [python-fundamentals]
+
+  - slug: python.basics.dunder-methods
+    name: Dunder methods
+    description: |
+      Methods named `__x__` hook into language-level operators. `__repr__`
+      for debug-friendly strings, `__eq__` / `__hash__` for equality,
+      `__len__` for `len()`, `__iter__` to make a class iterable.
+    default_difficulty: 3
+    tags: [oop, classes, protocols]
+    track_slugs: [python-fundamentals]
+
+  - slug: python.basics.inheritance
+    name: Inheritance
+    description: |
+      A subclass inherits attributes from its parent and can override
+      methods. Call the parent's method via `super().method()`. Multiple
+      inheritance is supported but use cooperatively.
+    default_difficulty: 3
+    tags: [oop, classes]
+    track_slugs: [python-fundamentals]
+
+  - slug: python.basics.encapsulation
+    name: Encapsulation conventions
+    description: |
+      Python doesn't enforce private fields. The conventions are: a
+      leading underscore (`_x`) signals "internal", double underscore
+      (`__x`) triggers name-mangling. Use sparingly.
+    default_difficulty: 2
+    tags: [oop, conventions]
+    track_slugs: [python-fundamentals]
+
+  - slug: python.basics.properties
+    name: Properties
+    description: |
+      `@property` turns a method into a read-only attribute; `@x.setter`
+      adds a writer. Use them when computed access should look like a
+      simple attribute, not a method call.
+    default_difficulty: 3
+    tags: [oop, classes, decorators]
+    track_slugs: [python-fundamentals]
+
+  - slug: python.basics.dataclasses
+    name: Dataclasses
+    description: |
+      `@dataclass` synthesises `__init__`, `__repr__`, `__eq__` from
+      annotated fields. Add `frozen=True` for immutability, `slots=True`
+      for memory savings. Replaces hand-rolled value classes.
+    default_difficulty: 3
+    tags: [oop, classes, decorators]
+    track_slugs: [python-fundamentals]
+
+  - slug: python.basics.context-managers
+    name: with statements and context managers
+    description: |
+      The `with` statement enters a context (acquires a resource) and
+      guarantees `__exit__` runs at block end. Build one with `__enter__`
+      and `__exit__`, or with the `@contextmanager` decorator on a
+      generator.
+    default_difficulty: 3
+    tags: [resource-management, control-flow]
+    track_slugs: [python-fundamentals]
+
+  - slug: python.basics.decorators
+    name: Decorators
+    description: |
+      `@decorator` wraps a function: `f = decorator(f)`. Use them for
+      logging, caching, retries, access checks. Preserve metadata with
+      `functools.wraps` so help texts and reprs survive the wrap.
+    default_difficulty: 3
+    tags: [functions, decorators, higher-order]
+    track_slugs: [python-fundamentals]
+
+  - slug: python.basics.type-hints
+    name: Type hints
+    description: |
+      Annotate parameters and returns with `name: T -> R`. Hints are
+      runtime-inert; tools like `mypy` / `pyright` validate them. Use
+      `typing.Optional`, `Union`, `List`, `Dict` — or the builtin generics
+      from Python 3.9+.
+    default_difficulty: 3
+    tags: [types, typing]
+    track_slugs: [python-fundamentals]
+
+  - slug: python.basics.itertools
+    name: itertools essentials
+    description: |
+      `itertools.chain` flattens, `count` makes infinite counters,
+      `groupby` groups consecutive items, `combinations` / `permutations`
+      enumerate, `accumulate` rolls a fold. Lazy — build pipelines.
+    default_difficulty: 3
+    tags: [iteration, stdlib]
+    track_slugs: [python-fundamentals]
+
+  - slug: python.basics.functools
+    name: functools essentials
+    description: |
+      `partial` pre-binds arguments, `lru_cache` memoises, `reduce` folds
+      a sequence, `singledispatch` switches on the type of the first
+      argument. Stdlib's higher-order toolkit.
+    default_difficulty: 3
+    tags: [functions, higher-order, stdlib]
+    track_slugs: [python-fundamentals]
+
+  - slug: python.basics.collections
+    name: collections module
+    description: |
+      `Counter` for histograms, `defaultdict` for auto-initialised dicts,
+      `deque` for O(1) head/tail, `OrderedDict` for explicit ordering,
+      `namedtuple` for tagged tuples.
+    default_difficulty: 3
+    tags: [data-structures, stdlib]
+    track_slugs: [python-fundamentals]
+
+  - slug: python.basics.string-methods
+    name: Common string methods
+    description: |
+      `.split` / `.join` for tokenising, `.strip` / `.lstrip` / `.rstrip`
+      for whitespace, `.replace` for substitution, `.startswith` /
+      `.endswith` for prefix/suffix tests, `.find` / `.index` for search.
+    default_difficulty: 1
+    tags: [strings, stdlib]
+    track_slugs: [python-fundamentals]
+
+  - slug: python.basics.regex
+    name: Regular expressions (re)
+    description: |
+      `re.match` / `re.search` / `re.findall` / `re.sub`. Compile patterns
+      once with `re.compile` for repeated use. Use raw strings (`r"..."`)
+      to dodge backslash collisions.
+    default_difficulty: 3
+    tags: [strings, regex, stdlib]
+    track_slugs: [python-fundamentals]
+
+  - slug: python.basics.file-io
+    name: File I/O
+    description: |
+      Open with `open(path, mode)`. Modes: `r` / `w` / `a` for text,
+      `rb` / `wb` for bytes. Always use `with open(...) as f:` so the
+      file closes deterministically.
+    default_difficulty: 2
+    tags: [io, files]
+    track_slugs: [python-fundamentals]
+
+  - slug: python.basics.json
+    name: JSON serialization
+    description: |
+      `json.dumps(obj)` / `json.loads(s)` round-trip Python objects to
+      JSON text. The defaults handle dict/list/str/int/float/bool/None;
+      add a custom encoder for richer types.
+    default_difficulty: 2
+    tags: [io, serialization, stdlib]
+    track_slugs: [python-fundamentals]
+
+  - slug: python.basics.os-path
+    name: os.path and pathlib
+    description: |
+      `os.path` is the legacy procedural API. `pathlib.Path` is the
+      modern object-oriented one. Prefer `pathlib` in new code; both
+      are cross-platform.
+    default_difficulty: 2
+    tags: [io, files, stdlib]
+    track_slugs: [python-fundamentals]
+
+  - slug: python.basics.sorting
+    name: Sorting and ordering
+    description: |
+      `sorted(it)` returns a new list; `list.sort()` mutates in place.
+      Both accept `key=` to extract a sort key and `reverse=True` for
+      descending. Sort is stable (equal keys preserve relative order).
+    default_difficulty: 2
+    tags: [algorithms, sorting]
+    track_slugs: [python-fundamentals]
+
+  - slug: python.basics.unpacking
+    name: Tuple unpacking and starred assignment
+    description: |
+      `a, b = pair` unpacks a 2-tuple. `*rest` collects the slack:
+      `head, *rest = xs`. `**` works for dict-spread in calls and
+      literals. Ergonomic substitute for indexing.
+    default_difficulty: 2
+    tags: [syntax, unpacking]
+    track_slugs: [python-fundamentals]
+
+  - slug: python.basics.argument-passing
+    name: Argument passing semantics
+    description: |
+      Python passes object references by value. Reassigning a parameter
+      doesn't affect the caller; mutating the bound object does. The
+      classic gotcha is the mutable default argument.
+    default_difficulty: 3
+    tags: [functions, semantics]
+    track_slugs: [python-fundamentals]
+
+  - slug: python.basics.testing
+    name: unittest and pytest basics
+    description: |
+      `unittest.TestCase` is stdlib; `pytest` is the de facto third-party
+      runner. Tests are functions or methods named `test_*`; assertions
+      use plain `assert`. Run with `pytest path/`.
+    default_difficulty: 2
+    tags: [testing, stdlib]
+    track_slugs: [python-fundamentals]
+
+  - slug: python.basics.virtualenv
+    name: Virtual environments
+    description: |
+      A venv isolates a project's dependencies. Create with
+      `python -m venv .venv`, activate with the platform-specific script.
+      Pair with `pip` or `uv` for installs; never `sudo pip` system-wide.
+    default_difficulty: 2
+    tags: [packaging, environment]
+    track_slugs: [python-fundamentals]
+
+  - slug: python.basics.pip-and-requirements
+    name: pip and requirements files
+    description: |
+      `pip install <pkg>` adds a package to the active environment;
+      `requirements.txt` pins versions for reproducible installs.
+      Modern alternative: `pyproject.toml` + `pip install -e .`.
+    default_difficulty: 2
+    tags: [packaging, dependencies]
+    track_slugs: [python-fundamentals]

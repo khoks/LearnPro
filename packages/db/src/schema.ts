@@ -204,11 +204,50 @@ export const concepts = pgTable(
     name: text("name").notNull(),
     language: text("language").notNull(),
     parent_concept_id: uuid("parent_concept_id"),
+    // STORY-032 — knowledge graph population. `description` is a 1-2 sentence learner-facing
+    // summary; `default_difficulty` is a 1-5 band the planner uses to pick a starting problem;
+    // `tags` is a free-form jsonb string array (e.g. ["control-flow", "loops"]); `track_slugs`
+    // is the jsonb string array linking a concept to one or more track slugs. All four are
+    // nullable to keep prior STORY-019/020 inserts (which only set name/language/slug) valid;
+    // the seeder backfills them from YAML.
+    description: text("description"),
+    default_difficulty: integer("default_difficulty"),
+    tags: jsonb("tags"),
+    track_slugs: jsonb("track_slugs"),
     created_at: createdAt(),
   },
   (t) => ({
     slug_uniq: uniqueIndex("concepts_slug_lang_uniq").on(t.org_id, t.language, t.slug),
     parent_idx: index("concepts_parent_idx").on(t.parent_concept_id),
+  }),
+);
+
+// STORY-032 — directed prerequisite edge. `from_concept_id` depends on `to_concept_id`
+// ("from depends on to" — i.e., to is a prerequisite of from). The unique index is the
+// idempotency bedrock for the seeder's delete + re-insert pattern. Cycle detection is a
+// pure CI-time check (vitest test loads YAML, walks the graph) — there is no DB-level
+// constraint forbidding cycles.
+export const prerequisites = pgTable(
+  "prerequisites",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    org_id: orgId(),
+    from_concept_id: uuid("from_concept_id")
+      .notNull()
+      .references(() => concepts.id, { onDelete: "cascade" }),
+    to_concept_id: uuid("to_concept_id")
+      .notNull()
+      .references(() => concepts.id, { onDelete: "cascade" }),
+    created_at: createdAt(),
+  },
+  (t) => ({
+    edge_uniq: uniqueIndex("prerequisites_edge_uniq").on(
+      t.org_id,
+      t.from_concept_id,
+      t.to_concept_id,
+    ),
+    from_idx: index("prerequisites_from_idx").on(t.from_concept_id),
+    to_idx: index("prerequisites_to_idx").on(t.to_concept_id),
   }),
 );
 
@@ -588,6 +627,8 @@ export type Profile = typeof profiles.$inferSelect;
 export type NewProfile = typeof profiles.$inferInsert;
 export type Concept = typeof concepts.$inferSelect;
 export type NewConcept = typeof concepts.$inferInsert;
+export type Prerequisite = typeof prerequisites.$inferSelect;
+export type NewPrerequisite = typeof prerequisites.$inferInsert;
 export type SkillScore = typeof skill_scores.$inferSelect;
 export type NewSkillScore = typeof skill_scores.$inferInsert;
 export type Episode = typeof episodes.$inferSelect;
@@ -625,6 +666,7 @@ export const ALL_TABLES = [
   verificationTokens,
   profiles,
   concepts,
+  prerequisites,
   skill_scores,
   tracks,
   problems,
@@ -648,6 +690,7 @@ export const ORG_SCOPED_TABLES = [
   users,
   profiles,
   concepts,
+  prerequisites,
   skill_scores,
   tracks,
   problems,

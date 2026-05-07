@@ -9,6 +9,7 @@ import {
   notifications,
   organizations,
   portfolio_pushes,
+  prerequisites,
   problems,
   profiles,
   sessions,
@@ -55,6 +56,21 @@ export const conceptsRelations = relations(concepts, ({ one, many }) => ({
   children: many(concepts, { relationName: "concept_parent" }),
   skill_scores: many(skill_scores),
   concept_reviews: many(concept_reviews),
+  outgoing_prerequisites: many(prerequisites, { relationName: "concept_from" }),
+  incoming_prerequisites: many(prerequisites, { relationName: "concept_to" }),
+}));
+
+export const prerequisitesRelations = relations(prerequisites, ({ one }) => ({
+  from_concept: one(concepts, {
+    fields: [prerequisites.from_concept_id],
+    references: [concepts.id],
+    relationName: "concept_from",
+  }),
+  to_concept: one(concepts, {
+    fields: [prerequisites.to_concept_id],
+    references: [concepts.id],
+    relationName: "concept_to",
+  }),
 }));
 
 export const conceptReviewsRelations = relations(concept_reviews, ({ one }) => ({

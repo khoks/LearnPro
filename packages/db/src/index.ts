@@ -184,3 +184,37 @@ export {
   type TutorModeSettings,
   type UpdateTutorModeOptions,
 } from "./llm-mode.js";
+export {
+  ConceptDifficultySchema,
+  ConceptSlugSchema,
+  ConceptYamlEntrySchema,
+  ConceptYamlFileSchema,
+  PrerequisiteEdgeYamlSchema,
+  PrerequisiteYamlFileSchema,
+  detectCycles,
+  topologicalOrder,
+  walkConceptGraph,
+  type ConceptYamlEntry,
+  type ConceptYamlFile,
+  type CycleDetectionResult,
+  type PrerequisiteEdgeYaml,
+  type PrerequisiteYamlFile,
+} from "./concept-graph.js";
+export {
+  CONCEPTS_YAML_ROOT,
+  loadConceptsFromYaml,
+  parseConceptYaml,
+  type LoadedConcept,
+  type LoadConceptsOptions,
+} from "./concepts-seed.js";
+export {
+  PREREQUISITES_YAML_PATH,
+  loadPrerequisitesFromYaml,
+  type LoadPrerequisitesOptions,
+} from "./prerequisites-seed.js";
+export {
+  listConceptsForOrg,
+  seedConceptsFromYaml,
+  type SeedConceptsOptions,
+  type SeedConceptsResult,
+} from "./concepts-seeder.js";

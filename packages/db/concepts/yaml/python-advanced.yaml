@@ -1,0 +1,323 @@
+concepts:
+  - slug: python.advanced.metaclasses
+    name: Metaclasses
+    description: |
+      A metaclass is the class of a class. Customising one lets you mutate
+      the class body before instantiation — adding methods, validating
+      attributes, registering subclasses. Most cases are now covered by
+      `__init_subclass__`; reach for a metaclass only when that is not.
+    default_difficulty: 5
+    tags: [oop, metaprogramming]
+    track_slugs: [python-advanced]
+
+  - slug: python.advanced.descriptors
+    name: Descriptors
+    description: |
+      An object that defines `__get__` / `__set__` / `__delete__` controls
+      attribute access on the instances of any class that uses it. The
+      machinery behind `@property`, methods themselves, `@staticmethod`,
+      and ORM column types.
+    default_difficulty: 5
+    tags: [oop, metaprogramming]
+    track_slugs: [python-advanced]
+
+  - slug: python.advanced.abcs
+    name: Abstract base classes
+    description: |
+      `abc.ABC` and `@abstractmethod` define an interface that subclasses
+      must satisfy. Use them to enforce a method contract on a hierarchy
+      and to plug user types into the stdlib's collections.abc protocols.
+    default_difficulty: 4
+    tags: [oop, types]
+    track_slugs: [python-advanced]
+
+  - slug: python.advanced.protocols
+    name: Structural typing (Protocols)
+    description: |
+      `typing.Protocol` defines a structural ("duck-typed") interface
+      checkable by static analysers. A class doesn't need to inherit from
+      the Protocol — having the right methods is enough.
+    default_difficulty: 4
+    tags: [types, typing]
+    track_slugs: [python-advanced]
+
+  - slug: python.advanced.async-await
+    name: async / await syntax
+    description: |
+      `async def` defines a coroutine; `await expr` suspends it until
+      `expr` resolves. Coroutines run on an event loop, not threads;
+      they are cheap to create and pause.
+    default_difficulty: 4
+    tags: [concurrency, async]
+    track_slugs: [python-advanced]
+
+  - slug: python.advanced.asyncio
+    name: asyncio basics
+    description: |
+      The asyncio module wires coroutines to an event loop. `asyncio.run`
+      launches one; `gather` runs many concurrently; `create_task` fires
+      and forgets. Composes with `async with` and `async for`.
+    default_difficulty: 4
+    tags: [concurrency, async, stdlib]
+    track_slugs: [python-advanced]
+
+  - slug: python.advanced.event-loop
+    name: Event loop internals
+    description: |
+      The loop polls a ready queue of callbacks, suspends coroutines on
+      `await`, and resumes them when their awaitable resolves. Blocking
+      I/O on the loop's thread freezes the entire app.
+    default_difficulty: 5
+    tags: [concurrency, async, internals]
+    track_slugs: [python-advanced]
+
+  - slug: python.advanced.threads
+    name: Threading
+    description: |
+      `threading.Thread` runs a callable in an OS thread. The GIL means
+      threads do not parallelise CPU-bound work but still help with
+      blocking I/O. Use locks (`threading.Lock`) to guard shared state.
+    default_difficulty: 4
+    tags: [concurrency, threading]
+    track_slugs: [python-advanced]
+
+  - slug: python.advanced.gil
+    name: The Global Interpreter Lock
+    description: |
+      The GIL is a mutex that serialises bytecode execution within a
+      CPython process. Two threads cannot run Python code at once. C
+      extensions can release it during heavy work.
+    default_difficulty: 5
+    tags: [concurrency, threading, internals]
+    track_slugs: [python-advanced]
+
+  - slug: python.advanced.multiprocessing
+    name: Multiprocessing
+    description: |
+      `multiprocessing.Process` launches separate Python interpreters
+      with their own GIL. Use a `Pool` for embarrassingly parallel work.
+      Inter-process state crosses pickle boundaries, which is slow and
+      restrictive.
+    default_difficulty: 4
+    tags: [concurrency, multiprocessing]
+    track_slugs: [python-advanced]
+
+  - slug: python.advanced.concurrent-futures
+    name: concurrent.futures
+    description: |
+      A thin executor abstraction: `ThreadPoolExecutor` for I/O-bound
+      work, `ProcessPoolExecutor` for CPU-bound. `submit` returns a
+      Future; `as_completed` walks them as they finish.
+    default_difficulty: 4
+    tags: [concurrency, stdlib]
+    track_slugs: [python-advanced]
+
+  - slug: python.advanced.context-vars
+    name: Context variables
+    description: |
+      `contextvars.ContextVar` carries thread-and-coroutine-local state
+      without explicit passing. Asyncio copies the context on each task,
+      so a request-id set on one task does not leak across.
+    default_difficulty: 5
+    tags: [concurrency, async]
+    track_slugs: [python-advanced]
+
+  - slug: python.advanced.memory-model
+    name: Memory model and reference counting
+    description: |
+      CPython uses reference counts plus a generational cyclic-GC for
+      cycles. `del x` decrements the count; the object dies at zero.
+      Long-lived containers can leak by accidentally retaining references.
+    default_difficulty: 5
+    tags: [internals, memory]
+    track_slugs: [python-advanced]
+
+  - slug: python.advanced.gc
+    name: Garbage collection
+    description: |
+      The `gc` module exposes the cycle collector. Most code never has to
+      touch it. Disabling it temporarily can speed up batch loads; tuning
+      thresholds is a last resort.
+    default_difficulty: 5
+    tags: [internals, memory, stdlib]
+    track_slugs: [python-advanced]
+
+  - slug: python.advanced.bytecode
+    name: Bytecode and the dis module
+    description: |
+      Python source compiles to bytecode for the CPython VM. `dis.dis(f)`
+      prints the instructions. Useful when reading optimisation guides
+      or chasing odd performance differences.
+    default_difficulty: 5
+    tags: [internals]
+    track_slugs: [python-advanced]
+
+  - slug: python.advanced.descriptors-data-vs-non-data
+    name: Data vs non-data descriptors
+    description: |
+      A data descriptor (defines `__set__`) wins over instance `__dict__`;
+      a non-data descriptor loses to it. The asymmetry is why methods
+      can be shadowed by attribute assignment.
+    default_difficulty: 5
+    tags: [oop, internals]
+    track_slugs: [python-advanced]
+
+  - slug: python.advanced.method-resolution-order
+    name: MRO and the C3 linearisation
+    description: |
+      Python orders the inheritance graph via C3 linearisation: each
+      class appears before its parents and parents are searched
+      breadth-first. `Klass.__mro__` shows the resolved order.
+    default_difficulty: 5
+    tags: [oop, internals]
+    track_slugs: [python-advanced]
+
+  - slug: python.advanced.weakref
+    name: Weak references
+    description: |
+      `weakref.ref(obj)` holds a reference that does not keep the object
+      alive. Useful for caches and observer registries that must not
+      themselves be the reason objects survive.
+    default_difficulty: 4
+    tags: [memory, stdlib]
+    track_slugs: [python-advanced]
+
+  - slug: python.advanced.functools-cache
+    name: functools.cache and lru_cache
+    description: |
+      `@cache` memoises a pure function unboundedly; `@lru_cache(maxsize)`
+      bounds it. Hashable arguments only. Clear with `.cache_clear()`;
+      inspect with `.cache_info()`.
+    default_difficulty: 4
+    tags: [functions, memoization, stdlib]
+    track_slugs: [python-advanced]
+
+  - slug: python.advanced.singledispatch
+    name: functools.singledispatch
+    description: |
+      Generic functions dispatched on the type of the first argument.
+      Register implementations with `@func.register(SomeType)`. The
+      cleanest answer to "I want OO polymorphism but on free functions".
+    default_difficulty: 4
+    tags: [functions, polymorphism, stdlib]
+    track_slugs: [python-advanced]
+
+  - slug: python.advanced.async-iterators
+    name: Async iterators and async for
+    description: |
+      Define `__aiter__` returning an object with `__anext__` that
+      returns awaitable values. `async for` drives the protocol.
+      Common with paginated APIs and streaming responses.
+    default_difficulty: 4
+    tags: [async, iteration]
+    track_slugs: [python-advanced]
+
+  - slug: python.advanced.async-context-managers
+    name: Async context managers
+    description: |
+      `async with` requires `__aenter__` / `__aexit__` returning
+      awaitables. Used for connections and locks where the setup or
+      teardown does I/O.
+    default_difficulty: 4
+    tags: [async, resource-management]
+    track_slugs: [python-advanced]
+
+  - slug: python.advanced.exception-groups
+    name: Exception groups (PEP 654)
+    description: |
+      `ExceptionGroup` bundles multiple errors raised concurrently —
+      e.g. by `asyncio.TaskGroup`. `except*` matches a subset; the
+      runtime re-raises the rest.
+    default_difficulty: 4
+    tags: [error-handling, async]
+    track_slugs: [python-advanced]
+
+  - slug: python.advanced.typing-generics
+    name: Generic classes and functions
+    description: |
+      `class Stack(Generic[T]):` parameterises by a TypeVar. Use them
+      for containers, repositories, or any abstraction that carries an
+      element type. PEP 695 simplifies the syntax in 3.12+.
+    default_difficulty: 4
+    tags: [typing]
+    track_slugs: [python-advanced]
+
+  - slug: python.advanced.typed-dict
+    name: TypedDict
+    description: |
+      A dict whose key set and value types are known statically.
+      Useful for JSON shapes, config blobs, request/response payloads.
+      Total vs partial controls per-key requiredness.
+    default_difficulty: 4
+    tags: [typing]
+    track_slugs: [python-advanced]
+
+  - slug: python.advanced.literal-types
+    name: Literal and Final types
+    description: |
+      `Literal["a", "b"]` narrows a parameter to specific values;
+      `Final` marks a constant. Both are static-only; the runtime
+      ignores them. Pair with discriminated unions for safety.
+    default_difficulty: 4
+    tags: [typing]
+    track_slugs: [python-advanced]
+
+  - slug: python.advanced.contextlib
+    name: contextlib utilities
+    description: |
+      `contextlib.contextmanager` lifts a generator into a context
+      manager; `ExitStack` composes them at runtime; `suppress` swallows
+      a chosen exception type. Less ceremony than rolling `__enter__`.
+    default_difficulty: 4
+    tags: [resource-management, stdlib]
+    track_slugs: [python-advanced]
+
+  - slug: python.advanced.profiling
+    name: Profiling and timing
+    description: |
+      `cProfile` records call counts and times; `timeit` micro-benchmarks
+      tiny snippets. Always profile before optimising — the bottleneck is
+      rarely where you guess.
+    default_difficulty: 4
+    tags: [performance, stdlib]
+    track_slugs: [python-advanced]
+
+  - slug: python.advanced.cython-and-c-ext
+    name: C extensions and Cython
+    description: |
+      For hot loops, drop into a C extension or Cython. Both release the
+      GIL during heavy work. Match the API surface of pure-Python siblings
+      so the call site stays unchanged.
+    default_difficulty: 5
+    tags: [performance, ffi]
+    track_slugs: [python-advanced]
+
+  - slug: python.advanced.packaging-pyproject
+    name: pyproject.toml packaging
+    description: |
+      The PEP 621 manifest replaces setup.py for new projects. It declares
+      metadata, dependencies, build backend, and entry points in one
+      declarative file readable by any tool.
+    default_difficulty: 4
+    tags: [packaging]
+    track_slugs: [python-advanced]
+
+  - slug: python.advanced.entry-points
+    name: Entry points and plugin systems
+    description: |
+      A package can advertise plugins via `[project.entry-points]`.
+      Other packages discover them with `importlib.metadata.entry_points`.
+      Common pattern for CLIs, codecs, and pytest plugins.
+    default_difficulty: 4
+    tags: [packaging]
+    track_slugs: [python-advanced]
+
+  - slug: python.advanced.subprocess
+    name: subprocess
+    description: |
+      `subprocess.run` invokes another program; capture stdout/stderr;
+      pass `text=True` for str, omit for bytes. Avoid `shell=True` unless
+      you really need a shell — it's a common injection vector.
+    default_difficulty: 3
+    tags: [io, processes, stdlib]
+    track_slugs: [python-advanced]

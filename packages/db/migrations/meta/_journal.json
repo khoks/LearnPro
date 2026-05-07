@@ -127,6 +127,13 @@
       "when": 1779500000000,
       "tag": "0018_debug_problems",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1779600000000,
+      "tag": "0019_knowledge_graph",
+      "breakpoints": true
     }
   ]
 }

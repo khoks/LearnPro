@@ -1,0 +1,411 @@
+concepts:
+  - slug: typescript.basics.variables
+    name: Variables and let / const
+    description: |
+      `let` declares a re-assignable binding; `const` declares one that
+      cannot be re-assigned (the bound value can still mutate). `var`
+      exists but should not be used in new code.
+    default_difficulty: 1
+    tags: [fundamentals, syntax]
+    track_slugs: [typescript-fundamentals]
+
+  - slug: typescript.basics.primitive-types
+    name: Primitive types
+    description: |
+      `number`, `string`, `boolean`, `bigint`, `symbol`, `null`, and
+      `undefined`. Most code only touches the first three. Annotate when
+      inference is wrong or absent — otherwise let the compiler decide.
+    default_difficulty: 1
+    tags: [fundamentals, types]
+    track_slugs: [typescript-fundamentals]
+
+  - slug: typescript.basics.literal-types
+    name: Literal types
+    description: |
+      A literal type matches a single value: `type Yes = "yes"`. Combine
+      with unions for finite enumerations: `type Mode = "off" | "on"`.
+      The compiler narrows control flow against them.
+    default_difficulty: 2
+    tags: [types]
+    track_slugs: [typescript-fundamentals]
+
+  - slug: typescript.basics.type-inference
+    name: Type inference
+    description: |
+      The compiler infers the narrowest sensible type from initialisers
+      and return values. Reach for an annotation when inference is wrong,
+      when crossing an API boundary, or when documenting intent.
+    default_difficulty: 2
+    tags: [types]
+    track_slugs: [typescript-fundamentals]
+
+  - slug: typescript.basics.arrays
+    name: Arrays
+    description: |
+      An array is `T[]` or `Array<T>`. Methods carry the element type
+      through chains: `numbers.map(n => n.toString())` returns `string[]`.
+      Use `readonly T[]` to forbid mutation at the type level.
+    default_difficulty: 1
+    tags: [fundamentals, types, sequences]
+    track_slugs: [typescript-fundamentals]
+
+  - slug: typescript.basics.tuples
+    name: Tuples
+    description: |
+      A fixed-length, ordered, typed sequence: `[number, string]`. Useful
+      for multi-return functions and structured pairs. Add labels for
+      self-documenting tuples: `[lat: number, lon: number]`.
+    default_difficulty: 2
+    tags: [types, sequences]
+    track_slugs: [typescript-fundamentals]
+
+  - slug: typescript.basics.objects
+    name: Object types
+    description: |
+      An object groups named, typed fields: `{ name: string; age: number }`.
+      Anonymous types in unions can drift; alias them with `type` for
+      reuse. Properties default to required; `?` makes them optional.
+    default_difficulty: 1
+    tags: [fundamentals, types]
+    track_slugs: [typescript-fundamentals]
+
+  - slug: typescript.basics.interfaces
+    name: Interfaces
+    description: |
+      `interface` defines a structural object shape. Multiple interfaces
+      with the same name merge. Prefer interfaces for public API shapes,
+      `type` for unions, intersections, and computed types.
+    default_difficulty: 2
+    tags: [types]
+    track_slugs: [typescript-fundamentals]
+
+  - slug: typescript.basics.type-aliases
+    name: Type aliases
+    description: |
+      `type Foo = ...` names a type expression. Aliases support unions,
+      intersections, mapped types, and conditional types — anywhere
+      interfaces fall short.
+    default_difficulty: 2
+    tags: [types]
+    track_slugs: [typescript-fundamentals]
+
+  - slug: typescript.basics.unions
+    name: Union types
+    description: |
+      A union `A | B` accepts any value of either type. The intersection
+      of their shared methods is what you can use without narrowing first.
+      Compose with literal types for tagged enums.
+    default_difficulty: 2
+    tags: [types]
+    track_slugs: [typescript-fundamentals]
+
+  - slug: typescript.basics.intersections
+    name: Intersection types
+    description: |
+      `A & B` merges two object shapes into one that has all the
+      properties of both. Useful for mixins and for combining a base
+      type with discriminator fields.
+    default_difficulty: 3
+    tags: [types]
+    track_slugs: [typescript-fundamentals]
+
+  - slug: typescript.basics.narrowing
+    name: Type narrowing
+    description: |
+      The compiler tracks which branch of a union you are in based on
+      `typeof`, `instanceof`, `in`, equality, and user-defined predicates.
+      Inside the narrowed branch, the type shrinks to match the test.
+    default_difficulty: 3
+    tags: [types, control-flow]
+    track_slugs: [typescript-fundamentals]
+
+  - slug: typescript.basics.discriminated-unions
+    name: Discriminated unions
+    description: |
+      A union of object types that share a literal-typed `kind` field.
+      Switching on `kind` narrows each branch to its full shape — the
+      idiomatic way to model state machines and message types in TS.
+    default_difficulty: 3
+    tags: [types, modeling]
+    track_slugs: [typescript-fundamentals]
+
+  - slug: typescript.basics.type-guards
+    name: Type guards and predicates
+    description: |
+      A user-defined type guard is a function returning `x is T`. Used
+      inside `if`, the compiler treats `x` as `T` in the true branch.
+      Pair with structural checks for runtime-validated data.
+    default_difficulty: 3
+    tags: [types, narrowing]
+    track_slugs: [typescript-fundamentals]
+
+  - slug: typescript.basics.functions
+    name: Function types
+    description: |
+      Annotate parameters and return: `function f(x: number): string`.
+      Function types: `(x: number) => string`. Optional and default
+      parameters work like JavaScript; rest parameters use `...args: T[]`.
+    default_difficulty: 1
+    tags: [functions, types]
+    track_slugs: [typescript-fundamentals]
+
+  - slug: typescript.basics.arrow-functions
+    name: Arrow functions
+    description: |
+      `(x) => x + 1` is a concise function expression. No own `this` —
+      it captures the surrounding scope, which makes it the right
+      default for callbacks. No `arguments` either.
+    default_difficulty: 1
+    tags: [functions, syntax]
+    track_slugs: [typescript-fundamentals]
+
+  - slug: typescript.basics.optional-and-default-params
+    name: Optional and default parameters
+    description: |
+      Mark a parameter optional with `?`; supply a default with `= value`.
+      Optional parameters end up with type `T | undefined` inside the
+      function body. Defaults narrow it to `T`.
+    default_difficulty: 2
+    tags: [functions]
+    track_slugs: [typescript-fundamentals]
+
+  - slug: typescript.basics.rest-and-spread
+    name: Rest and spread
+    description: |
+      `...args: T[]` collects extra arguments. `...arr` spreads an array
+      into a call or another array literal. Same syntax in object
+      literals to copy/merge fields.
+    default_difficulty: 2
+    tags: [functions, syntax]
+    track_slugs: [typescript-fundamentals]
+
+  - slug: typescript.basics.destructuring
+    name: Destructuring
+    description: |
+      Pull fields out of objects and arrays in the binding: `{ a, b } = x`,
+      `[head, ...tail] = arr`. Annotate at the destructuring level for
+      explicit types: `({ a }: { a: number })`.
+    default_difficulty: 2
+    tags: [syntax, unpacking]
+    track_slugs: [typescript-fundamentals]
+
+  - slug: typescript.basics.generics
+    name: Generic functions
+    description: |
+      `function id<T>(x: T): T { return x }` parameterises a function by
+      a type. The compiler infers the type at each call site. Add
+      constraints with `<T extends Foo>`.
+    default_difficulty: 3
+    tags: [types, generics]
+    track_slugs: [typescript-fundamentals]
+
+  - slug: typescript.basics.generic-classes
+    name: Generic classes
+    description: |
+      `class Stack<T> { ... }` parameterises a class. The element type
+      flows through methods. Use generic classes for containers and
+      strongly-typed wrappers.
+    default_difficulty: 3
+    tags: [types, generics, oop]
+    track_slugs: [typescript-fundamentals]
+
+  - slug: typescript.basics.classes
+    name: Classes
+    description: |
+      `class C { x: number; constructor(x: number) { this.x = x } }`
+      defines a class. Modifiers: `public` / `private` / `protected` /
+      `readonly`. Parameter properties shorten the constructor.
+    default_difficulty: 2
+    tags: [oop, classes]
+    track_slugs: [typescript-fundamentals]
+
+  - slug: typescript.basics.inheritance
+    name: Class inheritance
+    description: |
+      `class Sub extends Base { ... }` inherits members. Call the parent
+      constructor with `super(...)` first thing in your own constructor.
+      Override methods explicitly with the `override` keyword.
+    default_difficulty: 3
+    tags: [oop, classes]
+    track_slugs: [typescript-fundamentals]
+
+  - slug: typescript.basics.access-modifiers
+    name: Access modifiers
+    description: |
+      `public` (default), `private`, `protected`, `readonly`. TypeScript
+      enforces them at compile time only; the runtime is plain JS. For
+      true privacy use a `#field`.
+    default_difficulty: 2
+    tags: [oop, classes]
+    track_slugs: [typescript-fundamentals]
+
+  - slug: typescript.basics.enums
+    name: Enums
+    description: |
+      `enum Color { Red, Green, Blue }` produces both a runtime value
+      and a type. Prefer string enums for stable values; const enums
+      inline at compile time. Many codebases avoid enums in favour of
+      string-literal unions.
+    default_difficulty: 2
+    tags: [types]
+    track_slugs: [typescript-fundamentals]
+
+  - slug: typescript.basics.modules
+    name: ES modules
+    description: |
+      Each `.ts` file is a module. `export` exposes; `import { x } from "./y"`
+      pulls in. Default exports are discouraged in many style guides
+      because they fragment naming.
+    default_difficulty: 2
+    tags: [packaging, imports]
+    track_slugs: [typescript-fundamentals]
+
+  - slug: typescript.basics.readonly
+    name: readonly modifier
+    description: |
+      `readonly T[]` and `readonly` properties forbid writes at the type
+      level. `as const` infers literal types and marks them readonly.
+      Useful for config objects and lookup tables.
+    default_difficulty: 2
+    tags: [types]
+    track_slugs: [typescript-fundamentals]
+
+  - slug: typescript.basics.never
+    name: never and exhaustiveness checks
+    description: |
+      `never` is the type of values that cannot exist. Inside an
+      exhaustive `switch`, the default branch ends with a `never` check
+      so adding a new variant becomes a compile error.
+    default_difficulty: 3
+    tags: [types]
+    track_slugs: [typescript-fundamentals]
+
+  - slug: typescript.basics.unknown
+    name: unknown and the death of any
+    description: |
+      `unknown` is the type-safe version of `any` — you cannot use it
+      until you narrow. Default to it for parsed JSON, RPC payloads,
+      and anywhere data crosses an untyped boundary.
+    default_difficulty: 3
+    tags: [types]
+    track_slugs: [typescript-fundamentals]
+
+  - slug: typescript.basics.utility-types
+    name: Built-in utility types
+    description: |
+      `Partial<T>`, `Required<T>`, `Readonly<T>`, `Pick<T, K>`, `Omit<T, K>`,
+      `Record<K, V>`, `ReturnType<F>`. The standard library of type
+      transformations — recognise them and reach for them.
+    default_difficulty: 3
+    tags: [types, utility-types]
+    track_slugs: [typescript-fundamentals]
+
+  - slug: typescript.basics.async-await
+    name: Async functions and Promises
+    description: |
+      `async function` returns a `Promise<T>`. `await p` suspends until
+      `p` resolves and unwraps it; throwing rejects the surrounding
+      promise. Use `Promise.all` for fan-out.
+    default_difficulty: 3
+    tags: [async, promises]
+    track_slugs: [typescript-fundamentals]
+
+  - slug: typescript.basics.promises
+    name: Promises
+    description: |
+      A Promise represents a future value: pending, fulfilled, or
+      rejected. `.then` chains; `.catch` handles rejection. Inside
+      async functions, prefer `await`.
+    default_difficulty: 3
+    tags: [async, promises]
+    track_slugs: [typescript-fundamentals]
+
+  - slug: typescript.basics.error-handling
+    name: try / catch and errors
+    description: |
+      `try { ... } catch (err) { ... }` recovers from a thrown error.
+      Catch parameters are typed `unknown`; narrow before reading
+      `.message`. Always re-throw what you did not handle.
+    default_difficulty: 2
+    tags: [error-handling, control-flow]
+    track_slugs: [typescript-fundamentals]
+
+  - slug: typescript.basics.json
+    name: JSON parse and stringify
+    description: |
+      `JSON.parse` produces `unknown` (or `any` in strict mode); validate
+      against a schema before use. `JSON.stringify` skips `undefined`
+      and functions; `Date` becomes an ISO string.
+    default_difficulty: 2
+    tags: [io, serialization]
+    track_slugs: [typescript-fundamentals]
+
+  - slug: typescript.basics.iterators
+    name: Iterators and for...of
+    description: |
+      An iterable returns an iterator from `[Symbol.iterator]()`. `for
+      ... of` drives the protocol. Generators (`function*`) are the
+      easiest way to author one.
+    default_difficulty: 3
+    tags: [iteration, protocols]
+    track_slugs: [typescript-fundamentals]
+
+  - slug: typescript.basics.spread-in-objects
+    name: Object spread and merging
+    description: |
+      `{ ...a, ...b }` copies properties left-to-right; later wins.
+      Useful for non-mutating updates of state objects. The result type
+      is the merge of the spread shapes.
+    default_difficulty: 2
+    tags: [syntax]
+    track_slugs: [typescript-fundamentals]
+
+  - slug: typescript.basics.optional-chaining
+    name: Optional chaining and nullish coalescing
+    description: |
+      `a?.b?.c` short-circuits to `undefined` if any link is null /
+      undefined. `a ?? b` returns `b` only when `a` is null / undefined
+      (`||` falls back on any falsy).
+    default_difficulty: 2
+    tags: [syntax]
+    track_slugs: [typescript-fundamentals]
+
+  - slug: typescript.basics.tsconfig
+    name: tsconfig basics
+    description: |
+      `tsconfig.json` controls the compiler. Critical flags: `strict`,
+      `target`, `module`, `moduleResolution`, `paths`, `rootDir`,
+      `outDir`. Turn on every strict-* option in new projects.
+    default_difficulty: 2
+    tags: [build, config]
+    track_slugs: [typescript-fundamentals]
+
+  - slug: typescript.basics.npm-and-package
+    name: npm and package.json
+    description: |
+      `package.json` declares dependencies, scripts, and entry points.
+      `npm install` resolves the dep tree to `node_modules`. Lockfiles
+      pin exact versions for reproducibility.
+    default_difficulty: 2
+    tags: [packaging, build]
+    track_slugs: [typescript-fundamentals]
+
+  - slug: typescript.basics.testing
+    name: Testing with Vitest / Jest
+    description: |
+      `describe` groups tests, `it` / `test` declares one, `expect`
+      asserts. Run with `vitest` or `jest`. Stick to deterministic
+      tests; reach for fakes before mocks.
+    default_difficulty: 2
+    tags: [testing]
+    track_slugs: [typescript-fundamentals]
+
+  - slug: typescript.basics.fetch-api
+    name: fetch and HTTP
+    description: |
+      `fetch(url)` returns a `Promise<Response>`. Reading the body via
+      `.json()` is its own promise. Always validate the response shape
+      before trusting it.
+    default_difficulty: 2
+    tags: [io, network]
+    track_slugs: [typescript-fundamentals]

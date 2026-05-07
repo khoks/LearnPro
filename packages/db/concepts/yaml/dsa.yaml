@@ -1,0 +1,316 @@
+concepts:
+  - slug: dsa.arrays
+    name: Arrays
+    description: |
+      Contiguous memory holding fixed-type elements. `O(1)` index, `O(n)`
+      insert/delete in the middle. The default linear sequence in most
+      languages; the workhorse of interview-style problems.
+    default_difficulty: 1
+    tags: [arrays, sequences]
+    track_slugs: [dsa]
+
+  - slug: dsa.linked-lists
+    name: Linked lists
+    description: |
+      Each node points to the next (and possibly previous). `O(1)`
+      insert/delete given a node, `O(n)` to find one. Fundamental for
+      teaching pointer manipulation; rare in real code.
+    default_difficulty: 2
+    tags: [linked-list, pointers]
+    track_slugs: [dsa]
+
+  - slug: dsa.stacks
+    name: Stacks (LIFO)
+    description: |
+      Last-in-first-out container. Push and pop in `O(1)`. Backed by an
+      array or linked list. The right structure for matched-parenthesis
+      checks, undo, and DFS without recursion.
+    default_difficulty: 1
+    tags: [stack]
+    track_slugs: [dsa]
+
+  - slug: dsa.queues
+    name: Queues (FIFO)
+    description: |
+      First-in-first-out container. Enqueue at the tail, dequeue at the
+      head, both `O(1)` with the right backing. The base of BFS and
+      level-order tree traversals.
+    default_difficulty: 1
+    tags: [queue]
+    track_slugs: [dsa]
+
+  - slug: dsa.deques
+    name: Deques
+    description: |
+      Double-ended queue: `O(1)` insert/remove at both ends. The right
+      structure for sliding-window minima, palindrome checks, and any
+      problem that needs both push-front and push-back.
+    default_difficulty: 2
+    tags: [queue, deque]
+    track_slugs: [dsa]
+
+  - slug: dsa.hashmaps
+    name: Hash maps
+    description: |
+      Key-value lookup in `O(1)` amortised, backed by a hash table.
+      Trade memory for speed. Hash collisions are handled with chaining
+      or open addressing. Most counting / lookup problems start here.
+    default_difficulty: 2
+    tags: [hashing, dictionary]
+    track_slugs: [dsa]
+
+  - slug: dsa.hashsets
+    name: Hash sets
+    description: |
+      Membership-only sibling of the hash map. `O(1)` add and contains.
+      The right structure for de-duplication and "have I seen this before"
+      checks in linear-time algorithms.
+    default_difficulty: 2
+    tags: [hashing]
+    track_slugs: [dsa]
+
+  - slug: dsa.recursion
+    name: Recursion
+    description: |
+      A function calling itself on a smaller subproblem. Requires a
+      base case to halt. Stack depth is bounded by the runtime — deep
+      recursion blows up. Convert to iteration when stack pressure
+      matters.
+    default_difficulty: 2
+    tags: [recursion]
+    track_slugs: [dsa]
+
+  - slug: dsa.divide-and-conquer
+    name: Divide and conquer
+    description: |
+      Split into halves, solve each, combine. Mergesort and binary
+      search are the canonical examples. Often gets you `O(n log n)`
+      where naive search is `O(n^2)`.
+    default_difficulty: 3
+    tags: [recursion, paradigms]
+    track_slugs: [dsa]
+
+  - slug: dsa.binary-search
+    name: Binary search
+    description: |
+      `O(log n)` lookup in a sorted sequence. Half-open intervals are
+      easier to get right than inclusive ones. Generalises to "smallest
+      x such that pred(x)"; not just exact match.
+    default_difficulty: 2
+    tags: [search, divide-conquer]
+    track_slugs: [dsa]
+
+  - slug: dsa.two-pointers
+    name: Two-pointer technique
+    description: |
+      Walk a sequence with two indices that move under different rules.
+      Reduces nested loops to a single pass. Used for in-place
+      partitioning, sorted-array merging, and palindrome checks.
+    default_difficulty: 2
+    tags: [arrays, paradigms]
+    track_slugs: [dsa]
+
+  - slug: dsa.sliding-window
+    name: Sliding window
+    description: |
+      Maintain a window over a sequence; expand the right edge, shrink
+      from the left when a constraint is violated. `O(n)` for problems
+      that look quadratic — longest-substring-without-repeats, max sum
+      of size k.
+    default_difficulty: 3
+    tags: [arrays, paradigms]
+    track_slugs: [dsa]
+
+  - slug: dsa.prefix-sums
+    name: Prefix sums
+    description: |
+      Precompute cumulative sums so any range query is `O(1)`. Extends
+      to 2D for grids. The simplest example of trading preprocessing
+      time for fast queries.
+    default_difficulty: 2
+    tags: [arrays, paradigms]
+    track_slugs: [dsa]
+
+  - slug: dsa.sorting-basics
+    name: Sorting (intro)
+    description: |
+      Comparison-based sorts: bubble / selection / insertion are
+      `O(n^2)`; mergesort / heapsort / quicksort are `O(n log n)`.
+      Stability and in-place-ness matter for downstream invariants.
+    default_difficulty: 2
+    tags: [sorting]
+    track_slugs: [dsa]
+
+  - slug: dsa.heaps
+    name: Heaps and priority queues
+    description: |
+      A heap is a tree-shaped array with the heap property: parent
+      ordered relative to children. Priority queues are heaps with a
+      min/max API. `O(log n)` insert and pop, `O(1)` peek.
+    default_difficulty: 3
+    tags: [heap, priority-queue]
+    track_slugs: [dsa]
+
+  - slug: dsa.binary-trees
+    name: Binary trees
+    description: |
+      Each node has up to two children. Walks: pre-order, in-order,
+      post-order, level-order. The base for BSTs, heaps, and many
+      tree-shaped problems in graph land.
+    default_difficulty: 3
+    tags: [trees]
+    track_slugs: [dsa]
+
+  - slug: dsa.binary-search-trees
+    name: Binary search trees
+    description: |
+      In-order traversal yields a sorted sequence; left subtree is
+      smaller, right is larger. `O(log n)` operations on a balanced
+      tree, `O(n)` on a degenerate one. Real code uses balanced
+      variants (red-black, AVL).
+    default_difficulty: 3
+    tags: [trees, search]
+    track_slugs: [dsa]
+
+  - slug: dsa.tries
+    name: Tries (prefix trees)
+    description: |
+      Each node represents a single character; edges spell out keys.
+      `O(k)` insert and lookup where k is key length. The right
+      structure for autocomplete, dictionary checks, and longest
+      common prefix.
+    default_difficulty: 3
+    tags: [trees, strings]
+    track_slugs: [dsa]
+
+  - slug: dsa.graphs
+    name: Graph fundamentals
+    description: |
+      Nodes connected by edges; directed or undirected; weighted or
+      unweighted. Adjacency list scales sparsely; adjacency matrix is
+      dense and fast for "is there an edge". Most real systems are
+      graphs.
+    default_difficulty: 3
+    tags: [graphs]
+    track_slugs: [dsa]
+
+  - slug: dsa.bfs
+    name: Breadth-first search
+    description: |
+      Level-by-level walk from a source, queue-driven. Finds shortest
+      paths in unweighted graphs. `O(V + E)`. Used for spreading
+      problems, web crawls, and shortest-step puzzles.
+    default_difficulty: 3
+    tags: [graphs, search]
+    track_slugs: [dsa]
+
+  - slug: dsa.dfs
+    name: Depth-first search
+    description: |
+      Walk as far as possible before backtracking, stack- or
+      recursion-driven. Useful for cycle detection, topological sort,
+      and connected-components. `O(V + E)`.
+    default_difficulty: 3
+    tags: [graphs, search]
+    track_slugs: [dsa]
+
+  - slug: dsa.dijkstra
+    name: Dijkstra's shortest path
+    description: |
+      Single-source shortest paths in a non-negative weighted graph.
+      Heap-backed. `O((V + E) log V)`. Fails on negative edges — use
+      Bellman-Ford there.
+    default_difficulty: 4
+    tags: [graphs, search, weighted]
+    track_slugs: [dsa]
+
+  - slug: dsa.topological-sort
+    name: Topological sort
+    description: |
+      Linearise a DAG so every edge points forward. Two algorithms:
+      Kahn's (BFS over in-degree zero) and DFS post-order. Used for
+      build orders, scheduling, and prerequisite resolution.
+    default_difficulty: 3
+    tags: [graphs, sorting]
+    track_slugs: [dsa]
+
+  - slug: dsa.union-find
+    name: Union-find / disjoint set
+    description: |
+      Track partitioned elements with `find(x)` and `union(a, b)` in
+      near-constant amortised time (with path compression and union by
+      rank). The right structure for connectivity queries.
+    default_difficulty: 4
+    tags: [graphs, data-structures]
+    track_slugs: [dsa]
+
+  - slug: dsa.dp-intro
+    name: Dynamic programming (intro)
+    description: |
+      Solve a problem by combining solutions to subproblems with
+      overlapping work. Two flavours: top-down with memoisation, and
+      bottom-up tabulation. Recognise by the recursion + reuse pattern.
+    default_difficulty: 4
+    tags: [dp, paradigms]
+    track_slugs: [dsa]
+
+  - slug: dsa.dp-knapsack
+    name: 0/1 knapsack
+    description: |
+      Pick a subset of items with given weights and values to maximise
+      value within a capacity. The canonical 2D DP. The unbounded variant
+      lets each item repeat.
+    default_difficulty: 4
+    tags: [dp, paradigms]
+    track_slugs: [dsa]
+
+  - slug: dsa.dp-subsequence
+    name: Longest common subsequence and longest increasing subsequence
+    description: |
+      LCS is a classic 2D DP; LIS has an `O(n log n)` patience-sort
+      solution. Both crop up everywhere — diff, version control,
+      bioinformatics.
+    default_difficulty: 4
+    tags: [dp, strings]
+    track_slugs: [dsa]
+
+  - slug: dsa.greedy
+    name: Greedy algorithms
+    description: |
+      Make the locally-best choice at each step and hope it composes
+      to a global optimum. Works only when the problem has the
+      greedy-choice property — interval scheduling, Huffman coding,
+      Kruskal's MST.
+    default_difficulty: 4
+    tags: [paradigms]
+    track_slugs: [dsa]
+
+  - slug: dsa.backtracking
+    name: Backtracking
+    description: |
+      Build a candidate, prune dead branches early, undo on a fail.
+      DFS-shaped recursion. Used for constraint satisfaction, n-queens,
+      sudoku, permutations, subsets.
+    default_difficulty: 4
+    tags: [recursion, paradigms]
+    track_slugs: [dsa]
+
+  - slug: dsa.bit-manipulation
+    name: Bit manipulation
+    description: |
+      Treat integers as bit vectors: AND / OR / XOR / shift / popcount.
+      Subset enumeration via the integer trick. Useful for tight memory
+      and parity-style problems.
+    default_difficulty: 3
+    tags: [bits]
+    track_slugs: [dsa]
+
+  - slug: dsa.string-matching
+    name: String matching (KMP, Rabin-Karp)
+    description: |
+      Find a pattern in text in `O(n + m)`. KMP precomputes a failure
+      table; Rabin-Karp uses a rolling hash. Naive is `O(n*m)` in the
+      worst case and often fine in practice.
+    default_difficulty: 4
+    tags: [strings, search]
+    track_slugs: [dsa]
