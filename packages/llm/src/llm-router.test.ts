@@ -19,7 +19,7 @@ import type {
 
 function makeFake(name: string, response: Partial<CompleteResponse> = {}): LLMProvider {
   const complete = vi.fn(
-    async (req: CompleteRequest): Promise<CompleteResponse> => ({
+    async (_req: CompleteRequest): Promise<CompleteResponse> => ({
       text: response.text ?? `${name}-text`,
       model: response.model ?? `${name}-model`,
       finish_reason: response.finish_reason ?? "end_turn",
@@ -31,14 +31,14 @@ function makeFake(name: string, response: Partial<CompleteResponse> = {}): LLMPr
     yield { delta: "", done: true };
   });
   const embed = vi.fn(
-    async (req: EmbedRequest): Promise<EmbedResponse> => ({
+    async (_req: EmbedRequest): Promise<EmbedResponse> => ({
       vector: [],
       model: `${name}-embed`,
       usage: {},
     }),
   );
   const toolCall = vi.fn(
-    async (req: ToolCallRequest): Promise<ToolCallResponse> => ({
+    async (_req: ToolCallRequest): Promise<ToolCallResponse> => ({
       text: `${name}-tool-text`,
       tool_calls: [],
       model: `${name}-model`,
