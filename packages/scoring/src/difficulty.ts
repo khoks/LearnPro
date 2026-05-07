@@ -50,7 +50,10 @@ export const EpisodeSignalInputSchema = z.object({
   // call sites that don't supply the flag get the original behavior.
   got_help: z.boolean().default(false),
 });
-export type EpisodeSignalInput = z.infer<typeof EpisodeSignalInputSchema>;
+// `z.input` rather than `z.infer` so callers can omit the defaulted `got_help` field. Internal
+// readers (`updateSkillScore`, `episodeSuccessScore`) treat undefined as false — explicit code at
+// the top of those functions parses through the schema OR coerces `got_help ?? false`.
+export type EpisodeSignalInput = z.input<typeof EpisodeSignalInputSchema>;
 
 // Returns the per-episode difficulty signal `s` in (-∞..+∞ but typically clamped near [-1, +1]).
 // Negative = the learner struggled (slow, lots of hints, retries); positive = breezed through.
@@ -112,7 +115,7 @@ export function updateSkillScore(
   episode: EpisodeSignalInput,
   config: DifficultyHeuristicConfig = DEFAULT_DIFFICULTY_HEURISTIC,
 ): ConceptSkill {
-  if (episode.got_help) {
+  if (episode.got_help === true) {
     return prev;
   }
   const x = episodeSuccessScore(episode, config);

@@ -6,6 +6,9 @@ import dynamic from "next/dynamic";
 import type { SandboxLanguage, SandboxRunResponse } from "@learnpro/sandbox";
 import { OfflineBanner } from "../../components/pwa/OfflineBanner";
 import { StatusBadge } from "../../components/status-badge";
+import { PasteDetectModal } from "../../components/editor/PasteDetectModal";
+import { usePasteDetect } from "../../components/editor/use-paste-detect";
+import { attachPasteListener } from "../../components/editor/monaco-paste";
 import { runSandbox, type RunSandboxResult } from "../../lib/run-sandbox";
 import { runSandboxStream } from "../../lib/run-sandbox-stream";
 import { useInteractionCapture, type MonacoLikeEditor } from "../../lib/use-interaction-capture";
@@ -59,6 +62,11 @@ export function PlaygroundClient() {
   const [streamState, setStreamState] = useState<StreamingState | null>(null);
   const [voiceOptIn, setVoiceOptIn] = useState(false);
   const capture = useInteractionCapture();
+  const pasteDetect = usePasteDetect();
+  const codeRef = React.useRef(code);
+  React.useEffect(() => {
+    codeRef.current = code;
+  }, [code]);
 
   const onLanguageChange = useCallback((next: SandboxLanguage) => {
     setLanguage(next);
@@ -71,8 +79,11 @@ export function PlaygroundClient() {
     (editor: unknown) => {
       // Monaco's `IStandaloneCodeEditor` matches our structural `MonacoLikeEditor` shape.
       capture.attach(editor as MonacoLikeEditor);
+      attachPasteListener(editor, (text) => {
+        pasteDetect.notifyPaste({ text, current_content: codeRef.current });
+      });
     },
-    [capture],
+    [capture, pasteDetect],
   );
 
   const onRun = useCallback(async () => {
@@ -270,9 +281,16 @@ export function PlaygroundClient() {
       </section>
 
       <ResultPanel result={result} running={running} streamState={streamState} />
+
+      <PasteDetectModal
+        paste={pasteDetect.paste}
+        onMyCode={pasteDetect.dismiss}
+        onGotHelp={pasteDetect.gotHelp}
+      />
     </div>
   );
 }
+
 
 function ResultPanel({
   result,

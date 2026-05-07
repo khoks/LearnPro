@@ -440,6 +440,7 @@ function makeEpisode(overrides: Partial<Episode> = {}): Episode {
     time_to_solve_ms: null,
     embedding: null,
     interactions_summary: null,
+    got_help: false,
     ...overrides,
   };
 }

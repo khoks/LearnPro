@@ -37,6 +37,7 @@ import {
   getQuietHoursConfig,
   getUserDataSummary,
   insertDeferredNotification,
+  markEpisodeGotHelp,
   updateProfileFields,
 } from "@learnpro/db";
 import {
@@ -124,6 +125,10 @@ export interface BuildServerOptions {
   // STORY-011 — tutor agent factory. Default in production wires the Drizzle/LLM-backed factory
   // when DATABASE_URL is set; tests inject a fake factory so they don't need DB or LLM.
   tutorAgentFactory?: TutorAgentFactory;
+  // STORY-042 — got-help store for the per-episode honesty toggle. Production wires through
+  // @learnpro/db's `markEpisodeGotHelp`; tests inject a fake. The route fails closed (503) when
+  // omitted, so an unwired surface never silently swallows the user's mark.
+  gotHelpStore?: import("./tutor.js").GotHelpStore;
   // STORY-023 — bell-icon panel + Web Push routes. Tests inject a fake dispatcher / fake DB so
   // they don't need Postgres or VAPID keys. Production wiring lives in defaultsFromEnv() and
   // wraps the bare dispatcher with `dispatcherWithQuietHours()` (STORY-024).
@@ -373,7 +378,12 @@ export function buildServer(opts: BuildServerOptions = {}) {
   // the episode row. Production wires `buildDrizzleTutorFactory` via `defaultsFromEnv()`; tests
   // inject `tutorAgentFactory` directly.
   if (opts.tutorAgentFactory) {
-    registerTutorRoutes(app, { factory: opts.tutorAgentFactory, sessionResolver, redactor });
+    registerTutorRoutes(app, {
+      factory: opts.tutorAgentFactory,
+      sessionResolver,
+      redactor,
+      ...(opts.gotHelpStore ? { gotHelpStore: opts.gotHelpStore } : {}),
+    });
   }
 
   // STORY-023 — bell-icon panel + Web Push routes. Wired only when a notifications config is
@@ -492,6 +502,7 @@ function defaultsFromEnv(): {
   onboardingProfileWriter?: OnboardingProfileWriter;
   dataExporter?: DataExporter;
   tutorAgentFactory?: TutorAgentFactory;
+  gotHelpStore?: BuildServerOptions["gotHelpStore"];
   notifications?: BuildServerOptions["notifications"];
   sessionPlanFactory?: SessionPlanFactory;
   quietHoursDb?: import("@learnpro/db").LearnProDb;
@@ -566,6 +577,11 @@ function defaultsFromEnv(): {
       llm,
       sandbox: defaultSandbox(),
     }),
+    gotHelpStore: {
+      async markEpisodeGotHelp(input) {
+        return markEpisodeGotHelp(db, input);
+      },
+    },
     notifications: {
       db,
       dispatcher,
