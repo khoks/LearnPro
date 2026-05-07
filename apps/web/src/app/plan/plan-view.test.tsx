@@ -254,12 +254,15 @@ describe("TodayPlanFullView", () => {
     expect(out).toContain('href="/session?track=typescript-fundamentals"');
   });
 
-  it("always includes the ThisWeek deferred stub explaining STORY-032 dependency", () => {
+  it("does not embed the weekly view itself — the page composes <WeeklyPlanCard> separately (STORY-046b)", () => {
     const out = renderToStaticMarkup(
       <TodayPlanFullView plan={makePlan()} activeTrackSlug={null} />,
     );
-    expect(out).toContain("Weekly themed plans land alongside the knowledge-graph work");
-    expect(out).toContain("STORY-032");
+    // Pre-STORY-046b the full view embedded `<ThisWeekDeferredStub>`. Now the weekly view is
+    // owned by `<WeeklyPlanCard>` rendered alongside this component on the page; this view should
+    // NOT carry the deferred-stub copy any more.
+    expect(out).not.toContain("Weekly themed plans land alongside the knowledge-graph work");
+    expect(out).not.toContain('data-testid="this-week-deferred-stub"');
   });
 
   it("contains no forbidden dark-pattern phrases across variants", () => {
