@@ -2,14 +2,14 @@
 id: STORY-043
 title: Multi-file workspaces in sandbox + editor
 type: story
-status: backlog
+status: in-progress
 priority: P0
 estimate: L
 parent: EPIC-003
 phase: v1
 tags: [sandbox, workspaces, frameworks, v1]
 created: 2026-04-25
-updated: 2026-04-25
+updated: 2026-05-06
 ---
 
 ## Description
@@ -45,3 +45,4 @@ Add a virtual filesystem in the sandbox container, a file-tree sidebar in the UI
 ## Activity log
 
 - 2026-04-25 — created
+- 2026-05-06 — picked up; sandbox `SandboxRunRequest` extended to accept `files: Array<{path, content}>` with a backward-compat preprocess for the legacy `code` shorthand. Per-language entry-file convention exposed as `ENTRY_FILE_BY_LANGUAGE` (`python: main.py`, `typescript: index.ts`). Piston provider reorders the entry file to `files[0]` so Piston's default-first-file run rule picks it up.

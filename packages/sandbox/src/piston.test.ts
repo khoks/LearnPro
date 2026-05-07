@@ -8,6 +8,7 @@ import {
 } from "./piston.js";
 import { InMemorySandboxTelemetrySink } from "./telemetry.js";
 import { SandboxRequestError } from "./errors.js";
+import { ENTRY_FILE_BY_LANGUAGE, SandboxRunRequestSchema } from "./types.js";
 
 class FakePistonTransport implements PistonTransport {
   public lastParams: PistonExecuteParams | null = null;
@@ -286,6 +287,146 @@ describe("PistonSandboxProvider.runStream — STORY-059", () => {
     }
     expect(sink.events).toHaveLength(1);
     expect(sink.events[0]?.ok).toBe(true);
+  });
+});
+
+// STORY-043 — Multi-file workspace tests.  The legacy `code` shorthand keeps working;
+// the multi-file `files` shape ships every file to Piston, with the entry file at index 0
+// (Piston runs the first file in its files[] array by default).  Both shapes are accepted
+// by the same `SandboxRunRequestSchema` thanks to a `code: string` → `files[]` preprocess.
+describe("PistonSandboxProvider.run — STORY-043 multi-file workspace", () => {
+  it("ships multi-file workspaces to Piston with the entry file first", async () => {
+    const transport = new FakePistonTransport(ok({ stdout: "two\n" }));
+    const provider = new PistonSandboxProvider({ transport });
+    await provider.run({
+      language: "python",
+      files: [
+        { path: "lib/util.py", content: "def add(a, b): return a + b\n" },
+        { path: "main.py", content: "from lib.util import add\nprint(add(1, 1))\n" },
+      ],
+      entry_file: "main.py",
+      time_limit_ms: 5_000,
+      memory_limit_mb: 128,
+      output_limit_bytes: 64 * 1024,
+    });
+    expect(transport.lastParams?.files).toHaveLength(2);
+    // Entry first.
+    expect(transport.lastParams?.files[0]?.name).toBe("main.py");
+    expect(transport.lastParams?.files[1]?.name).toBe("lib/util.py");
+  });
+
+  it("falls back to the per-language entry filename when entry_file is omitted", async () => {
+    const transport = new FakePistonTransport(ok());
+    const provider = new PistonSandboxProvider({ transport });
+    await provider.run({
+      language: "typescript",
+      files: [
+        { path: "math.ts", content: "export const sum = (a: number, b: number) => a + b;\n" },
+        {
+          path: "index.ts",
+          content: "import { sum } from './math.js';\nconsole.log(sum(2, 3));\n",
+        },
+      ],
+      time_limit_ms: 5_000,
+      memory_limit_mb: 128,
+      output_limit_bytes: 64 * 1024,
+    });
+    // The TS spec's filename is `index.ts` (per ENTRY_FILE_BY_LANGUAGE), so we expect the
+    // entry to be reordered to the front.
+    expect(ENTRY_FILE_BY_LANGUAGE.typescript).toBe("index.ts");
+    expect(transport.lastParams?.files[0]?.name).toBe("index.ts");
+  });
+
+  it("preserves the order of non-entry files", async () => {
+    const transport = new FakePistonTransport(ok());
+    const provider = new PistonSandboxProvider({ transport });
+    await provider.run({
+      language: "python",
+      files: [
+        { path: "a.py", content: "x = 1\n" },
+        { path: "b.py", content: "y = 2\n" },
+        { path: "main.py", content: "import a, b\nprint(a.x + b.y)\n" },
+        { path: "c.py", content: "z = 3\n" },
+      ],
+      entry_file: "main.py",
+      time_limit_ms: 5_000,
+      memory_limit_mb: 128,
+      output_limit_bytes: 64 * 1024,
+    });
+    const names = transport.lastParams?.files.map((f) => f.name);
+    expect(names).toEqual(["main.py", "a.py", "b.py", "c.py"]);
+  });
+
+  it("accepts the legacy `code` shorthand (backward compat)", async () => {
+    const transport = new FakePistonTransport(ok({ stdout: "ok\n" }));
+    const provider = new PistonSandboxProvider({ transport });
+    const res = await provider.run({
+      language: "python",
+      code: "print('ok')\n",
+      time_limit_ms: 5_000,
+      memory_limit_mb: 128,
+      output_limit_bytes: 64 * 1024,
+    });
+    expect(transport.lastParams?.files).toHaveLength(1);
+    expect(transport.lastParams?.files[0]?.name).toBe(ENTRY_FILE_BY_LANGUAGE.python);
+    expect(transport.lastParams?.files[0]?.content).toBe("print('ok')\n");
+    expect(res.stdout).toBe("ok\n");
+  });
+
+  it("rejects duplicate paths in files[] via the zod boundary", () => {
+    const result = SandboxRunRequestSchema.safeParse({
+      language: "python",
+      files: [
+        { path: "main.py", content: "x=1\n" },
+        { path: "main.py", content: "x=2\n" },
+      ],
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects entry_file values not present in files[]", () => {
+    const result = SandboxRunRequestSchema.safeParse({
+      language: "python",
+      files: [{ path: "main.py", content: "x=1\n" }],
+      entry_file: "missing.py",
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects path traversal (..-segments)", () => {
+    const result = SandboxRunRequestSchema.safeParse({
+      language: "python",
+      files: [{ path: "../etc/passwd", content: "" }],
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects absolute paths", () => {
+    const result = SandboxRunRequestSchema.safeParse({
+      language: "python",
+      files: [{ path: "/etc/passwd", content: "" }],
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("permits empty content in non-entry files (e.g. an empty __init__.py)", async () => {
+    const transport = new FakePistonTransport(ok({ stdout: "ok\n" }));
+    const provider = new PistonSandboxProvider({ transport });
+    await provider.run({
+      language: "python",
+      files: [
+        { path: "lib/__init__.py", content: "" },
+        { path: "lib/util.py", content: "def f(): return 1\n" },
+        { path: "main.py", content: "from lib.util import f\nprint(f())\n" },
+      ],
+      entry_file: "main.py",
+      time_limit_ms: 5_000,
+      memory_limit_mb: 128,
+      output_limit_bytes: 64 * 1024,
+    });
+    expect(transport.lastParams?.files.find((f) => f.name === "lib/__init__.py")?.content).toBe(
+      "",
+    );
   });
 });
 
