@@ -13,6 +13,10 @@ import { auth, signOut } from "../../auth/auth.js";
 import { getAuthDb } from "../../auth/db.js";
 import { destinationForUser } from "../../auth/post-signin.js";
 import { AutonomyBandIndicator } from "../../components/autonomy/AutonomyBandIndicator.js";
+import {
+  BugFindingScoresCard,
+  type BugFindingScoreRow,
+} from "../../components/dashboard/BugFindingScoresCard.js";
 import { InstallPrompt } from "../../components/pwa/InstallPrompt.js";
 import { QuietHoursCard } from "../../components/settings/QuietHoursCard.js";
 import { TodayPlanSummaryCard, type TodayPlanShape } from "../plan/plan-view.js";
@@ -43,16 +47,25 @@ export default async function DashboardPage() {
   const userId = session.user.id;
   const db = getAuthDb();
   const today = new Date();
-  const [xp, streak, activeTrackSlugs, dueReviews, todayPlan, gotHelpCount, insights] =
-    await Promise.all([
-      getUserXp(db, userId),
-      getStreakSnapshot(db, userId, today, MONTHLY_GRACE_CAP),
-      getActiveTrackSlugs(db, userId),
-      getDueConcepts(db, userId, today),
-      loadTodayPlanForDashboard(),
-      countGotHelpEpisodes(db, userId),
-      loadProfileInsightsForDashboard(),
-    ]);
+  const [
+    xp,
+    streak,
+    activeTrackSlugs,
+    dueReviews,
+    todayPlan,
+    gotHelpCount,
+    insights,
+    bugFindingScores,
+  ] = await Promise.all([
+    getUserXp(db, userId),
+    getStreakSnapshot(db, userId, today, MONTHLY_GRACE_CAP),
+    getActiveTrackSlugs(db, userId),
+    getDueConcepts(db, userId, today),
+    loadTodayPlanForDashboard(),
+    countGotHelpEpisodes(db, userId),
+    loadProfileInsightsForDashboard(),
+    loadBugFindingScoresForDashboard(),
+  ]);
 
   const trackProgress = (
     await Promise.all(activeTrackSlugs.map((slug) => getTrackProgress(db, userId, slug)))
@@ -109,6 +122,10 @@ export default async function DashboardPage() {
         <ProfileInsightsCard insights={insights} />
       </section>
 
+      <section aria-label="Bug-finding scores" style={{ marginTop: "1.25rem" }}>
+        <BugFindingScoresCard scores={bugFindingScores} />
+      </section>
+
       <section aria-label="Per-track progress" style={{ marginTop: "2rem" }}>
         <h2 style={{ fontSize: "1.1rem", marginBottom: "0.75rem" }}>Tracks</h2>
         {trackProgress.length === 0 ? (
@@ -160,6 +177,29 @@ async function loadProfileInsightsForDashboard(): Promise<ProfileInsight[]> {
     if (!res.ok) return [];
     const json = (await res.json().catch(() => null)) as { insights: ProfileInsight[] } | null;
     return json?.insights ?? [];
+  } catch {
+    return [];
+  }
+}
+
+// STORY-037b — fetch the user's per-archetype bug-finding scores via the Next.js proxy. The
+// proxy forwards the cookie to apps/api so the session resolver can identify the user. Fail-
+// soft: when the API is unreachable or returns 4xx/5xx, return an empty list — the card
+// renders the empty-state copy ("Try a debug problem to see your bug-finding scores here.").
+async function loadBugFindingScoresForDashboard(): Promise<BugFindingScoreRow[]> {
+  try {
+    const incoming = await headers();
+    const cookie = incoming.get("cookie") ?? "";
+    const host = incoming.get("host") ?? "localhost:3000";
+    const proto = incoming.get("x-forwarded-proto") ?? "http";
+    const url = `${proto}://${host}/api/bug-finding-scores`;
+    const res = await fetch(url, {
+      headers: { ...(cookie ? { cookie } : {}) },
+      cache: "no-store",
+    });
+    if (!res.ok) return [];
+    const json = (await res.json().catch(() => null)) as { scores: BugFindingScoreRow[] } | null;
+    return json?.scores ?? [];
   } catch {
     return [];
   }

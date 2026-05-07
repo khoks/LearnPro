@@ -10,6 +10,7 @@ void React;
 
 import RootLayout from "../app/layout";
 import { StatusBadge } from "../components/status-badge";
+import { BugFindingScoresCard } from "../components/dashboard/BugFindingScoresCard";
 import { StreakCard, TrackProgressBar, XpCard } from "../app/dashboard/dashboard-components";
 
 // STORY-027 a11y baseline. AC #5 was originally "Lighthouse a11y >= 90 on the dashboard,
@@ -163,6 +164,15 @@ describe("axe-core sweep — STORY-027 a11y baseline (no critical violations)", 
             ratio={3 / 9}
           />
         </section>
+        <section aria-label="Bug-finding scores">
+          <BugFindingScoresCard
+            scores={[
+              { bug_archetype: "off_by_one", score: 0.8, attempts: 5 },
+              { bug_archetype: "shadowing", score: 0.45, attempts: 2 },
+              { bug_archetype: "async_race", score: 0.25, attempts: 1 },
+            ]}
+          />
+        </section>
         <form>
           <button type="submit">Sign out</button>
         </form>
@@ -170,6 +180,31 @@ describe("axe-core sweep — STORY-027 a11y baseline (no critical violations)", 
     );
     const violations = await runAxe(markup);
     expectNoCritical(violations, "/dashboard");
+  });
+
+  it("/dashboard with bug-finding card empty state has 0 critical a11y violations", async () => {
+    // STORY-037b — sweep the empty-state variant separately so the axe baseline covers both
+    // the populated row layout (above) and the soft empty-state copy (below).
+    const markup = pageMarkup(
+      <main
+        id="main-content"
+        style={{
+          padding: "2rem",
+          fontFamily: "system-ui, sans-serif",
+          maxWidth: 960,
+          margin: "0 auto",
+        }}
+      >
+        <header>
+          <h1>Dashboard</h1>
+        </header>
+        <section aria-label="Bug-finding scores">
+          <BugFindingScoresCard scores={[]} />
+        </section>
+      </main>,
+    );
+    const violations = await runAxe(markup);
+    expectNoCritical(violations, "/dashboard (bug-finding empty)");
   });
 
   it("/onboarding has 0 critical a11y violations", async () => {
