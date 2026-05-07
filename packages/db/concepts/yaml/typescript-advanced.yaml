@@ -1,0 +1,203 @@
+concepts:
+  - slug: typescript.advanced.conditional-types
+    name: Conditional types
+    description: |
+      `T extends U ? X : Y` chooses one of two types based on assignability.
+      Distributes over unions: `T extends any ? T[] : never` maps each
+      member. The basis for most utility-type magic.
+    default_difficulty: 4
+    tags: [types, type-system]
+    track_slugs: [typescript-advanced]
+
+  - slug: typescript.advanced.mapped-types
+    name: Mapped types
+    description: |
+      `{ [K in keyof T]: F<T[K]> }` builds a new object type by walking
+      the keys of another. Combine with conditional types for filters
+      (e.g., `Pick`, `Omit`). Add `?` / `-?` / `readonly` modifiers.
+    default_difficulty: 4
+    tags: [types, type-system]
+    track_slugs: [typescript-advanced]
+
+  - slug: typescript.advanced.template-literal-types
+    name: Template literal types
+    description: |
+      `\`hello-${World}\`` builds a literal-type from a pattern. With
+      `infer`, you can parse a literal: extract a route param, split a
+      kebab-case name, or check a prefix at the type level.
+    default_difficulty: 5
+    tags: [types, type-system]
+    track_slugs: [typescript-advanced]
+
+  - slug: typescript.advanced.infer
+    name: infer keyword
+    description: |
+      Inside a conditional type, `infer X` captures a type position so
+      the true branch can refer to it. `ReturnType<F>` uses it:
+      `F extends (...a: any[]) => infer R ? R : never`.
+    default_difficulty: 4
+    tags: [types, type-system]
+    track_slugs: [typescript-advanced]
+
+  - slug: typescript.advanced.declaration-merging
+    name: Declaration merging
+    description: |
+      Multiple declarations with the same name can merge: two interfaces,
+      a namespace and a class, an interface and a function. Used by
+      tools that augment globals (e.g. extending `Window`).
+    default_difficulty: 4
+    tags: [types, modules]
+    track_slugs: [typescript-advanced]
+
+  - slug: typescript.advanced.module-augmentation
+    name: Module augmentation
+    description: |
+      Augment another module's types from your own file with
+      `declare module "x" { ... }`. The classic case is teaching React
+      that you have a custom theme object.
+    default_difficulty: 4
+    tags: [types, modules]
+    track_slugs: [typescript-advanced]
+
+  - slug: typescript.advanced.assertion-functions
+    name: Assertion functions
+    description: |
+      A function returning `asserts x is T` narrows `x` to `T` for the
+      caller after the call returns. Used by validators that throw on
+      bad input — narrows without an explicit `if`.
+    default_difficulty: 4
+    tags: [types, narrowing]
+    track_slugs: [typescript-advanced]
+
+  - slug: typescript.advanced.variance
+    name: Variance and bivariance
+    description: |
+      Function parameter positions are usually contravariant; return
+      positions covariant. With `strictFunctionTypes`, parameters are
+      contravariant; without, they are bivariant — a soundness escape
+      hatch.
+    default_difficulty: 5
+    tags: [types, type-system]
+    track_slugs: [typescript-advanced]
+
+  - slug: typescript.advanced.satisfies
+    name: satisfies operator
+    description: |
+      `expr satisfies T` checks that `expr` is assignable to `T` without
+      widening its inferred type. Lets you type-check a config object
+      while keeping its precise shape for downstream lookups.
+    default_difficulty: 4
+    tags: [types]
+    track_slugs: [typescript-advanced]
+
+  - slug: typescript.advanced.recursive-types
+    name: Recursive type aliases
+    description: |
+      A type alias can refer to itself — necessary for trees, JSON,
+      and linked lists: `type Json = null | string | number | boolean
+      | Json[] | { [k: string]: Json }`. The compiler imposes a depth
+      limit to avoid blowing up.
+    default_difficulty: 4
+    tags: [types]
+    track_slugs: [typescript-advanced]
+
+  - slug: typescript.advanced.brand-types
+    name: Branded / nominal types
+    description: |
+      Add a phantom field with a unique symbol to mint a nominally
+      distinct type from a structural one: `type UserId = string &
+      { readonly __brand: unique symbol }`. Useful for IDs that share
+      a primitive but should not be interchangeable.
+    default_difficulty: 5
+    tags: [types, modeling]
+    track_slugs: [typescript-advanced]
+
+  - slug: typescript.advanced.const-assertions
+    name: const assertions
+    description: |
+      `as const` makes a literal expression's type as narrow as
+      possible: arrays become readonly tuples, object literals get
+      `readonly` on every key, primitives become literal types.
+    default_difficulty: 3
+    tags: [types]
+    track_slugs: [typescript-advanced]
+
+  - slug: typescript.advanced.tuple-manipulation
+    name: Tuple type manipulation
+    description: |
+      Tuple operations at the type level: `[T, ...U]`, length, indexing,
+      mapping. The compiler treats variadic tuples as first-class —
+      build a typed `pipe` or `compose` from them.
+    default_difficulty: 5
+    tags: [types, type-system]
+    track_slugs: [typescript-advanced]
+
+  - slug: typescript.advanced.this-types
+    name: this types
+    description: |
+      `this: T` declares the expected type of `this` at a method site;
+      `this` as a type refers to the current class so subclasses
+      automatically narrow it. Critical for builder patterns.
+    default_difficulty: 4
+    tags: [types, oop]
+    track_slugs: [typescript-advanced]
+
+  - slug: typescript.advanced.decorators
+    name: Decorators
+    description: |
+      Decorators (`@Foo`) wrap classes, methods, accessors, and
+      properties at definition time. The 5.0+ stage-3 spec is the
+      modern target; legacy decorators differ subtly.
+    default_difficulty: 4
+    tags: [oop, syntax]
+    track_slugs: [typescript-advanced]
+
+  - slug: typescript.advanced.symbols
+    name: Symbols and unique symbols
+    description: |
+      `Symbol("name")` mints a unique value; `unique symbol` lets you
+      type a particular symbol so it cannot be conflated. Used as
+      computed property keys for protocol methods.
+    default_difficulty: 4
+    tags: [types]
+    track_slugs: [typescript-advanced]
+
+  - slug: typescript.advanced.async-iterators
+    name: Async iterators and for await
+    description: |
+      An async iterable returns an async iterator from
+      `[Symbol.asyncIterator]()`. `for await ... of` drives it. Async
+      generators (`async function*`) are the natural author.
+    default_difficulty: 4
+    tags: [async, iteration]
+    track_slugs: [typescript-advanced]
+
+  - slug: typescript.advanced.streams
+    name: Web Streams API
+    description: |
+      `ReadableStream` / `WritableStream` / `TransformStream` model
+      back-pressured pipelines in the platform. Compose with
+      `pipeThrough`. Native to fetch's `body` and modern Node.
+    default_difficulty: 4
+    tags: [async, streams]
+    track_slugs: [typescript-advanced]
+
+  - slug: typescript.advanced.workers
+    name: Web Workers and threads
+    description: |
+      Workers run JS off the main thread. Communicate with structured
+      cloning via `postMessage`. Node's `worker_threads` is the
+      backend cousin.
+    default_difficulty: 4
+    tags: [concurrency]
+    track_slugs: [typescript-advanced]
+
+  - slug: typescript.advanced.proxies-reflect
+    name: Proxy and Reflect
+    description: |
+      A `Proxy` intercepts operations on a target object — get, set,
+      apply, has. `Reflect` mirrors the underlying ops. Power tools
+      for validation layers, ORMs, and observable wrappers.
+    default_difficulty: 5
+    tags: [metaprogramming]
+    track_slugs: [typescript-advanced]
