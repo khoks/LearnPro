@@ -186,6 +186,17 @@ export {
 } from "./weekly-plan.js";
 
 export {
+  generateWeeklyTheme,
+  parseWeeklyThemeResponse,
+  WEEKLY_THEME_FORBIDDEN_OUTPUT_SUBSTRINGS,
+  WEEKLY_THEME_MAX_CHARS,
+  WEEKLY_THEME_MAX_WORDS,
+  type ConceptInfo as WeeklyThemeConceptInfo,
+  type GenerateWeeklyThemeInput,
+  type GenerateWeeklyThemeOutput,
+} from "./weekly-theme.js";
+
+export {
   AUTONOMY_ACTION_CONSEQUENCE,
   TutorSession,
   type AutonomyActionKind,
