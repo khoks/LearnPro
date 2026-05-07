@@ -2,7 +2,7 @@
 id: STORY-037b
 title: Bug-finding scores dashboard card (STORY-037a UI follow-up)
 type: story
-status: in-progress
+status: done
 priority: P2
 estimate: S
 parent: EPIC-007
@@ -25,29 +25,29 @@ attempt counter — no rankings, no comparisons.
 
 ## Acceptance criteria
 
-- [ ] New `<BugFindingScoresCard>` component renders a row per archetype with: humanized
+- [x] New `<BugFindingScoresCard>` component renders a row per archetype with: humanized
       archetype name (e.g. "Off-by-one", "Mutation in iteration", "Reference equality"), score
       surfaced as a low/medium/high band (never a raw number, never a percentile, no shaming),
       attempt count.
-- [ ] Coach-voice copy: card heading "Bug archetypes you've worked through" — never "weakness"
+- [x] Coach-voice copy: card heading "Bug archetypes you've worked through" — never "weakness"
       or "gap" framing. Scores reframed as growth, not deficit.
-- [ ] Empty state (no debug-problem submissions yet, or every archetype has 0 attempts):
+- [x] Empty state (no debug-problem submissions yet, or every archetype has 0 attempts):
       "Try a debug problem to see your bug-finding scores here." — coach-voice.
-- [ ] Sort: highest-attempts first (most-touched archetypes first); ties broken by archetype name.
-- [ ] Score → band mapping in a pure helper (`apps/web/src/lib/bug-finding-band.ts`):
+- [x] Sort: highest-attempts first (most-touched archetypes first); ties broken by archetype name.
+- [x] Score → band mapping in a pure helper (`apps/web/src/lib/bug-finding-band.ts`):
       `score < 0.4 → "still learning"`, `0.4 <= score <= 0.7 → "getting there"`,
       `score > 0.7 → "solid"`. (Centred on 0.5 cold-start; `bug-finding-policy` returns scores
       in [0, 1].)
-- [ ] New Next.js Route Handler proxy at `apps/web/src/app/api/bug-finding-scores/route.ts`
+- [x] New Next.js Route Handler proxy at `apps/web/src/app/api/bug-finding-scores/route.ts`
       forwards the cookie to the API's `GET /v1/bug-finding-scores`.
-- [ ] Card mounted on `/dashboard` page.
-- [ ] Forbidden-phrase test ensures the card never uses "weakness", "DON'T", "you're failing",
+- [x] Card mounted on `/dashboard` page.
+- [x] Forbidden-phrase test ensures the card never uses "weakness", "DON'T", "you're failing",
       etc. and reframes the bug-finding score as growth, not deficit.
-- [ ] axe-core regression test extends the existing dashboard a11y sweep with the new card
+- [x] axe-core regression test extends the existing dashboard a11y sweep with the new card
       visible.
-- [ ] Component render tests cover empty state, partial state (some archetypes touched, some
+- [x] Component render tests cover empty state, partial state (some archetypes touched, some
       not), full state, and the highest-attempts-first sort.
-- [ ] Pure band-mapping unit tests cover the band boundaries.
+- [x] Pure band-mapping unit tests cover the band boundaries.
 
 ## Dependencies
 
@@ -62,3 +62,16 @@ prompt, EWMA persistence, Fastify route) are already in main. This Story is pure
 
 - 2026-05-06 — created (carved out of STORY-037a)
 - 2026-05-06 — picked up
+- 2026-05-06 — done. New pure helper `apps/web/src/lib/bug-finding-band.ts` maps the [0, 1]
+  EWMA into 3 bands (`< 0.4 → still learning`, `0.4–0.7 → getting there`, `> 0.7 → solid`)
+  and exports humanized labels for the 8 archetypes. New Next.js proxy
+  `apps/web/src/app/api/bug-finding-scores/route.ts` forwards the cookie to apps/api's
+  `GET /v1/bug-finding-scores`. New `<BugFindingScoresCard>` in
+  `apps/web/src/components/dashboard/BugFindingScoresCard.tsx` renders one row per touched
+  archetype (humanized name + band pill + attempt count), sorted highest-attempts first with
+  alphabetic tie-break. Empty state surfaces the coach-voice prompt. Mounted on `/dashboard`
+  via a fail-soft loader (returns `[]` on 4xx/5xx so the card renders the empty state
+  rather than blocking the page). Extended STORY-027's axe-core sweep with two new
+  regressions (populated card + empty state) — 0 critical violations on both. 24 new tests
+  (12 component + 7 band/label + 5 proxy). Full apps/web suite: 652/652 passing.
+
