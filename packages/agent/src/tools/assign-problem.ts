@@ -33,6 +33,13 @@ export const AssignProblemOutputSchema = z.object({
     expected_median_time_to_solve_ms: z.number().int().positive(),
     concept_tags: z.array(z.string()),
     difficulty: z.number().int().min(1).max(5),
+    // STORY-037 — `kind` discriminator. Default "implement" so existing clients (and replay
+    // fixtures from before STORY-037) keep parsing. Debug problems also surface
+    // `bug_archetype` + `expected_behavior` so the editor can render the right scaffolding
+    // (test panel, pre-populated buggy code, "find the bug" framing).
+    kind: z.enum(["implement", "debug"]).default("implement"),
+    bug_archetype: z.string().nullable().default(null),
+    expected_behavior: z.string().nullable().default(null),
   }),
   difficulty_tier: z.enum(["easy", "medium", "hard", "expert"]),
   why_this_difficulty: z.string(),
@@ -267,5 +274,8 @@ function projectProblem(def: ProblemDef): AssignProblemOutput["problem"] {
     expected_median_time_to_solve_ms: def.expected_median_time_to_solve_ms,
     concept_tags: def.concept_tags,
     difficulty: def.difficulty,
+    kind: def.kind,
+    bug_archetype: def.kind === "debug" ? def.bug_archetype : null,
+    expected_behavior: def.kind === "debug" ? def.expected_behavior : null,
   };
 }
