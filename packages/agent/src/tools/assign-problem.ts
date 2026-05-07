@@ -38,13 +38,28 @@ export const AssignProblemOutputSchema = z.object({
     expected_median_time_to_solve_ms: z.number().int().positive(),
     concept_tags: z.array(z.string()),
     difficulty: z.number().int().min(1).max(5),
-    // STORY-037 — `kind` discriminator. Default "implement" so existing clients (and replay
-    // fixtures from before STORY-037) keep parsing. Debug problems also surface
+    // STORY-037 / STORY-038a — `kind` discriminator. Default "implement" so existing clients (and
+    // replay fixtures from before STORY-037) keep parsing. Debug problems also surface
     // `bug_archetype` + `expected_behavior` so the editor can render the right scaffolding
-    // (test panel, pre-populated buggy code, "find the bug" framing).
-    kind: z.enum(["implement", "debug"]).default("implement"),
+    // (test panel, pre-populated buggy code, "find the bug" framing). Comprehension problems
+    // surface the `question`, `comprehension_format`, `answer_format`, the optional
+    // multiple-choice options + correct index, and the `explanation` (used by the tutor's
+    // commentary phase on a passed answer). Implement+debug problems leave the comprehension
+    // fields null; comprehension problems leave the debug fields null.
+    kind: z.enum(["implement", "debug", "comprehension"]).default("implement"),
     bug_archetype: z.string().nullable().default(null),
     expected_behavior: z.string().nullable().default(null),
+    // STORY-038a — comprehension projection. All fields are nullable so the implement+debug
+    // branch can serialize cleanly (the consumer narrows via `kind`).
+    question: z.string().nullable().default(null),
+    comprehension_format: z
+      .enum(["predict_output", "trace_execution", "reason_property"])
+      .nullable()
+      .default(null),
+    answer_format: z.enum(["multiple_choice", "free_text"]).nullable().default(null),
+    multiple_choice_options: z.array(z.string()).nullable().default(null),
+    correct_answer_index: z.number().int().min(0).nullable().default(null),
+    explanation: z.string().nullable().default(null),
   }),
   difficulty_tier: z.enum(["easy", "medium", "hard", "expert"]),
   why_this_difficulty: z.string(),
@@ -294,10 +309,36 @@ function countOverlap(tags: ReadonlyArray<string>, due: ReadonlySet<string>): nu
 }
 
 function projectProblem(def: ProblemDef): AssignProblemOutput["problem"] {
-  // STORY-038 — comprehension problems are routed via a separate assign path; the implement+debug
-  // path here doesn't surface them. Narrow defensively so the projection types are sound.
+  // STORY-038a — comprehension problems are surfaced through the same assign path as
+  // implement+debug. The projection narrows on `kind`: implement/debug leave the comprehension
+  // fields null and surface the legacy `public_examples` + (debug-only) `bug_archetype` /
+  // `expected_behavior`; comprehension problems leave the implement/debug fields at their
+  // empty defaults and surface the comprehension widget shape (question / format / answer
+  // shape / options / explanation).
   if (def.kind === "comprehension") {
-    throw new Error("assign-problem: comprehension problems use a separate route");
+    return {
+      name: def.name,
+      language: def.language,
+      statement: def.statement,
+      // The editor renders this read-only for comprehension; it's still the "code under
+      // discussion" the user reads.
+      starter_code: def.starter_code,
+      // Comprehension YAMLs don't carry `public_examples` (no code to run); empty array keeps
+      // the projection shape uniform.
+      public_examples: [],
+      expected_median_time_to_solve_ms: def.expected_median_time_to_solve_ms,
+      concept_tags: def.concept_tags,
+      difficulty: def.difficulty,
+      kind: "comprehension",
+      bug_archetype: null,
+      expected_behavior: null,
+      question: def.question,
+      comprehension_format: def.comprehension_format,
+      answer_format: def.answer_format,
+      multiple_choice_options: def.multiple_choice_options ?? null,
+      correct_answer_index: def.correct_answer_index ?? null,
+      explanation: def.explanation,
+    };
   }
   return {
     name: def.name,
@@ -311,5 +352,11 @@ function projectProblem(def: ProblemDef): AssignProblemOutput["problem"] {
     kind: def.kind,
     bug_archetype: def.kind === "debug" ? def.bug_archetype : null,
     expected_behavior: def.kind === "debug" ? def.expected_behavior : null,
+    question: null,
+    comprehension_format: null,
+    answer_format: null,
+    multiple_choice_options: null,
+    correct_answer_index: null,
+    explanation: null,
   };
 }

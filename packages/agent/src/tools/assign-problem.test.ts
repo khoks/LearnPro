@@ -506,6 +506,158 @@ describe("createAssignProblemTool: STORY-037 debug problem projection", () => {
   });
 });
 
+// STORY-038a — comprehension projection. Comprehension problems are surfaced through the same
+// assigner as implement+debug (no separate route any more). The projection carries the
+// comprehension-specific fields (question / format / answer_format / options / index /
+// explanation) and leaves the debug-only fields null. Implement+debug projections keep their
+// existing shape and leave the comprehension fields null.
+describe("createAssignProblemTool: STORY-038a comprehension projection", () => {
+  function comprehensionEntry(opts: {
+    slug: string;
+    answer_format: "multiple_choice" | "free_text";
+  }): ProblemCatalogEntry {
+    const def: ProblemDef =
+      opts.answer_format === "multiple_choice"
+        ? {
+            kind: "comprehension",
+            slug: opts.slug,
+            name: `Read ${opts.slug}`,
+            language: "python",
+            difficulty: 2,
+            track: "python-fundamentals",
+            concept_tags: ["list-comprehension"],
+            statement: "Read the code and answer.",
+            starter_code: "result = [x*2 for x in range(4)]\nprint(result)\n",
+            expected_median_time_to_solve_ms: 60_000,
+            comprehension_format: "predict_output",
+            question: "What does the program print?",
+            answer_format: "multiple_choice",
+            multiple_choice_options: ["[0, 2, 4, 6]", "[1, 2, 3, 4]", "[0, 1, 2, 3]", "[2, 4, 6]"],
+            correct_answer_index: 0,
+            explanation: "range(4) is 0..3; doubling gives [0, 2, 4, 6].",
+          }
+        : {
+            kind: "comprehension",
+            slug: opts.slug,
+            name: `Reason ${opts.slug}`,
+            language: "python",
+            difficulty: 3,
+            track: "python-fundamentals",
+            concept_tags: ["complexity"],
+            statement: "Read the code and answer.",
+            starter_code: "def fib(n):\n    return n if n < 2 else fib(n-1) + fib(n-2)\n",
+            expected_median_time_to_solve_ms: 90_000,
+            comprehension_format: "reason_property",
+            question: "Why is this slow for n=30?",
+            answer_format: "free_text",
+            expected_answer:
+              "Naive recursion has overlapping subproblems leading to exponential calls.",
+            explanation:
+              "Without memoization, fib has O(2^n) overlapping subproblems and recomputes them.",
+          };
+    return {
+      problem_id: `00000000-0000-4000-8000-${opts.slug.padStart(12, "0").slice(0, 12)}`,
+      problem_slug: opts.slug,
+      def,
+    };
+  }
+
+  it("surfaces comprehension fields on a multiple-choice problem (debug fields null)", async () => {
+    const catalog = [comprehensionEntry({ slug: "mc-pred", answer_format: "multiple_choice" })];
+    const deps: AssignProblemDeps = {
+      async loadRecentEpisodes() {
+        return [];
+      },
+      async loadProblemCatalog() {
+        return catalog;
+      },
+      async createEpisode() {
+        return {
+          episode_id: "99999999-9999-4999-8999-000000000020",
+          started_at: 1700000000000,
+        };
+      },
+    };
+    const tool = createAssignProblemTool({ deps });
+    const out = await tool.run({ user_id: USER_ID, org_id: ORG_ID, track_id: TRACK_ID });
+
+    expect(out.problem.kind).toBe("comprehension");
+    expect(out.problem.question).toBe("What does the program print?");
+    expect(out.problem.comprehension_format).toBe("predict_output");
+    expect(out.problem.answer_format).toBe("multiple_choice");
+    expect(out.problem.multiple_choice_options).toEqual([
+      "[0, 2, 4, 6]",
+      "[1, 2, 3, 4]",
+      "[0, 1, 2, 3]",
+      "[2, 4, 6]",
+    ]);
+    expect(out.problem.correct_answer_index).toBe(0);
+    expect(out.problem.explanation).toContain("range(4)");
+    // Debug-only fields stay null.
+    expect(out.problem.bug_archetype).toBeNull();
+    expect(out.problem.expected_behavior).toBeNull();
+    // Comprehension YAMLs carry no hidden tests / public_examples.
+    expect(out.problem.public_examples).toEqual([]);
+    // Code is still surfaced (read-only in the editor).
+    expect(out.problem.starter_code).toContain("range(4)");
+  });
+
+  it("surfaces comprehension fields on a free-text problem (multiple_choice fields null)", async () => {
+    const catalog = [comprehensionEntry({ slug: "ft-rsn", answer_format: "free_text" })];
+    const deps: AssignProblemDeps = {
+      async loadRecentEpisodes() {
+        return [];
+      },
+      async loadProblemCatalog() {
+        return catalog;
+      },
+      async createEpisode() {
+        return {
+          episode_id: "99999999-9999-4999-8999-000000000021",
+          started_at: 1700000000000,
+        };
+      },
+    };
+    const tool = createAssignProblemTool({ deps });
+    const out = await tool.run({ user_id: USER_ID, org_id: ORG_ID, track_id: TRACK_ID });
+
+    expect(out.problem.kind).toBe("comprehension");
+    expect(out.problem.answer_format).toBe("free_text");
+    expect(out.problem.comprehension_format).toBe("reason_property");
+    // Free-text problems don't surface options / index.
+    expect(out.problem.multiple_choice_options).toBeNull();
+    expect(out.problem.correct_answer_index).toBeNull();
+    expect(out.problem.explanation).toContain("memoization");
+  });
+
+  it("implement+debug projections leave comprehension fields null", async () => {
+    const catalog = [entry("impl-x", 1)];
+    const deps: AssignProblemDeps = {
+      async loadRecentEpisodes() {
+        return [];
+      },
+      async loadProblemCatalog() {
+        return catalog;
+      },
+      async createEpisode() {
+        return {
+          episode_id: "99999999-9999-4999-8999-000000000022",
+          started_at: 1700000000000,
+        };
+      },
+    };
+    const tool = createAssignProblemTool({ deps });
+    const out = await tool.run({ user_id: USER_ID, org_id: ORG_ID, track_id: TRACK_ID });
+    expect(out.problem.kind).toBe("implement");
+    expect(out.problem.question).toBeNull();
+    expect(out.problem.comprehension_format).toBeNull();
+    expect(out.problem.answer_format).toBeNull();
+    expect(out.problem.multiple_choice_options).toBeNull();
+    expect(out.problem.correct_answer_index).toBeNull();
+    expect(out.problem.explanation).toBeNull();
+  });
+});
+
 // STORY-033 — assign-problem now surfaces the user's latest cross-episode insights so the
 // tutor's opener can reference them. The deps adapter's `loadLatestInsights` is optional;
 // when unwired the array is empty and behaviour matches the pre-STORY-033 path exactly.
