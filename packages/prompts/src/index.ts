@@ -29,3 +29,10 @@ export {
   buildSessionPlanUserPrompt,
   type SessionPlanPromptOptions,
 } from "./session-plan.js";
+
+export {
+  ASSIGN_PROBLEM_PROMPT_VERSION,
+  ASSIGN_PROBLEM_SYSTEM_PROMPT,
+  buildAssignProblemUserPrompt,
+  type AssignProblemPromptOptions,
+} from "./assign-problem.js";

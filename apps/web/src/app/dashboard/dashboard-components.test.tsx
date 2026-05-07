@@ -1,7 +1,13 @@
 import * as React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { DueReviewsCard, StreakCard, TrackProgressBar, XpCard } from "./dashboard-components.js";
+import {
+  DueReviewsCard,
+  HonestSessionsCard,
+  StreakCard,
+  TrackProgressBar,
+  XpCard,
+} from "./dashboard-components.js";
 
 // Reference React explicitly so vitest's classic-runtime JSX transform doesn't strip the
 // import. (Without this, esbuild's classic JSX transform emits React.createElement calls and
@@ -14,7 +20,11 @@ void React;
 
 function html(
   node: ReturnType<
-    typeof XpCard | typeof StreakCard | typeof TrackProgressBar | typeof DueReviewsCard
+    | typeof XpCard
+    | typeof StreakCard
+    | typeof TrackProgressBar
+    | typeof DueReviewsCard
+    | typeof HonestSessionsCard
   >,
 ): string {
   if (node === null) return "";
@@ -242,5 +252,45 @@ describe("DueReviewsCard (STORY-031)", () => {
     expect(out).not.toContain("forget");
     expect(out).not.toContain("losing");
     expect(out).not.toContain("fading");
+  });
+});
+
+describe("HonestSessionsCard — STORY-042", () => {
+  it("renders a soft empty-state at zero count (no shame, no pressure)", () => {
+    const out = html(<HonestSessionsCard count={0} />);
+    expect(out).toContain("Honest sessions");
+    expect(out).toContain("—");
+    expect(out).toContain("No pressure to use it");
+  });
+
+  it("renders the singular form at count=1", () => {
+    const out = html(<HonestSessionsCard count={1} />);
+    expect(out).toContain("1 problem marked");
+    expect(out).toContain("makes adaptiveness sharper");
+  });
+
+  it("renders the plural form for higher counts", () => {
+    const out = html(<HonestSessionsCard count={5} />);
+    expect(out).toContain("5 problems marked");
+  });
+
+  it("never accuses, moralizes, or surfaces a ratio (anti-dark-pattern)", () => {
+    const out = html(<HonestSessionsCard count={3} />);
+    assertNoForbiddenPhrases(out);
+    // STORY-042 — no accusatory framing.
+    expect(out).not.toContain("cheat");
+    expect(out).not.toContain("Cheat");
+    expect(out).not.toContain("dishonest");
+    // Never surface a ratio against total episodes — invites comparison + shaming.
+    expect(out).not.toMatch(/got help \d+\s*\/\s*\d+/);
+    expect(out).not.toContain("ratio");
+    // STORY-042 — always frame as a positive (sharper adaptiveness, not a counter that pressures).
+    expect(out.toLowerCase()).not.toContain("you got help");
+  });
+
+  it("contains no forbidden dark-pattern phrases at any count", () => {
+    for (const n of [0, 1, 2, 9, 27]) {
+      assertNoForbiddenPhrases(html(<HonestSessionsCard count={n} />));
+    }
   });
 });

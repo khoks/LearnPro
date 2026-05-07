@@ -91,6 +91,9 @@ const EpisodeSchema = z.object({
     .nullable(),
   time_to_solve_ms: z.number().int().nullable(),
   interactions_summary: z.unknown().nullable(),
+  // STORY-042 — backwards-compatible: dumps that pre-date the column simply default to false on
+  // import.
+  got_help: z.boolean().default(false),
 });
 
 const SubmissionSchema = z.object({
@@ -146,7 +149,11 @@ export const DumpEnvelopeSchema = z.object({
   notifications: z.array(NotificationSchema),
 });
 
-export type DumpEnvelope = z.infer<typeof DumpEnvelopeSchema>;
+// `z.input` rather than `z.infer` so callers (and the import-test fixtures) can omit fields with
+// schema-level defaults — STORY-042's `got_help` flag is the first such field. Internal code reads
+// `envelope` after `DumpEnvelopeSchema.parse(...)` which fills the defaults, so the post-parse
+// type is effectively the wider `z.infer` shape.
+export type DumpEnvelope = z.input<typeof DumpEnvelopeSchema>;
 
 // =============================================================================
 // Result + options.
@@ -316,6 +323,7 @@ export async function importDump(
         time_to_solve_ms: ep.time_to_solve_ms,
         // `embedding` is intentionally omitted — re-derivable from the next tutor call.
         interactions_summary: ep.interactions_summary ?? null,
+        got_help: ep.got_help,
       }));
       const inserted = await tx
         .insert(episodes)

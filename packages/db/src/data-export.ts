@@ -258,6 +258,8 @@ function serializeEpisode(row: Episode): Record<string, unknown> {
     final_outcome: row.final_outcome,
     time_to_solve_ms: row.time_to_solve_ms,
     interactions_summary: row.interactions_summary,
+    // STORY-042 — exported so the user has full visibility into the per-episode honesty flag.
+    got_help: row.got_help,
     // `embedding` deliberately omitted — it's a 1536-dim vector that bloats the export and is
     // re-derivable from the episode content. A future Story can flip this to opt-in.
   };

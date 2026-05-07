@@ -170,6 +170,53 @@ export function DueReviewsCard(props: DueReviewsCardProps): ReactElement | null 
   );
 }
 
+export interface HonestSessionsCardProps {
+  // Number of episodes the user marked as "I got help" — counts both the paste-detect modal's
+  // "I got help" path and the per-submission toggle in the result panel.
+  count: number;
+}
+
+// STORY-042 — coach-voice "Honest sessions" stat. Frame it as a compliment to the user's honesty,
+// never a counter that creates pressure. Zero-state renders a tiny "—" so the card still occupies
+// the slot but doesn't moralize. Anti-dark-pattern: no "you got help X times" framing; never
+// surface this as a ratio against total episodes (a ratio invites comparison and shaming).
+export function HonestSessionsCard(props: HonestSessionsCardProps): ReactElement {
+  const { count } = props;
+  const headline =
+    count === 0
+      ? "—"
+      : count === 1
+        ? "1 problem marked"
+        : `${count} problems marked`;
+  const supporting =
+    count === 0
+      ? "When you mark a problem as “I got help,” it shows up here. No pressure to use it; the option is there if you want it."
+      : "Being honest with the system makes adaptiveness sharper. Skill scores skip a bump on these — the system focuses on what you own.";
+  return (
+    <section
+      data-testid="honest-sessions-card"
+      aria-labelledby="honest-sessions-card-label"
+      style={{ ...cardBaseStyle }}
+    >
+      <div
+        id="honest-sessions-card-label"
+        style={{
+          fontSize: "0.85rem",
+          color: "#666",
+          textTransform: "uppercase",
+          letterSpacing: 0.5,
+        }}
+      >
+        Honest sessions
+      </div>
+      <div style={{ fontSize: "1.4rem", fontWeight: 600, marginTop: "0.25rem" }}>{headline}</div>
+      <div style={{ fontSize: "0.9rem", color: "#444", marginTop: "0.5rem", lineHeight: 1.45 }}>
+        {supporting}
+      </div>
+    </section>
+  );
+}
+
 export interface TrackProgressBarProps {
   trackName: string;
   trackSlug: string;

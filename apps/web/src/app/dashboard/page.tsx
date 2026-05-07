@@ -1,4 +1,5 @@
 import {
+  countGotHelpEpisodes,
   getActiveTrackSlugs,
   getDueConcepts,
   getStreakSnapshot,
@@ -15,7 +16,7 @@ import { AutonomyBandIndicator } from "../../components/autonomy/AutonomyBandInd
 import { InstallPrompt } from "../../components/pwa/InstallPrompt.js";
 import { QuietHoursCard } from "../../components/settings/QuietHoursCard.js";
 import { TodayPlanSummaryCard, type TodayPlanShape } from "../plan/plan-view.js";
-import { DueReviewsCard, TrackProgressBar } from "./dashboard-components.js";
+import { DueReviewsCard, HonestSessionsCard, TrackProgressBar } from "./dashboard-components.js";
 import { DashboardCardsRow } from "./DashboardCardsRow.js";
 import { DashboardHeader } from "./DashboardHeader.js";
 
@@ -36,12 +37,13 @@ export default async function DashboardPage() {
   const userId = session.user.id;
   const db = getAuthDb();
   const today = new Date();
-  const [xp, streak, activeTrackSlugs, dueReviews, todayPlan] = await Promise.all([
+  const [xp, streak, activeTrackSlugs, dueReviews, todayPlan, gotHelpCount] = await Promise.all([
     getUserXp(db, userId),
     getStreakSnapshot(db, userId, today, MONTHLY_GRACE_CAP),
     getActiveTrackSlugs(db, userId),
     getDueConcepts(db, userId, today),
     loadTodayPlanForDashboard(),
+    countGotHelpEpisodes(db, userId),
   ]);
 
   const trackProgress = (
@@ -89,6 +91,10 @@ export default async function DashboardPage() {
 
       <section aria-label="Tutor autonomy" style={{ marginTop: "1.25rem" }}>
         <AutonomyBandIndicator />
+      </section>
+
+      <section aria-label="Honest sessions" style={{ marginTop: "1.25rem" }}>
+        <HonestSessionsCard count={gotHelpCount} />
       </section>
 
       <section aria-label="Per-track progress" style={{ marginTop: "2rem" }}>
