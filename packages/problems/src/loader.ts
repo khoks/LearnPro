@@ -23,6 +23,8 @@ const LANGUAGE_DIRS: ReadonlyArray<LanguageDir> = [
   { language: "typescript", dir: "typescript" },
   { language: "python", dir: "python-debug" },
   { language: "typescript", dir: "typescript-debug" },
+  { language: "python", dir: "python-comprehension" },
+  { language: "typescript", dir: "typescript-comprehension" },
 ];
 
 export interface LoadProblemsOptions {
@@ -96,24 +98,10 @@ export async function seedProblems(
     if (!track_id) {
       throw new Error(`internal: missing track '${def.track}' in id map`);
     }
-    const hidden_payload =
-      def.kind === "debug"
-        ? {
-            cases: def.hidden_tests,
-            public_examples: def.public_examples,
-            reference_solution: def.reference_solution,
-            concept_tags: def.concept_tags,
-            expected_median_time_to_solve_ms: def.expected_median_time_to_solve_ms,
-            expected_behavior: def.expected_behavior,
-          }
-        : {
-            cases: def.hidden_tests,
-            public_examples: def.public_examples,
-            reference_solution: def.reference_solution,
-            concept_tags: def.concept_tags,
-            expected_median_time_to_solve_ms: def.expected_median_time_to_solve_ms,
-          };
+    const hidden_payload = buildHiddenPayload(def);
     const bug_archetype = def.kind === "debug" ? def.bug_archetype : null;
+    const comprehension_format = def.kind === "comprehension" ? def.comprehension_format : null;
+    const answer_format = def.kind === "comprehension" ? def.answer_format : null;
     const result = await db
       .insert(problems)
       .values({
@@ -125,6 +113,8 @@ export async function seedProblems(
         difficulty: String(def.difficulty),
         kind: def.kind,
         bug_archetype,
+        comprehension_format,
+        answer_format,
         statement: def.statement,
         starter_code: def.starter_code,
         hidden_tests: hidden_payload,
@@ -137,6 +127,8 @@ export async function seedProblems(
           difficulty: String(def.difficulty),
           kind: def.kind,
           bug_archetype,
+          comprehension_format,
+          answer_format,
           statement: def.statement,
           starter_code: def.starter_code,
           hidden_tests: hidden_payload,
@@ -148,4 +140,46 @@ export async function seedProblems(
     else updated += 1;
   }
   return { inserted, updated };
+}
+
+// Per-`kind` projector for the `problems.hidden_tests` jsonb payload. Implement / debug carry the
+// classic shape (cases + public_examples + reference_solution + concept_tags + expected_time, with
+// debug adding `expected_behavior`); comprehension carries the question / answer-shape /
+// explanation triple. The column name stays `hidden_tests` for column-stability — the per-`kind`
+// projector keeps the union narrow.
+function buildHiddenPayload(def: ProblemDef): Record<string, unknown> {
+  if (def.kind === "comprehension") {
+    const base: Record<string, unknown> = {
+      concept_tags: def.concept_tags,
+      expected_median_time_to_solve_ms: def.expected_median_time_to_solve_ms,
+      comprehension_format: def.comprehension_format,
+      question: def.question,
+      explanation: def.explanation,
+      answer_format: def.answer_format,
+    };
+    if (def.answer_format === "multiple_choice") {
+      base["multiple_choice_options"] = def.multiple_choice_options;
+      base["correct_answer_index"] = def.correct_answer_index;
+    } else {
+      base["expected_answer"] = def.expected_answer;
+    }
+    return base;
+  }
+  if (def.kind === "debug") {
+    return {
+      cases: def.hidden_tests,
+      public_examples: def.public_examples,
+      reference_solution: def.reference_solution,
+      concept_tags: def.concept_tags,
+      expected_median_time_to_solve_ms: def.expected_median_time_to_solve_ms,
+      expected_behavior: def.expected_behavior,
+    };
+  }
+  return {
+    cases: def.hidden_tests,
+    public_examples: def.public_examples,
+    reference_solution: def.reference_solution,
+    concept_tags: def.concept_tags,
+    expected_median_time_to_solve_ms: def.expected_median_time_to_solve_ms,
+  };
 }

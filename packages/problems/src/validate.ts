@@ -39,6 +39,11 @@ export async function validateProblem(
   opts: ValidateProblemsOptions = {},
 ): Promise<ProblemValidationResult> {
   const failures: ProblemValidationFailure[] = [];
+  // STORY-038 — comprehension problems have no sandbox-runnable hidden_tests. The per-problem
+  // sanity check is "the YAML parsed at all" — already enforced by the Zod schema upstream.
+  if (def.kind === "comprehension") {
+    return { slug: def.slug, language: def.language, passed: true, failures: [] };
+  }
   for (let i = 0; i < def.hidden_tests.length; i += 1) {
     const test = def.hidden_tests[i];
     if (!test) continue;

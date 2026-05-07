@@ -44,8 +44,8 @@ export type HiddenTest = z.infer<typeof HiddenTestSchema>;
 
 // STORY-037 — bug-archetype catalog. Each debug problem flags exactly one of these so the tutor
 // commentary phase can recognize "the bug was X because Y" and the profile can track per-archetype
-// strength. STORY-038 will extend the discriminator with `"comprehension"`; new archetypes for
-// future stories should be added here (and to the corresponding pgEnum in 0018_debug_problems.sql).
+// strength. STORY-038 extends the discriminator with `"comprehension"`; new archetypes for future
+// stories should be added here (and to the corresponding pgEnum in 0018_debug_problems.sql).
 export const BugArchetypeSchema = z.enum([
   "off_by_one",
   "mutation_in_iteration",
@@ -58,12 +58,21 @@ export const BugArchetypeSchema = z.enum([
 ]);
 export type BugArchetype = z.infer<typeof BugArchetypeSchema>;
 
-// STORY-037 — `kind` discriminator. STORY-038 will land `"comprehension"`. The discriminated
-// union below uses `kind` so adding a new variant only adds a Zod object to the union, leaving the
-// existing variants untouched. The legacy "implement" shape (no `kind` field on disk) is normalized
-// at parse time via `ProblemDefSchema.preprocess` below — back-compat is mechanical, not optional.
-export const ProblemKindSchema = z.enum(["implement", "debug"]);
+// STORY-037 / STORY-038 — `kind` discriminator. The discriminated union below uses `kind` so adding
+// a new variant only adds a Zod object to the union, leaving the existing variants untouched. The
+// legacy "implement" shape (no `kind` field on disk) is normalized at parse time via
+// `ProblemDefSchema.preprocess` below — back-compat is mechanical, not optional.
+export const ProblemKindSchema = z.enum(["implement", "debug", "comprehension"]);
 export type ProblemKind = z.infer<typeof ProblemKindSchema>;
+
+// STORY-038 — comprehension sub-formats. Predict-the-output, trace-execution-state, and
+// reason-about-properties (complexity / why-it-works / where-to-cache).
+export const ComprehensionFormatSchema = z.enum([
+  "predict_output",
+  "trace_execution",
+  "reason_property",
+]);
+export type ComprehensionFormat = z.infer<typeof ComprehensionFormatSchema>;
 
 const baseProblemFields = {
   slug: ProblemSlugSchema,
@@ -74,15 +83,23 @@ const baseProblemFields = {
   concept_tags: z.array(ConceptTagSchema).min(1),
   statement: z.string().min(1),
   starter_code: z.string().min(1),
+  expected_median_time_to_solve_ms: z.number().int().positive(),
+} as const;
+
+// Implement / debug problems carry `reference_solution`, `public_examples` and a non-empty
+// `hidden_tests` array — they're code-execution problems. The comprehension branch below skips
+// those fields entirely (they're meaningless for "predict the output") and only requires the
+// answer-shape fields.
+const codingProblemFields = {
+  ...baseProblemFields,
   reference_solution: z.string().min(1),
   public_examples: z.array(PublicExampleSchema).min(1),
   hidden_tests: z.array(HiddenTestSchema).min(1),
-  expected_median_time_to_solve_ms: z.number().int().positive(),
 } as const;
 
 export const ImplementProblemDefSchema = z.object({
   kind: z.literal("implement"),
-  ...baseProblemFields,
+  ...codingProblemFields,
 });
 export type ImplementProblemDef = z.infer<typeof ImplementProblemDefSchema>;
 
@@ -95,25 +112,147 @@ export type ImplementProblemDef = z.infer<typeof ImplementProblemDefSchema>;
 //     uses it to verify the tests pass once the bug is removed).
 export const DebugProblemDefSchema = z.object({
   kind: z.literal("debug"),
-  ...baseProblemFields,
+  ...codingProblemFields,
   bug_archetype: BugArchetypeSchema,
   expected_behavior: z.string().min(1),
 });
 export type DebugProblemDef = z.infer<typeof DebugProblemDefSchema>;
 
+// STORY-038 — comprehension problem. The editor renders `starter_code` READ-ONLY (Monaco's
+// `readOnly: true`); below it the UI shows `question` plus an answer widget chosen by
+// `answer_format` (multiple-choice radio buttons or a free-text textarea). `correct_answer_index`
+// is required for multiple-choice; `expected_answer` is required for free-text. `explanation` is
+// the 1-3 sentence prose used by the tutor's after-correct commentary.
+//
+// Why no `hidden_tests` / `reference_solution` / `public_examples`: there is nothing for the
+// sandbox to run — the user is reading code, not writing it. The seed bank validator + harness
+// short-circuit on `kind === "comprehension"`.
+//
+// Why one schema (not a nested discriminator on `answer_format`): Zod's discriminated union
+// can't nest on the same parent key, and z.discriminatedUnion("answer_format", ...) inside the
+// `kind` union confuses the union resolver. A single z.object + a refinement that enforces the
+// per-`answer_format` field requirements gives us the same parse-time guarantees with cleaner
+// type inference at the call site.
+export const ComprehensionProblemDefSchema = z
+  .object({
+    kind: z.literal("comprehension"),
+    ...baseProblemFields,
+    comprehension_format: ComprehensionFormatSchema,
+    question: z.string().min(1),
+    answer_format: z.enum(["multiple_choice", "free_text"]),
+    multiple_choice_options: z.array(z.string().min(1)).length(4).optional(),
+    correct_answer_index: z.number().int().min(0).max(3).optional(),
+    expected_answer: z.string().min(1).optional(),
+    explanation: z.string().min(1),
+  })
+  .superRefine((val, ctx) => {
+    if (val.answer_format === "multiple_choice") {
+      if (!val.multiple_choice_options) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["multiple_choice_options"],
+          message: "multiple_choice_options is required when answer_format = 'multiple_choice'",
+        });
+      }
+      if (val.correct_answer_index === undefined) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["correct_answer_index"],
+          message: "correct_answer_index is required when answer_format = 'multiple_choice'",
+        });
+      }
+      if (
+        val.multiple_choice_options &&
+        val.correct_answer_index !== undefined &&
+        val.correct_answer_index >= val.multiple_choice_options.length
+      ) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["correct_answer_index"],
+          message: "correct_answer_index must index into multiple_choice_options",
+        });
+      }
+    } else {
+      if (!val.expected_answer) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["expected_answer"],
+          message: "expected_answer is required when answer_format = 'free_text'",
+        });
+      }
+    }
+  });
+export type ComprehensionProblemDef = z.infer<typeof ComprehensionProblemDefSchema>;
+
 const DiscriminatedProblemDefSchema = z.discriminatedUnion("kind", [
   ImplementProblemDefSchema,
   DebugProblemDefSchema,
+  // Plain z.object form (not the refined wrapper) so the discriminated-union resolver can pull
+  // the `kind` literal cleanly. The refinement runs on the wrapper above; we re-apply it here so
+  // the parsed `ProblemDef` always passes the per-`answer_format` checks.
+  z.object({
+    kind: z.literal("comprehension"),
+    ...baseProblemFields,
+    comprehension_format: ComprehensionFormatSchema,
+    question: z.string().min(1),
+    answer_format: z.enum(["multiple_choice", "free_text"]),
+    multiple_choice_options: z.array(z.string().min(1)).length(4).optional(),
+    correct_answer_index: z.number().int().min(0).max(3).optional(),
+    expected_answer: z.string().min(1).optional(),
+    explanation: z.string().min(1),
+  }),
 ]);
 
 // On-disk YAMLs for "implement" problems do not carry a `kind` field (and we don't want to bulk-
-// rewrite all 63 of them). Normalize at parse time: missing `kind` → `"implement"`.
-export const ProblemDefSchema = z.preprocess((raw) => {
-  if (raw && typeof raw === "object" && !Array.isArray(raw) && !("kind" in raw)) {
-    return { ...(raw as Record<string, unknown>), kind: "implement" };
-  }
-  return raw;
-}, DiscriminatedProblemDefSchema);
+// rewrite all 63 of them). Normalize at parse time: missing `kind` → `"implement"`. The trailing
+// superRefine re-applies the per-`answer_format` rule for comprehension problems (the inner
+// z.object in the union can't carry the refinement because z.discriminatedUnion needs plain
+// objects to extract the discriminator literal cleanly).
+export const ProblemDefSchema = z
+  .preprocess((raw) => {
+    if (raw && typeof raw === "object" && !Array.isArray(raw) && !("kind" in raw)) {
+      return { ...(raw as Record<string, unknown>), kind: "implement" };
+    }
+    return raw;
+  }, DiscriminatedProblemDefSchema)
+  .superRefine((val, ctx) => {
+    if (val.kind !== "comprehension") return;
+    if (val.answer_format === "multiple_choice") {
+      if (!val.multiple_choice_options) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["multiple_choice_options"],
+          message: "multiple_choice_options is required when answer_format = 'multiple_choice'",
+        });
+      }
+      if (val.correct_answer_index === undefined) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["correct_answer_index"],
+          message: "correct_answer_index is required when answer_format = 'multiple_choice'",
+        });
+      }
+      if (
+        val.multiple_choice_options &&
+        val.correct_answer_index !== undefined &&
+        val.correct_answer_index >= val.multiple_choice_options.length
+      ) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["correct_answer_index"],
+          message: "correct_answer_index must index into multiple_choice_options",
+        });
+      }
+    } else if (val.answer_format === "free_text") {
+      if (!val.expected_answer) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["expected_answer"],
+          message: "expected_answer is required when answer_format = 'free_text'",
+        });
+      }
+    }
+  });
 
 export type ProblemDef = z.infer<typeof ProblemDefSchema>;
 
@@ -123,4 +262,8 @@ export function isDebugProblem(def: ProblemDef): def is DebugProblemDef {
 
 export function isImplementProblem(def: ProblemDef): def is ImplementProblemDef {
   return def.kind === "implement";
+}
+
+export function isComprehensionProblem(def: ProblemDef): def is ComprehensionProblemDef {
+  return def.kind === "comprehension";
 }

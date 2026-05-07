@@ -301,15 +301,23 @@ export const problems = pgTable(
     language: submissionLanguageEnum("language").notNull(),
     difficulty: text("difficulty").notNull(),
     // STORY-037 — `kind` discriminator: "implement" (default, legacy bank) | "debug" (broken-code,
-    // find-and-fix). STORY-038 will add "comprehension" using the same column. CHECK constraint
-    // in 0018 enforces the enum at the DB level so a stray free-text write never reaches the
-    // assigner.
+    // find-and-fix). STORY-038 added "comprehension" (read-this-code) using the same column. CHECK
+    // constraint in 0018 enforces the enum at the DB level so a stray free-text write never reaches
+    // the assigner; 0020 widens the CHECK to include "comprehension".
     kind: text("kind").notNull().default("implement"),
     // STORY-037 — non-null only when kind="debug". One of the 8 archetypes from
     // packages/problems/src/schema.ts BugArchetypeSchema. CHECK constraint in 0018 enforces the
     // enum. The tutor's debug-grade prompt + the profile's bug_finding_score axis both consume
     // this column.
     bug_archetype: text("bug_archetype"),
+    // STORY-038 — non-null only when kind="comprehension". One of the three sub-formats:
+    // "predict_output" | "trace_execution" | "reason_property". CHECK constraint in 0020 enforces
+    // the enum.
+    comprehension_format: text("comprehension_format"),
+    // STORY-038 — non-null only when kind="comprehension". "multiple_choice" | "free_text". The
+    // grader path branches on this column — multiple-choice uses a deterministic index match;
+    // free-text uses an LLM rubric grader (`comprehensionGradeAgent`).
+    answer_format: text("answer_format"),
     statement: text("statement").notNull(),
     starter_code: text("starter_code"),
     hidden_tests: jsonb("hidden_tests").notNull(),
