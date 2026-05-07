@@ -31,7 +31,16 @@ export type WorkspaceFileTreeAction =
   | { type: "delete"; path: string }
   | { type: "set_active"; path: string }
   | { type: "set_content"; path: string; content: string }
-  | { type: "set_entry"; path: string };
+  | { type: "set_entry"; path: string }
+  // STORY-043 — replace the entire workspace.  Used by the playground on language switch
+  // (Python ↔ TypeScript) and by SessionClient when a new problem assigns its starter
+  // workspace.  Validation matches `initWorkspaceFileTree`'s rules.
+  | {
+      type: "replace";
+      files: ReadonlyArray<WorkspaceFile>;
+      active_path?: string;
+      entry_file?: string;
+    };
 
 export type WorkspaceFileTreeError =
   | { code: "invalid_path"; message: string }
@@ -107,6 +116,23 @@ export function workspaceFileTreeReducer(
         return { state, error: { code: "missing_path", message: `no such file: ${action.path}` } };
       }
       return { state: { ...state, entry_file: action.path }, error: null };
+    }
+    case "replace": {
+      try {
+        const next = initWorkspaceFileTree(action.files, {
+          ...(action.active_path !== undefined && { active_path: action.active_path }),
+          ...(action.entry_file !== undefined && { entry_file: action.entry_file }),
+        });
+        return { state: next, error: null };
+      } catch (err) {
+        return {
+          state,
+          error: {
+            code: "invalid_path",
+            message: err instanceof Error ? err.message : "Couldn't replace workspace.",
+          },
+        };
+      }
     }
   }
 }

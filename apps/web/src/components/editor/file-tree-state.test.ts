@@ -248,6 +248,29 @@ describe("workspaceFileTreeReducer — set_active / set_content / set_entry", ()
   });
 });
 
+describe("workspaceFileTreeReducer — replace", () => {
+  it("replaces the whole workspace with a fresh seed", () => {
+    const { state, error } = workspaceFileTreeReducer(SEED, {
+      type: "replace",
+      files: [{ path: "index.ts", content: "console.log('hi')\n" }],
+      entry_file: "index.ts",
+    });
+    expect(error).toBeNull();
+    expect(state.files).toEqual([{ path: "index.ts", content: "console.log('hi')\n" }]);
+    expect(state.entry_file).toBe("index.ts");
+    expect(state.active_path).toBe("index.ts");
+  });
+
+  it("returns an error when the replacement seed is invalid", () => {
+    const { state, error } = workspaceFileTreeReducer(SEED, {
+      type: "replace",
+      files: [],
+    });
+    expect(error?.code).toBe("invalid_path");
+    expect(state).toBe(SEED);
+  });
+});
+
 describe("toSandboxFiles", () => {
   it("converts the state into the sandbox's request shape", () => {
     const out = toSandboxFiles(SEED);
