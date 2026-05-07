@@ -11,6 +11,7 @@ import {
   portfolio_pushes,
   prerequisites,
   problems,
+  profile_insights,
   profiles,
   sessions,
   skill_scores,
@@ -33,6 +34,7 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   web_push_subscriptions: many(web_push_subscriptions),
   concept_reviews: many(concept_reviews),
   portfolio_pushes: many(portfolio_pushes),
+  profile_insights: many(profile_insights),
 }));
 
 export const accountsRelations = relations(accounts, ({ one }) => ({
@@ -125,4 +127,8 @@ export const webPushSubscriptionsRelations = relations(web_push_subscriptions, (
 export const portfolioPushesRelations = relations(portfolio_pushes, ({ one }) => ({
   user: one(users, { fields: [portfolio_pushes.user_id], references: [users.id] }),
   episode: one(episodes, { fields: [portfolio_pushes.episode_id], references: [episodes.id] }),
+}));
+
+export const profileInsightsRelations = relations(profile_insights, ({ one }) => ({
+  user: one(users, { fields: [profile_insights.user_id], references: [users.id] }),
 }));

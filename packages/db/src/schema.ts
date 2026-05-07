@@ -615,6 +615,34 @@ export const portfolio_pushes = pgTable(
   }),
 );
 
+// STORY-033 — Async profile-insight rows. The async profile-update agent (Haiku, BullMQ) writes
+// 1-3 cross-episode insights per session-end here. The tutor reads the latest 1-3 active
+// (non-expired) rows at assign-problem time so its opener can reference them. `episodes_covered`
+// is the jsonb array of episode UUIDs the synthesis was derived from (provenance). `concept_tags`
+// is the kebab-case slugs the insight touches (cheap filter without re-running synthesis).
+// `referenced_count` is bumped via `incrementReferenced()` each time the tutor's opener
+// substring-matches the insight text — that's the AC #5 telemetry signal. `expires_at` defaults
+// to created_at + 30 days; the dashboard + tutor only show rows where `expires_at > now()`.
+export const profile_insights = pgTable(
+  "profile_insights",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    org_id: orgId(),
+    user_id: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    insight_text: text("insight_text").notNull(),
+    episodes_covered: jsonb("episodes_covered").notNull().default(sql`'[]'::jsonb`),
+    concept_tags: jsonb("concept_tags").notNull().default(sql`'[]'::jsonb`),
+    referenced_count: integer("referenced_count").notNull().default(0),
+    created_at: createdAt(),
+    expires_at: timestamp("expires_at", { withTimezone: true }),
+  },
+  (t) => ({
+    user_created_idx: index("profile_insights_user_created_idx").on(t.user_id, t.created_at),
+  }),
+);
+
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type Account = typeof accounts.$inferSelect;
@@ -657,6 +685,8 @@ export type ConceptReview = typeof concept_reviews.$inferSelect;
 export type NewConceptReview = typeof concept_reviews.$inferInsert;
 export type PortfolioPush = typeof portfolio_pushes.$inferSelect;
 export type NewPortfolioPush = typeof portfolio_pushes.$inferInsert;
+export type ProfileInsight = typeof profile_insights.$inferSelect;
+export type NewProfileInsight = typeof profile_insights.$inferInsert;
 
 export const ALL_TABLES = [
   organizations,
@@ -681,6 +711,7 @@ export const ALL_TABLES = [
   deferred_notifications,
   concept_reviews,
   portfolio_pushes,
+  profile_insights,
 ] as const;
 
 // Auth.js tables (`accounts`, `sessions`, `verificationTokens`) are intentionally NOT in this
@@ -705,6 +736,7 @@ export const ORG_SCOPED_TABLES = [
   deferred_notifications,
   concept_reviews,
   portfolio_pushes,
+  profile_insights,
 ] as const;
 
 export const PGVECTOR_PROLOGUE_SQL = sql`CREATE EXTENSION IF NOT EXISTS vector`;

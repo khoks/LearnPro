@@ -218,3 +218,17 @@ export {
   type SeedConceptsOptions,
   type SeedConceptsResult,
 } from "./concepts-seeder.js";
+export {
+  DEFAULT_INSIGHT_TTL_DAYS,
+  InsightConceptTagsSchema,
+  InsightEpisodesCoveredSchema,
+  deleteExpiredInsights,
+  getInsightTelemetry,
+  incrementReferenced,
+  insertInsight,
+  listEpisodesForSynthesis,
+  listLatestInsights,
+  type InsertInsightInput,
+  type InsightSourceEpisode,
+  type ProfileInsight,
+} from "./profile-insights.js";
