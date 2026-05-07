@@ -56,10 +56,25 @@ const SubmitBodySchema = z.object({
   code: z.string().min(1),
 });
 
+const GotHelpBodySchema = z.object({
+  got_help: z.boolean(),
+});
+
 const FinishBodySchema = z.object({
   outcome: z.enum(["passed", "passed_with_hints", "failed", "abandoned", "revealed"]).optional(),
   reveal_clicked: z.boolean().optional(),
 });
+
+// STORY-042 — narrow side-effect port for the got-help endpoint. Production wires this to
+// @learnpro/db's `markEpisodeGotHelp`; tests inject a fake. The user-id check inside the helper is
+// defense-in-depth — the per-tenant mark won't accidentally cross-contaminate.
+export interface GotHelpStore {
+  markEpisodeGotHelp(input: {
+    user_id: string;
+    episode_id: string;
+    got_help: boolean;
+  }): Promise<{ updated: boolean }>;
+}
 
 export interface RegisterTutorRoutesOptions {
   factory: TutorAgentFactory;
@@ -68,6 +83,10 @@ export interface RegisterTutorRoutesOptions {
   // before being handed to the grade tool. URLs are preserved (tutorials often link docs); emails
   // / phones / IDs / cards are still scrubbed.
   redactor: PiiRedactor;
+  // STORY-042 — optional. When wired, the `POST /v1/tutor/episodes/:id/got-help` endpoint flips
+  // `episodes.got_help` for honest-self-mark submissions. Tests can omit this — the route returns
+  // 503 until the dependency is wired (so the surface fails closed, never silently).
+  gotHelpStore?: GotHelpStore;
 }
 
 export function registerTutorRoutes(app: FastifyInstance, opts: RegisterTutorRoutesOptions): void {
@@ -147,6 +166,40 @@ export function registerTutorRoutes(app: FastifyInstance, opts: RegisterTutorRou
       } catch (err) {
         return mapToolError(reply, err);
       }
+    },
+  );
+
+  // STORY-042 — POST /v1/tutor/episodes/:id/got-help — flip episodes.got_help for honest-self-mark
+  // submissions. The submission itself was already graded normally (tests still run, XP still
+  // awards); this endpoint is a secondary side-effect that only the close-time skill update
+  // consumes. Idempotent: repeating the call with the same value is a cheap no-op.
+  app.post<{ Params: { id: string }; Body: { got_help: boolean } }>(
+    "/v1/tutor/episodes/:id/got-help",
+    async (req, reply) => {
+      const session = await opts.sessionResolver(req);
+      if (!session) return reply.code(401).send({ error: "unauthorized" });
+
+      const parsed = GotHelpBodySchema.safeParse(req.body);
+      if (!parsed.success) {
+        return reply.code(400).send({ error: "invalid_request", issues: parsed.error.issues });
+      }
+
+      if (!opts.gotHelpStore) {
+        return reply.code(503).send({
+          error: "got_help_store_not_wired",
+          message: "got_help store is not configured on this server",
+        });
+      }
+
+      const r = await opts.gotHelpStore.markEpisodeGotHelp({
+        user_id: session.user_id,
+        episode_id: req.params.id,
+        got_help: parsed.data.got_help,
+      });
+      if (!r.updated) {
+        return reply.code(404).send({ error: "episode_not_found" });
+      }
+      return reply.code(200).send({ ok: true, got_help: parsed.data.got_help });
     },
   );
 

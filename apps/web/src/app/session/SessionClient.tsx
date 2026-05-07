@@ -5,6 +5,9 @@ import dynamic from "next/dynamic";
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import type { HintRung } from "@learnpro/agent";
 import { OfflineBanner } from "../../components/pwa/OfflineBanner";
+import { PasteDetectModal } from "../../components/editor/PasteDetectModal";
+import { usePasteDetect } from "../../components/editor/use-paste-detect";
+import { attachPasteListener } from "../../components/editor/monaco-paste";
 import { runSandbox, type RunSandboxResult } from "../../lib/run-sandbox";
 import { useInteractionCapture, type MonacoLikeEditor } from "../../lib/use-interaction-capture";
 import { useViewportSize } from "../../lib/use-viewport-size";
@@ -77,8 +80,17 @@ export function SessionClient({ trackId }: SessionClientProps) {
   const [code, setCode] = useState<string>("");
   const [runResult, setRunResult] = useState<RunSandboxResult | null>(null);
   const [running, setRunning] = useState(false);
+  // STORY-042 — per-submission "I got help on this one" toggle. Default OFF; flips ON when the
+  // paste-detect modal's "I got help" path is chosen, OR when the user toggles it manually in the
+  // result panel. Reset on Next-problem so it doesn't leak across episodes.
+  const [gotHelp, setGotHelp] = useState<boolean>(false);
   const [planState, planDispatch] = useReducer(planStateReducer, initialPlanState);
   const capture = useInteractionCapture();
+  const pasteDetect = usePasteDetect({ onGotHelp: () => setGotHelp(true) });
+  const codeRef = useRef(code);
+  useEffect(() => {
+    codeRef.current = code;
+  }, [code]);
   const assigningRef = useRef(false);
   const planFetchingRef = useRef(false);
 
@@ -164,8 +176,11 @@ export function SessionClient({ trackId }: SessionClientProps) {
     (editor: unknown) => {
       // Monaco's IStandaloneCodeEditor matches our structural MonacoLikeEditor.
       capture.attach(editor as MonacoLikeEditor);
+      attachPasteListener(editor, (text) => {
+        pasteDetect.notifyPaste({ text, current_content: codeRef.current });
+      });
     },
-    [capture],
+    [capture, pasteDetect],
   );
 
   const onRun = useCallback(async () => {
@@ -188,6 +203,7 @@ export function SessionClient({ trackId }: SessionClientProps) {
 
   const onSubmit = useCallback(async () => {
     if (state.phase !== "coding" && state.phase !== "grading") return;
+    const episodeIdForSubmit = state.assigned.episode_id;
     const { events } = await driveSubmit(state, code);
     for (const ev of events) dispatch(ev);
     const succeeded = events.find(
@@ -196,8 +212,14 @@ export function SessionClient({ trackId }: SessionClientProps) {
     );
     if (succeeded) {
       capture.emit({ type: "submit", payload: { passed: succeeded.grade.passed } });
+      // STORY-042 — when the user opted in, flip episodes.got_help via the API. The submission
+      // itself is graded normally above; this PATCH is a secondary, idempotent side-effect. Soft-
+      // fail: a network hiccup leaves got_help=false, which is the conservative direction.
+      if (gotHelp) {
+        void persistGotHelp(episodeIdForSubmit, true);
+      }
     }
-  }, [state, code, capture]);
+  }, [state, code, capture, gotHelp]);
 
   const onRequestHint = useCallback(async () => {
     if (state.phase !== "coding" && state.phase !== "grading") return;
@@ -233,6 +255,7 @@ export function SessionClient({ trackId }: SessionClientProps) {
   const onNext = useCallback(() => {
     setRunResult(null);
     setCode("");
+    setGotHelp(false);
     dispatch({ type: "reset" });
   }, []);
 
@@ -261,10 +284,32 @@ export function SessionClient({ trackId }: SessionClientProps) {
           onFinish={onFinish}
           onNext={onNext}
           onDismissError={() => dispatch({ type: "dismiss_error" })}
+          gotHelp={gotHelp}
+          onGotHelpChange={setGotHelp}
         />
       </SessionLayout>
+      <PasteDetectModal
+        paste={pasteDetect.paste}
+        onMyCode={pasteDetect.dismiss}
+        onGotHelp={pasteDetect.gotHelp}
+      />
     </>
   );
+}
+
+// STORY-042 — POSTs `got_help` to the API for an episode. Idempotent (the helper UPSERTs the
+// boolean). Soft-fails on network errors so a hiccup never blocks the user from continuing.
+async function persistGotHelp(episode_id: string, got_help: boolean): Promise<void> {
+  try {
+    await fetch(`/api/tutor/episodes/${encodeURIComponent(episode_id)}/got-help`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ got_help }),
+    });
+  } catch {
+    // soft-fail: the conservative direction is got_help=false (skill bumps normally), which is
+    // safe to skip when the user couldn't reach the API.
+  }
 }
 
 // SessionLayout — a client component that picks between the laptop 2-column grid (sidebar
@@ -350,6 +395,8 @@ interface SessionViewProps {
   onFinish: () => void;
   onNext: () => void;
   onDismissError: () => void;
+  gotHelp: boolean;
+  onGotHelpChange: (next: boolean) => void;
 }
 
 function SessionView(props: SessionViewProps) {
@@ -455,6 +502,11 @@ function ActiveSessionView(props: ActiveStateProps) {
           tone="muted"
           busy={isFinishing}
         />
+        <GotHelpToggle
+          checked={props.gotHelp}
+          onChange={props.onGotHelpChange}
+          disabled={isFinished}
+        />
       </div>
 
       {props.runResult && <RunResultPanel result={props.runResult} />}
@@ -463,6 +515,46 @@ function ActiveSessionView(props: ActiveStateProps) {
 
       {isFinished && <SkillUpdateSummary profile={state.profile} onNext={props.onNext} />}
     </section>
+  );
+}
+
+// STORY-042 — per-submission "I got help on this one" toggle. OFF by default; flips ON when the
+// paste-detect modal's "I got help" path is chosen (the parent's onGotHelp callback wires that).
+// Coach-voice copy: never accusatory, never urgency. Disabled once the episode is finished — at
+// that point the persisted got_help has already shaped the close.
+function GotHelpToggle({
+  checked,
+  onChange,
+  disabled,
+}: {
+  checked: boolean;
+  onChange: (next: boolean) => void;
+  disabled: boolean;
+}) {
+  return (
+    <label
+      data-testid="got-help-toggle"
+      title="Marking this keeps adaptiveness sharper — the system won't reward concept mastery for code that wasn't yours. Tests still run; XP still awards."
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 6,
+        marginLeft: "auto",
+        fontSize: 13,
+        color: disabled ? "#999" : "#37474f",
+        cursor: disabled ? "not-allowed" : "pointer",
+      }}
+    >
+      <input
+        type="checkbox"
+        checked={checked}
+        disabled={disabled}
+        onChange={(e) => onChange(e.target.checked)}
+        aria-label="I got help on this one"
+        data-testid="got-help-toggle-input"
+      />
+      <span>I got help on this one</span>
+    </label>
   );
 }
 
