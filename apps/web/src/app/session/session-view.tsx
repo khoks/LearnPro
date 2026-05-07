@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import type { FinalOutcome, GradeOutput, UpdateProfileOutput } from "@learnpro/agent";
 import { StatusBadge } from "../../components/status-badge";
 import type { HintEntry, SessionError } from "../../lib/session-state";
@@ -13,6 +14,11 @@ import {
   skillDeltaSymbol,
 } from "./session-view-helpers";
 import { SaveToPortfolioButton } from "./SaveToPortfolioButton";
+
+// Reference React explicitly so vitest's classic-runtime JSX transform doesn't strip the
+// import. (Without this, esbuild's classic JSX transform emits React.createElement calls and
+// fails with `ReferenceError: React is not defined` at test-run time.)
+void React;
 
 // Pure visual components reused by SessionClient. They are framework-aware (return JSX) but
 // have no fetch / state of their own — every input flows through props.
@@ -243,6 +249,90 @@ export function GradeResultPanel({ grade }: { grade: GradeOutput }) {
       </div>
     </section>
   );
+}
+
+// STORY-037 — debug-problem framing panel. Renders below the header on `kind: "debug"` problems
+// so the user knows the editor came pre-populated with broken code, what the code SHOULD do, and
+// that hidden tests will run on submit. Coach-voice copy, no fire emoji or FOMO timers.
+export function DebugProblemPanel({
+  expectedBehavior,
+  bugArchetype,
+}: {
+  expectedBehavior: string;
+  bugArchetype: string | null;
+}) {
+  const archetypeLabel = bugArchetype ? humanizeArchetype(bugArchetype) : "one bug";
+  return (
+    <section
+      data-testid="debug-problem-panel"
+      aria-label="Debug problem panel"
+      style={{
+        display: "grid",
+        gap: "0.5rem",
+        padding: "0.75rem",
+        background: "#fff8e1",
+        border: "1px solid #ffe082",
+        borderRadius: 6,
+      }}
+    >
+      <div style={{ fontSize: 13, fontWeight: 600, color: "#5d4037" }}>
+        This is a debug problem. The editor is pre-populated with code that has {archetypeLabel}.
+      </div>
+      <div style={{ fontSize: 13, color: "#5d4037" }}>
+        <strong style={{ marginRight: 4 }}>What the code should do:</strong>
+        <span style={{ whiteSpace: "pre-wrap" }}>{expectedBehavior}</span>
+      </div>
+      <div style={{ fontSize: 12, color: "#7d6043" }}>
+        Hidden tests will run when you submit. The fix is usually small — read carefully.
+      </div>
+    </section>
+  );
+}
+
+// STORY-037 — small uppercase pill for the problem kind. "implement" hides (the legacy default
+// shape stays visually unchanged); "debug" surfaces a yellow pill alongside the difficulty badge.
+export function KindBadge({ kind }: { kind: "implement" | "debug" }) {
+  if (kind === "implement") return null;
+  return (
+    <span
+      data-testid="kind-badge"
+      style={{
+        background: "#fff3cd",
+        color: "#7c5e00",
+        padding: "0.15rem 0.5rem",
+        borderRadius: 999,
+        fontSize: 12,
+        fontWeight: 600,
+        textTransform: "uppercase",
+        letterSpacing: 0.5,
+      }}
+    >
+      Debug
+    </span>
+  );
+}
+
+function humanizeArchetype(archetype: string): string {
+  switch (archetype) {
+    case "off_by_one":
+      return "an off-by-one bug";
+    case "mutation_in_iteration":
+      return "a mutation-during-iteration bug";
+    case "reference_equality":
+      return "a reference-equality bug";
+    case "async_race":
+      return "an async race condition";
+    case "late_binding":
+      return "a closure late-binding bug";
+    case "shadowing":
+      return "a shadowed built-in";
+    case "type_coercion":
+      return "a type-coercion bug";
+    case "default_arg_mutability":
+      return "a mutable-default-arg bug";
+    default:
+      return "one bug";
+  }
 }
 
 export function DifficultyBadge({ tier }: { tier: string }) {

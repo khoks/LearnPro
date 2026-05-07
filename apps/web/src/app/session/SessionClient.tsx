@@ -28,10 +28,12 @@ import {
 } from "../../lib/session-plan-state";
 import { SessionPlanSidebar } from "./SessionPlanSidebar";
 import {
+  DebugProblemPanel,
   DifficultyBadge,
   ErrorBanner,
   GradeResultPanel,
   HintHistory,
+  KindBadge,
   SkillUpdateSummary,
 } from "./session-view";
 
@@ -559,16 +561,29 @@ function GotHelpToggle({
 }
 
 function Header({ assigned }: { assigned: ActiveStateProps["state"]["assigned"] }) {
+  // STORY-037 — debug-aware framing. Existing assign payloads from before STORY-037 don't carry a
+  // `kind` field; treat them as "implement" so the legacy UI stays unchanged.
+  const kind = (assigned.problem as { kind?: "implement" | "debug" }).kind ?? "implement";
+  const expectedBehavior = (assigned.problem as { expected_behavior?: string | null })
+    .expected_behavior;
+  const bugArchetype = (assigned.problem as { bug_archetype?: string | null }).bug_archetype;
   return (
     <header style={{ display: "grid", gap: "0.5rem" }}>
       <div style={{ display: "flex", gap: "0.6rem", alignItems: "center", flexWrap: "wrap" }}>
         <h2 style={{ margin: 0, fontSize: 20 }}>{assigned.problem.name}</h2>
         <DifficultyBadge tier={assigned.difficulty_tier} />
+        <KindBadge kind={kind} />
         <span style={{ fontSize: 13, color: "#666" }}>{assigned.problem.language}</span>
       </div>
       <p style={{ margin: 0, whiteSpace: "pre-wrap", color: "#222", lineHeight: 1.5 }}>
         {assigned.problem.statement}
       </p>
+      {kind === "debug" && expectedBehavior ? (
+        <DebugProblemPanel
+          expectedBehavior={expectedBehavior}
+          bugArchetype={bugArchetype ?? null}
+        />
+      ) : null}
       <p style={{ margin: 0, fontSize: 12, color: "#888" }} title={assigned.why_this_difficulty}>
         {assigned.why_this_difficulty}
       </p>

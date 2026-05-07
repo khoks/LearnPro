@@ -21,6 +21,9 @@ const problem: AssignProblemOutput["problem"] = {
   expected_median_time_to_solve_ms: 600_000,
   concept_tags: ["arrays", "hashing"],
   difficulty: 2,
+  kind: "implement",
+  bug_archetype: null,
+  expected_behavior: null,
 };
 
 const assigned: AssignedProblem = {
