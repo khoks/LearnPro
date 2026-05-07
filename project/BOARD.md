@@ -34,10 +34,11 @@
 
 ## Backlog (v1 — filed via Phase C)
 
-These stories were filed during EPIC-017 Phase C from the expanded idea catalog ([`docs/vision/RECOMMENDED_ADDITIONS.md`](../docs/vision/RECOMMENDED_ADDITIONS.md)). Selected because each (a) reinforces a differentiator from [`docs/product/DIFFERENTIATORS.md`](../docs/product/DIFFERENTIATORS.md), (b) is startable within the v1 window, and (c) is specific enough to estimate today.
+**v1 backlog is EMPTY.** All 19 v1 P0/P1/P2 stories filed in Phase C have shipped (see "Recently Done"). Deferred follow-ups within those stories live in their respective activity logs (e.g. STORY-036 Ollama live-model validation, STORY-037 multi-file grade-tool harness, STORY-038 tutor route fan-out for the comprehension kind, STORY-039 LLM-judge spec-clarity rubric, STORY-041 BullMQ trigger for cheatsheet generation, STORY-046b LLM-generated theme names). They can be promoted to fresh STORY files if/when picked up.
 
 | ID | Title | Epic | Phase | Priority | Est |
 |----|-------|------|-------|----------|-----|
+| _(v1 backlog empty — pick from v2.)_ | | | | | |
 
 ## Backlog (v2 — filed via Phase C)
 
