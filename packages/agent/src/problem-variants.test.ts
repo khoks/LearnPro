@@ -19,10 +19,7 @@ import {
   buildProblemVariantsSystemPrompt,
   buildProblemVariantsUserPrompt,
 } from "@learnpro/prompts";
-import {
-  generateProblemVariant,
-  parseProblemVariantResponse,
-} from "./problem-variants.js";
+import { generateProblemVariant, parseProblemVariantResponse } from "./problem-variants.js";
 
 // STORY-039 — tests cover:
 //   - The `variant_of` field validates correctly through ProblemDefSchema
@@ -43,8 +40,7 @@ const SOURCE_PROBLEM: ImplementProblemDef = ImplementProblemDefSchema.parse({
   concept_tags: ["loops", "arithmetic"],
   statement: "Given a list of integers, return the sum of all even numbers.",
   starter_code: "def solve(nums):\n    pass\n",
-  reference_solution:
-    "def solve(nums):\n    return sum(n for n in nums if n % 2 == 0)\n",
+  reference_solution: "def solve(nums):\n    return sum(n for n in nums if n % 2 == 0)\n",
   public_examples: [{ input: [1, 2, 3, 4], expected: 6 }],
   hidden_tests: [
     { input: [], expected: 0 },
@@ -135,9 +131,7 @@ describe("ProblemDefSchema — variant_of field — STORY-039", () => {
   });
 
   it("rejects variant_of that is not a kebab-case slug", () => {
-    const result = ProblemDefSchema.safeParse(
-      validVariantPayload({ variant_of: "INVALID Slug" }),
-    );
+    const result = ProblemDefSchema.safeParse(validVariantPayload({ variant_of: "INVALID Slug" }));
     expect(result.success).toBe(false);
   });
 
@@ -256,7 +250,10 @@ describe("generateProblemVariant — STORY-039", () => {
   });
 
   it("retries once on parse failure, succeeds on the second attempt", async () => {
-    const llm = fakeLLM(["not json", JSON.stringify(validVariantPayload({ slug: "sum-even-numbers-variant-2" }))]);
+    const llm = fakeLLM([
+      "not json",
+      JSON.stringify(validVariantPayload({ slug: "sum-even-numbers-variant-2" })),
+    ]);
     const out = await generateProblemVariant({
       llm,
       user_id: "u",
@@ -325,7 +322,9 @@ describe("generateProblemVariant — STORY-039", () => {
     // suppress them.
     const responses: string[] = [];
     for (let i = 1; i <= 8; i++) {
-      responses.push(JSON.stringify(validVariantPayload({ slug: `sum-even-numbers-variant-${i}` })));
+      responses.push(
+        JSON.stringify(validVariantPayload({ slug: `sum-even-numbers-variant-${i}` })),
+      );
     }
     const llm = fakeLLM(responses);
     const out = await generateProblemVariant({

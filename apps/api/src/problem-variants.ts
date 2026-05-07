@@ -204,8 +204,7 @@ async function loadProblemDef(
         : ht.cases && ht.cases.length > 0
           ? [ht.cases[0]!]
           : [{ input: null, expected: null }],
-    hidden_tests:
-      ht.cases && ht.cases.length > 0 ? ht.cases : [{ input: null, expected: null }],
+    hidden_tests: ht.cases && ht.cases.length > 0 ? ht.cases : [{ input: null, expected: null }],
     expected_median_time_to_solve_ms: ht.expected_median_time_to_solve_ms ?? 300_000,
   };
 

@@ -27,8 +27,7 @@ const SAMPLE_HIDDEN_PAYLOAD = {
     { input: [1, 3, 5], expected: 0 },
   ],
   public_examples: [{ input: [1, 2, 3, 4], expected: 6 }],
-  reference_solution:
-    "def solve(nums):\n    return sum(n for n in nums if n % 2 == 0)\n",
+  reference_solution: "def solve(nums):\n    return sum(n for n in nums if n % 2 == 0)\n",
   concept_tags: ["loops", "arithmetic"],
   expected_median_time_to_solve_ms: 60_000,
 };
