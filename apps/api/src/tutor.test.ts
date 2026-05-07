@@ -44,6 +44,12 @@ function fakeAssignOutput(): AssignProblemOutput {
       kind: "implement",
       bug_archetype: null,
       expected_behavior: null,
+      question: null,
+      comprehension_format: null,
+      answer_format: null,
+      multiple_choice_options: null,
+      correct_answer_index: null,
+      explanation: null,
     },
     difficulty_tier: "easy",
     why_this_difficulty: "cold-start",
@@ -405,8 +411,8 @@ describe("POST /v1/tutor/episodes/:id/submit — code redaction (STORY-056)", ()
       },
       grade: {
         name: "grade",
-        async run({ code }) {
-          receivedCode = code;
+        async run(input) {
+          if ("code" in input) receivedCode = input.code;
           return fakeGradeOutput(true);
         },
       },

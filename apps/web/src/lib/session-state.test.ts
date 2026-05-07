@@ -24,6 +24,12 @@ const problem: AssignProblemOutput["problem"] = {
   kind: "implement",
   bug_archetype: null,
   expected_behavior: null,
+  question: null,
+  comprehension_format: null,
+  answer_format: null,
+  multiple_choice_options: null,
+  correct_answer_index: null,
+  explanation: null,
 };
 
 const assigned: AssignedProblem = {

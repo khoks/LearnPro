@@ -302,6 +302,58 @@ export interface UpdateProfileEpisodeContext {
   started_at: number;
 }
 
+// STORY-038a — narrow port for the comprehension grade dispatch. The grade tool calls this
+// when `episode.problem.kind === "comprehension"`. Production wires this to
+// `gradeComprehension` in @learnpro/agent (deterministic for multiple-choice, Haiku LLM rubric
+// for free-text); tests inject a fake. Optional on `createGradeTool({ comprehensionDeps })` —
+// when absent the tool throws ComprehensionDepsNotWiredError so a comprehension YAML can never
+// silently no-op on a server that didn't wire the LLM provider.
+export interface ComprehensionGradeDeps {
+  gradeComprehensionAnswer(input: ComprehensionGradeDepsInput): Promise<ComprehensionGradeDepsResult>;
+}
+
+export interface ComprehensionGradeDepsInput {
+  episode_id: string;
+  user_id: string;
+  problem: ComprehensionProblemDefShape;
+  answer: ComprehensionAnswerShape;
+}
+
+// Structural shape of the comprehension problem the deps adapter accepts. Mirrors
+// `ComprehensionProblemDef` from @learnpro/problems but typed here in `ports.ts` so this leaf
+// module stays the source-of-truth for cross-tool types (the agent module imports this type).
+// The tool implementation imports the real `ComprehensionProblemDef` from @learnpro/problems
+// and TypeScript's structural typing accepts the assignment.
+export interface ComprehensionProblemDefShape {
+  kind: "comprehension";
+  slug: string;
+  name: string;
+  language: "python" | "typescript";
+  comprehension_format: "predict_output" | "trace_execution" | "reason_property";
+  question: string;
+  answer_format: "multiple_choice" | "free_text";
+  multiple_choice_options?: ReadonlyArray<string>;
+  correct_answer_index?: number;
+  expected_answer?: string;
+  explanation: string;
+  starter_code: string;
+  concept_tags: ReadonlyArray<string>;
+  difficulty: number;
+}
+
+// Structural shape of the comprehension answer the user submits. Mirrors
+// `ComprehensionAnswer` from `comprehension-grade.ts` but typed here so the leaf is consistent.
+export type ComprehensionAnswerShape =
+  | { kind: "multiple_choice"; selected_index: number }
+  | { kind: "free_text"; text: string };
+
+export interface ComprehensionGradeDepsResult {
+  correct: boolean;
+  reasoning: string;
+  explanation: string;
+  fallback_used: boolean;
+}
+
 // STORY-015 — session-plan agent. The planner LLM call is a one-shot completion (no tool use).
 // The deps surface keeps the agent free of LLM SDK / DB knowledge; the production wiring in
 // apps/api passes a `generatePlan` adapter that calls Haiku with the SESSION_PLAN_SYSTEM_PROMPT

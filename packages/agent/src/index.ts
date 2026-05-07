@@ -19,6 +19,11 @@ export {
 export type {
   AssignProblemDeps,
   AssignProblemInsight,
+  ComprehensionAnswerShape,
+  ComprehensionGradeDeps,
+  ComprehensionGradeDepsInput,
+  ComprehensionGradeDepsResult,
+  ComprehensionProblemDefShape,
   GiveHintDeps,
   GradeDeps,
   GradeRubric,
@@ -63,7 +68,10 @@ export {
 } from "./tools/give-hint.js";
 
 export {
+  ComprehensionDepsNotWiredError,
+  ComprehensionGradeOutputSchema,
   GradeInputSchema,
+  GradeInputShapeMismatchError,
   GradeOutputSchema,
   GradeRubricSchema,
   GraderAgentRubricSchema,
@@ -71,6 +79,7 @@ export {
   clampRubric,
   createGradeTool,
   summarizeFailingTests,
+  type ComprehensionGradeOutput,
   type CreateGradeToolOptions,
   type GradeInput,
   type GradeOutput,
