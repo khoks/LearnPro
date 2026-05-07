@@ -102,6 +102,11 @@ import {
   type SessionPlanFactory,
 } from "./session-plan.js";
 import { buildDbTodayPlanDeps, registerTodayPlanRoutes } from "./today-plan.js";
+import {
+  buildDbWeeklyPlanDeps,
+  registerWeeklyPlanRoutes,
+  type WeeklyPlanDeps,
+} from "./weekly-plan.js";
 import { registerTutorRoutes, type TutorAgentFactory } from "./tutor.js";
 import { buildDrizzleTutorFactory } from "./tutor-factory.js";
 import {
@@ -194,6 +199,10 @@ export interface BuildServerOptions {
   // registers `GET /v1/today-plan` + `POST /v1/today-plan/replan`. Tests inject a fake deps
   // object; production wires `buildDbTodayPlanDeps(db)` via defaultsFromEnv.
   todayPlanDeps?: TodayPlanDeps;
+  // STORY-046b — weekly-plan deps adapter. When supplied, registers `GET /v1/weekly-plan` +
+  // `POST /v1/weekly-plan/replan`. Tests inject a fake deps object; production wires
+  // `buildDbWeeklyPlanDeps(db)` via defaultsFromEnv.
+  weeklyPlanDeps?: WeeklyPlanDeps;
   // STORY-040 — DB handle for the portfolio routes (state / connect-init / disconnect / push /
   // settings). Same injection pattern; tests inject a fake DB. `webBaseUrl` lets tests override
   // the apps/web origin used to build the connect-init start URL.
@@ -466,6 +475,17 @@ export function buildServer(opts: BuildServerOptions = {}) {
     });
   }
 
+  // STORY-046b — weekly themed plan routes. Reads the populated knowledge graph (STORY-032)
+  // + recent episodes + due reviews and composes a per-day theme via `buildWeeklyPlan`. Wired
+  // only when weekly-plan deps are supplied. Tests inject a fake deps object; production wires
+  // `buildDbWeeklyPlanDeps(db)` via defaultsFromEnv.
+  if (opts.weeklyPlanDeps) {
+    registerWeeklyPlanRoutes(app, {
+      weeklyPlanDeps: opts.weeklyPlanDeps,
+      sessionResolver,
+    });
+  }
+
   // STORY-024 — quiet-hours settings routes. Wired only when a db is supplied; defaultsFromEnv()
   // forwards the same `db` instance the notifications dispatcher uses.
   if (opts.quietHoursDb) {
@@ -608,6 +628,7 @@ function defaultsFromEnv(): {
   spacedRepetitionDb?: import("@learnpro/db").LearnProDb;
   installEligibleDb?: import("@learnpro/db").LearnProDb;
   todayPlanDeps?: TodayPlanDeps;
+  weeklyPlanDeps?: WeeklyPlanDeps;
   portfolio?: BuildServerOptions["portfolio"];
   exportRateLimiter?: RateLimiter;
   emailDigestDb?: import("@learnpro/db").LearnProDb;
@@ -702,6 +723,7 @@ function defaultsFromEnv(): {
     spacedRepetitionDb: db,
     installEligibleDb: db,
     todayPlanDeps: buildDbTodayPlanDeps({ db }),
+    weeklyPlanDeps: buildDbWeeklyPlanDeps({ db }),
     portfolio: { db },
     redactor: buildDefaultRedactor({ llm }),
     dataControls: {

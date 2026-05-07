@@ -12,8 +12,9 @@ void React;
 //
 // Coach-voice copy. Anti-dark-pattern: never urgency, shame, FOMO, fire/warning emoji.
 //
-// Weekly plans intentionally NOT rendered. The "This week" section shows a stub explaining the
-// deferral to STORY-046b (post-STORY-032 knowledge graph). We do NOT fake the weekly view.
+// STORY-046b — the weekly plan is now rendered by `<WeeklyPlanCard>` (../../components/plan/),
+// not here. The legacy `<ThisWeekDeferredStub>` export is kept for backward-compat with
+// pre-STORY-046b pages and tests, but the `/plan` page wires `<WeeklyPlanCard>` instead.
 
 const cardBaseStyle: CSSProperties = {
   border: "1px solid #e3e3e3",
@@ -225,8 +226,6 @@ export function TodayPlanFullView(props: TodayPlanFullViewProps): ReactElement {
           <SessionPlanBlock items={sessionItems} />
         </div>
       </section>
-
-      <ThisWeekDeferredStub />
     </div>
   );
 }

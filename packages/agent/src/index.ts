@@ -168,6 +168,24 @@ export {
 } from "./today-plan.js";
 
 export {
+  buildWeeklyPlan,
+  computeWeeklyDampeningReason,
+  reasoningForDailyConcept,
+  SUPPRESSED_REPLAN_ONE_DAY_WEEKLY,
+  SUPPRESSED_REPLAN_WEEKEND_WEEKLY,
+  WeeklyPlanDampeningSchema,
+  WeeklyPlanDayConceptSchema,
+  WeeklyPlanSchema,
+  type BuildWeeklyPlanInput,
+  type WeeklyPlan,
+  type WeeklyPlanConceptGraph,
+  type WeeklyPlanDampening,
+  type WeeklyPlanDayConcept,
+  type WeeklyPlanDueReview,
+  type WeeklyPlanRecentEpisode,
+} from "./weekly-plan.js";
+
+export {
   AUTONOMY_ACTION_CONSEQUENCE,
   TutorSession,
   type AutonomyActionKind,
