@@ -21,11 +21,7 @@ import type {
   ToolCallRequest,
   ToolCallResponse,
 } from "@learnpro/llm";
-import type {
-  SandboxProvider,
-  SandboxRunChunk,
-  SandboxRunResponse,
-} from "@learnpro/sandbox";
+import type { SandboxProvider, SandboxRunChunk, SandboxRunResponse } from "@learnpro/sandbox";
 import { ProblemDefSchema, type ProblemDef } from "@learnpro/problems";
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
@@ -125,9 +121,7 @@ describe.skipIf(!DATABASE_URL)("buildGradeDrizzleDeps: debug-grader wiring", () 
     if (db) {
       await db.delete(agent_calls).where(eq(agent_calls.user_id, testUserId));
       await db.delete(submissions);
-      await db
-        .delete(bug_finding_scores)
-        .where(eq(bug_finding_scores.user_id, testUserId));
+      await db.delete(bug_finding_scores).where(eq(bug_finding_scores.user_id, testUserId));
       await db.delete(episodes).where(eq(episodes.user_id, testUserId));
       await db.delete(problems).where(eq(problems.id, debugProblemId));
       await db.delete(problems).where(eq(problems.id, implementProblemId));
@@ -139,9 +133,7 @@ describe.skipIf(!DATABASE_URL)("buildGradeDrizzleDeps: debug-grader wiring", () 
 
   beforeEach(async () => {
     await db.delete(submissions);
-    await db
-      .delete(bug_finding_scores)
-      .where(eq(bug_finding_scores.user_id, testUserId));
+    await db.delete(bug_finding_scores).where(eq(bug_finding_scores.user_id, testUserId));
     await db.delete(episodes).where(eq(episodes.user_id, testUserId));
 
     const epDebug = await db

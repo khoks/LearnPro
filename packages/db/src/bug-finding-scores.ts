@@ -81,9 +81,7 @@ export async function upsertBugFindingScore(
       ),
     )
     .limit(1);
-  const prev = prevRows[0]
-    ? rowToView(prevRows[0])
-    : coldStartBugFinding(archetype);
+  const prev = prevRows[0] ? rowToView(prevRows[0]) : coldStartBugFinding(archetype);
   const next = updateBugFindingScore(prev, input.signal, input.config);
 
   await db
@@ -132,12 +130,7 @@ export async function listBugFindingScores(
       attempts: bug_finding_scores.attempts,
     })
     .from(bug_finding_scores)
-    .where(
-      and(
-        eq(bug_finding_scores.user_id, user_id),
-        eq(bug_finding_scores.org_id, orgIdValue),
-      ),
-    )
+    .where(and(eq(bug_finding_scores.user_id, user_id), eq(bug_finding_scores.org_id, orgIdValue)))
     .orderBy(asc(bug_finding_scores.bug_archetype));
 
   const byArchetype = new Map<BugArchetypeKey, BugFindingScoreView>();
@@ -146,7 +139,5 @@ export async function listBugFindingScores(
     byArchetype.set(view.archetype, view);
   }
   const sortedArchetypes = [...BUG_ARCHETYPES].sort();
-  return sortedArchetypes.map(
-    (a) => byArchetype.get(a) ?? coldStartBugFinding(a),
-  );
+  return sortedArchetypes.map((a) => byArchetype.get(a) ?? coldStartBugFinding(a));
 }

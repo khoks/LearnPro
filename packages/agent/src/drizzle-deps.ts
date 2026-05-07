@@ -376,8 +376,7 @@ export function buildGradeDrizzleDeps(opts: BuildDrizzleAgentDepsOptions): Grade
               org_id: input.org_id,
               bug_archetype: input.problem.bug_archetype,
               signal: {
-                passed: input.test_results.length > 0
-                  && input.test_results.every((r) => r.passed),
+                passed: input.test_results.length > 0 && input.test_results.every((r) => r.passed),
                 named_bug: debugResult.named_bug,
               },
             });

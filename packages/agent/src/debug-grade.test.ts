@@ -10,11 +10,7 @@ import type {
 } from "@learnpro/llm";
 import type { DebugProblemDef } from "@learnpro/problems";
 import { describe, expect, it } from "vitest";
-import {
-  DebugGradeResultSchema,
-  parseDebugGraderResponse,
-  runDebugGrader,
-} from "./debug-grade.js";
+import { DebugGradeResultSchema, parseDebugGraderResponse, runDebugGrader } from "./debug-grade.js";
 
 function fakeLlm(responseText: string): LLMProvider & { calls: CompleteRequest[] } {
   const calls: CompleteRequest[] = [];

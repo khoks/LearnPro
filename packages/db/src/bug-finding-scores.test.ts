@@ -2,10 +2,7 @@ import { eq } from "drizzle-orm";
 import type { Pool } from "pg";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { createDb, type LearnProDb } from "./client.js";
-import {
-  listBugFindingScores,
-  upsertBugFindingScore,
-} from "./bug-finding-scores.js";
+import { listBugFindingScores, upsertBugFindingScore } from "./bug-finding-scores.js";
 import { runMigrations } from "./migrate.js";
 import { bug_finding_scores, organizations, users } from "./schema.js";
 
@@ -40,12 +37,8 @@ describe.skipIf(!DATABASE_URL)("bug_finding_scores DB helpers (integration)", ()
 
   afterAll(async () => {
     if (db) {
-      await db
-        .delete(bug_finding_scores)
-        .where(eq(bug_finding_scores.user_id, testUserId));
-      await db
-        .delete(bug_finding_scores)
-        .where(eq(bug_finding_scores.user_id, otherUserId));
+      await db.delete(bug_finding_scores).where(eq(bug_finding_scores.user_id, testUserId));
+      await db.delete(bug_finding_scores).where(eq(bug_finding_scores.user_id, otherUserId));
       await db.delete(users).where(eq(users.id, testUserId));
       await db.delete(users).where(eq(users.id, otherUserId));
     }
@@ -53,12 +46,8 @@ describe.skipIf(!DATABASE_URL)("bug_finding_scores DB helpers (integration)", ()
   });
 
   beforeEach(async () => {
-    await db
-      .delete(bug_finding_scores)
-      .where(eq(bug_finding_scores.user_id, testUserId));
-    await db
-      .delete(bug_finding_scores)
-      .where(eq(bug_finding_scores.user_id, otherUserId));
+    await db.delete(bug_finding_scores).where(eq(bug_finding_scores.user_id, testUserId));
+    await db.delete(bug_finding_scores).where(eq(bug_finding_scores.user_id, otherUserId));
   });
 
   it("cold-start insert: first close on an untouched archetype seeds row + applies EWMA", async () => {
