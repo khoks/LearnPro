@@ -72,3 +72,10 @@ export {
   type CheatsheetEpisodeInput,
   type CheatsheetPromptOptions,
 } from "./cheatsheet-prompt.js";
+export {
+  PROBLEM_VARIANTS_PROMPT_VERSION,
+  buildProblemVariantsSystemPrompt,
+  buildProblemVariantsUserPrompt,
+  type ProblemVariantsPromptOptions,
+  type ProblemVariantsPromptSourceShape,
+} from "./problem-variants-prompt.js";

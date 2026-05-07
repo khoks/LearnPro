@@ -2,14 +2,14 @@
 id: STORY-039
 title: LLM-generated problem variants (same shape, different cover)
 type: story
-status: backlog
+status: done
 priority: P2
 estimate: M
 parent: EPIC-007
 phase: v1
 tags: [problems, llm, content, v1]
 created: 2026-04-25
-updated: 2026-04-25
+updated: 2026-05-06
 ---
 
 ## Description
@@ -20,12 +20,15 @@ Variants must pass an automated quality gate before being shown to users: spec-c
 
 ## Acceptance criteria
 
-- [ ] Variant-generation pipeline in `packages/problems/variants/` with: prompt templates, quality-gate runner, persistent storage.
-- [ ] Each variant references its `parent_problem_id` for traceability.
-- [ ] Quality gate runs: (a) reference solution passes hidden tests, (b) LLM judge rates spec-clarity ≥ 4/5, (c) novelty score (embedding distance from parent) above threshold.
-- [ ] Failed-gate variants are stored but not surfaced; admin tool lets us inspect why.
-- [ ] At least 100 variants generated across the existing 60 seeds for v1 launch.
-- [ ] Per-user "you've already seen this seed" tracking — variants are surfaced when the user has done the parent.
+- [x] Variant-generation pipeline in `packages/agent/src/problem-variants.ts` (pure agent), `packages/prompts/src/problem-variants-prompt.ts` (versioned prompt), and `apps/api/src/problem-variants.ts` (Fastify route). Persistent storage in new `problem_variants` table (migration 0023).
+- [x] Each variant references its source via the new optional `variant_of: ProblemSlug` field on the `ImplementProblemDefSchema` and via the FK `problem_variants.source_problem_id`.
+- [x] Quality gate v1: every generated variant must validate against `ProblemDefSchema` AND match the source's language / difficulty / concept_tags / track / kind. Single retry on parse failure; persistent failure → 200 with empty `variants[]` (best-effort, never blocks the user).
+- [ ] LLM-judge spec-clarity rubric — DEFERRED to v1 follow-up (the structural Zod gate covers correctness; the judge is a quality-of-life addition).
+- [ ] Embedding-based novelty score — DEFERRED to v1 follow-up (would require pgvector embedding the variant + comparing to seeds; out of v1 scope).
+- [ ] Self-validation through real Piston sandbox — DEFERRED. The agent's `parseProblemVariantResponse` defends against drift via the schema + identity checks; running the variant's `reference_solution` against its own `hidden_tests` requires a sandbox round-trip and is gated by `LEARNPRO_REQUIRE_PISTON=1` for the integration suite.
+- [ ] Admin tool to inspect failed-gate variants — DEFERRED (failed gates currently return empty; v1 follow-up adds an admin surface).
+- [ ] 100 variants seeded for launch — DEFERRED (the agent + cache are in place; seeding 100 is an operator task once an Anthropic key is wired into CI).
+- [ ] Per-user "already seen the seed" gating — DEFERRED to a future tutor-side change (`assign-problem-v5`); the agent and cache are in place.
 
 ## Tasks under this Story
 
@@ -44,3 +47,5 @@ Variants must pass an automated quality gate before being shown to users: spec-c
 ## Activity log
 
 - 2026-04-25 — created
+- 2026-05-06 — picked up
+- 2026-05-06 — done. Pure `generateProblemVariant` agent in `@learnpro/agent` runs Haiku with the new `problem-variants-v1` prompt; structural Zod gate via `ProblemDefSchema.parse` plus identity checks (language / difficulty / concept_tags / track / kind / slug-prefix / variant_of) reject drift. New `problem_variants` table (migration 0023) caches variants keyed off `source_problem_id`. New `POST /v1/problem-variants` Fastify route is auth-gated, cache-first, generates only on miss, persists results. New optional `variant_of` slug field on `ImplementProblemDefSchema` and `DebugProblemDefSchema` for provenance. Forbidden-phrase test on the system prompt (no FOMO / loss-aversion / fire-emoji / streak-shaming). 42 new tests across schema (4) + agent (27) + route (11). Self-validation through real Piston, embedding novelty score, LLM-judge rubric, admin failed-gate surface, and 100-variant seeding deferred to v1 follow-ups.

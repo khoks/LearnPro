@@ -200,3 +200,9 @@ export {
   type CheatsheetAgentResult,
   type CheatsheetEntry as CheatsheetAgentEntry,
 } from "./cheatsheet.js";
+export {
+  generateProblemVariant,
+  parseProblemVariantResponse,
+  type GenerateProblemVariantInput,
+  type GenerateProblemVariantOutput,
+} from "./problem-variants.js";

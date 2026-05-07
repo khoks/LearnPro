@@ -223,6 +223,13 @@ export {
   type UpdateCheatsheetMarkdownOptions,
 } from "./cheatsheets.js";
 export {
+  insertProblemVariant,
+  listProblemVariants,
+  type InsertProblemVariantInput,
+  type ListProblemVariantsOptions,
+  type ProblemVariantRow,
+} from "./problem-variants.js";
+export {
   PREREQUISITES_YAML_PATH,
   loadPrerequisitesFromYaml,
   type LoadPrerequisitesOptions,

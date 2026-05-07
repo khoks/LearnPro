@@ -680,6 +680,26 @@ export const cheatsheets = pgTable(
   }),
 );
 
+// STORY-039 — LLM-generated problem variants. Cache table keyed off the source seed problem
+// so the agent doesn't re-pay the generation cost on every request. `variant_def` stores the
+// full jsonb-serialised `ProblemDef` (parsed against `ProblemDefSchema` on read), so a cache
+// row is structurally interchangeable with a hand-authored YAML in the seed bank.
+export const problem_variants = pgTable(
+  "problem_variants",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    org_id: orgId(),
+    source_problem_id: uuid("source_problem_id")
+      .notNull()
+      .references(() => problems.id, { onDelete: "cascade" }),
+    variant_def: jsonb("variant_def").notNull(),
+    created_at: createdAt(),
+  },
+  (t) => ({
+    source_idx: index("problem_variants_source_idx").on(t.source_problem_id, t.created_at),
+  }),
+);
+
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type Account = typeof accounts.$inferSelect;
@@ -726,6 +746,8 @@ export type ProfileInsight = typeof profile_insights.$inferSelect;
 export type NewProfileInsight = typeof profile_insights.$inferInsert;
 export type Cheatsheet = typeof cheatsheets.$inferSelect;
 export type NewCheatsheet = typeof cheatsheets.$inferInsert;
+export type ProblemVariant = typeof problem_variants.$inferSelect;
+export type NewProblemVariant = typeof problem_variants.$inferInsert;
 
 export const ALL_TABLES = [
   organizations,
@@ -752,6 +774,7 @@ export const ALL_TABLES = [
   portfolio_pushes,
   profile_insights,
   cheatsheets,
+  problem_variants,
 ] as const;
 
 // Auth.js tables (`accounts`, `sessions`, `verificationTokens`) are intentionally NOT in this
@@ -778,6 +801,7 @@ export const ORG_SCOPED_TABLES = [
   portfolio_pushes,
   profile_insights,
   cheatsheets,
+  problem_variants,
 ] as const;
 
 export const PGVECTOR_PROLOGUE_SQL = sql`CREATE EXTENSION IF NOT EXISTS vector`;
