@@ -247,6 +247,48 @@ describe("PistonSandboxProvider.run — errors", () => {
   });
 });
 
+describe("PistonSandboxProvider.runStream — STORY-059", () => {
+  it("yields stdout/stderr chunks ending with an exit chunk", async () => {
+    const transport = new FakePistonTransport(ok({ stdout: "a\nb\n", stderr: "oops\n" }));
+    const provider = new PistonSandboxProvider({ transport });
+    const out = [];
+    for await (const c of provider.runStream({
+      language: "python",
+      code: "print('a'); print('b')",
+      time_limit_ms: 5_000,
+      memory_limit_mb: 128,
+      output_limit_bytes: 64 * 1024,
+    })) {
+      out.push(c);
+    }
+    expect(out.map((c) => c.type)).toEqual(["stdout", "stdout", "stderr", "exit"]);
+    expect(transport.calls).toBe(1);
+    const last = out[out.length - 1]!;
+    if (last.type !== "exit") throw new Error("expected exit chunk");
+    expect(last.exit_code).toBe(0);
+    expect(last.language).toBe("python");
+  });
+
+  it("emits telemetry exactly once per stream (telemetry is on the underlying run())", async () => {
+    const sink = new InMemorySandboxTelemetrySink();
+    const transport = new FakePistonTransport(ok({ stdout: "hello\n" }));
+    const provider = new PistonSandboxProvider({ transport, telemetry: sink });
+    const stream = provider.runStream({
+      language: "python",
+      code: "print('hello')",
+      time_limit_ms: 5_000,
+      memory_limit_mb: 128,
+      output_limit_bytes: 64 * 1024,
+    });
+    for await (const _ of stream) {
+      // drain
+      void _;
+    }
+    expect(sink.events).toHaveLength(1);
+    expect(sink.events[0]?.ok).toBe(true);
+  });
+});
+
 describe("PistonSandboxProvider — telemetry", () => {
   it("emits a sandbox telemetry event on success", async () => {
     const sink = new InMemorySandboxTelemetrySink();

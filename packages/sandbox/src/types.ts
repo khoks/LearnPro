@@ -38,6 +38,37 @@ export const SandboxRunResponseSchema = z.object({
 });
 export type SandboxRunResponse = z.infer<typeof SandboxRunResponseSchema>;
 
+// STORY-059 — streaming chunks emitted by `SandboxProvider.runStream()`. The chunks form a
+// finite stream that always ends with exactly one `exit` chunk. v1 fake-streams by splitting
+// the post-run stdout/stderr into newline-delimited tokens (Piston's HTTP API is
+// request/response — see STORY-059 activity log). Real streaming lands when STORY-048
+// (project-based learning) needs a long-running primitive.
+export const SandboxStdoutChunkSchema = z.object({
+  type: z.literal("stdout"),
+  line: z.string(),
+});
+export const SandboxStderrChunkSchema = z.object({
+  type: z.literal("stderr"),
+  line: z.string(),
+});
+export const SandboxExitChunkSchema = z.object({
+  type: z.literal("exit"),
+  exit_code: z.number().int().nullable(),
+  duration_ms: z.number().int().nonnegative(),
+  killed_by: SandboxKilledBySchema.nullable(),
+  language: SandboxLanguageSchema,
+  runtime_version: z.string().optional(),
+});
+export const SandboxRunChunkSchema = z.discriminatedUnion("type", [
+  SandboxStdoutChunkSchema,
+  SandboxStderrChunkSchema,
+  SandboxExitChunkSchema,
+]);
+export type SandboxStdoutChunk = z.infer<typeof SandboxStdoutChunkSchema>;
+export type SandboxStderrChunk = z.infer<typeof SandboxStderrChunkSchema>;
+export type SandboxExitChunk = z.infer<typeof SandboxExitChunkSchema>;
+export type SandboxRunChunk = z.infer<typeof SandboxRunChunkSchema>;
+
 export const SandboxTelemetryEventSchema = z.object({
   provider: z.string(),
   language: SandboxLanguageSchema,

@@ -1,7 +1,13 @@
 import { describe, it, expect } from "vitest";
 import type { InteractionStore, StoredInteraction } from "@learnpro/shared";
 import { InMemoryUsageStore, TokenBudgetExceededError, type LLMProvider } from "@learnpro/llm";
-import type { SandboxProvider, SandboxRunRequest, SandboxRunResponse } from "@learnpro/sandbox";
+import {
+  streamChunksFromRun,
+  type SandboxProvider,
+  type SandboxRunChunk,
+  type SandboxRunRequest,
+  type SandboxRunResponse,
+} from "@learnpro/sandbox";
 import { buildServer, buildExportRateLimiterFromEnv } from "./index.js";
 import { MemoryRateLimiter, RedisRateLimiter } from "./rate-limiter.js";
 import { regexOnlyRedactor } from "./redactor.js";
@@ -49,6 +55,10 @@ class FakeSandbox implements SandboxProvider {
   async run(req: SandboxRunRequest): Promise<SandboxRunResponse> {
     this.lastReq = req;
     return typeof this.response === "function" ? this.response(req) : this.response;
+  }
+
+  runStream(req: SandboxRunRequest, signal?: AbortSignal): AsyncIterable<SandboxRunChunk> {
+    return streamChunksFromRun(() => this.run(req), signal);
   }
 }
 

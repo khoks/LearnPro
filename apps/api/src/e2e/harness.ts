@@ -43,9 +43,11 @@ import {
   type LearnProDb,
 } from "@learnpro/db";
 import { VERDICT_PASS_TOKEN } from "@learnpro/problems";
+import { streamChunksFromRun } from "@learnpro/sandbox";
 import type {
   SandboxLanguage,
   SandboxProvider,
+  SandboxRunChunk,
   SandboxRunRequest,
   SandboxRunResponse,
 } from "@learnpro/sandbox";
@@ -139,6 +141,10 @@ export class AlwaysPassSandbox implements SandboxProvider {
       language: req.language as SandboxLanguage,
       runtime_version: "fake-1.0.0",
     };
+  }
+
+  runStream(req: SandboxRunRequest, signal?: AbortSignal): AsyncIterable<SandboxRunChunk> {
+    return streamChunksFromRun(() => this.run(req), signal);
   }
 }
 
