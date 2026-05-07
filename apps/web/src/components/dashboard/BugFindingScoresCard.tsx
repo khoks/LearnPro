@@ -44,9 +44,7 @@ const BAND_COPY: Record<BugFindingBand, { label: string; color: string; bg: stri
 };
 
 // Sort: highest-attempts first (most-touched archetypes first); ties broken by humanized label.
-function sortRows(
-  rows: ReadonlyArray<BugFindingScoreRow>,
-): ReadonlyArray<BugFindingScoreRow> {
+function sortRows(rows: ReadonlyArray<BugFindingScoreRow>): ReadonlyArray<BugFindingScoreRow> {
   return [...rows].sort((a, b) => {
     if (b.attempts !== a.attempts) return b.attempts - a.attempts;
     return humanizeBugArchetype(a.bug_archetype).localeCompare(
@@ -104,8 +102,7 @@ export function BugFindingScoresCard(props: BugFindingScoresCardProps): ReactEle
             .map((row) => {
               const band = bugFindingBand(row.score);
               const bandCopy = BAND_COPY[band];
-              const attemptsLabel =
-                row.attempts === 1 ? "1 attempt" : `${row.attempts} attempts`;
+              const attemptsLabel = row.attempts === 1 ? "1 attempt" : `${row.attempts} attempts`;
               return (
                 <li
                   key={row.bug_archetype}

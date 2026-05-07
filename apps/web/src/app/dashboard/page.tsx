@@ -198,9 +198,7 @@ async function loadBugFindingScoresForDashboard(): Promise<BugFindingScoreRow[]>
       cache: "no-store",
     });
     if (!res.ok) return [];
-    const json = (await res.json().catch(() => null)) as
-      | { scores: BugFindingScoreRow[] }
-      | null;
+    const json = (await res.json().catch(() => null)) as { scores: BugFindingScoreRow[] } | null;
     return json?.scores ?? [];
   } catch {
     return [];

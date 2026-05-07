@@ -1,10 +1,7 @@
 import * as React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import {
-  BugFindingScoresCard,
-  type BugFindingScoreRow,
-} from "./BugFindingScoresCard.js";
+import { BugFindingScoresCard, type BugFindingScoreRow } from "./BugFindingScoresCard.js";
 
 void React;
 
@@ -82,7 +79,7 @@ describe("BugFindingScoresCard — STORY-037b", () => {
     expect(out).toContain("Bug archetypes you&#x27;ve worked through");
     expect(out).toContain("Try a debug problem to see your bug-finding scores here.");
     // Empty state has no list/rows.
-    expect(out).not.toContain("data-testid=\"bug-finding-scores-card-list\"");
+    expect(out).not.toContain('data-testid="bug-finding-scores-card-list"');
   });
 
   it("renders the empty state when every archetype has 0 attempts (cold-start)", () => {
@@ -90,7 +87,7 @@ describe("BugFindingScoresCard — STORY-037b", () => {
     // means attempts=0 — the card treats this as "no data yet" and renders the empty state.
     const out = html(<BugFindingScoresCard scores={ALL_8_COLD_START} />);
     expect(out).toContain("Try a debug problem to see your bug-finding scores here.");
-    expect(out).not.toContain("data-testid=\"bug-finding-scores-card-list\"");
+    expect(out).not.toContain('data-testid="bug-finding-scores-card-list"');
   });
 
   it("renders one row per touched archetype (partial state)", () => {
@@ -100,11 +97,11 @@ describe("BugFindingScoresCard — STORY-037b", () => {
       { bug_archetype: "async_race", score: 0.3, attempts: 2 },
     ];
     const out = html(<BugFindingScoresCard scores={scores} />);
-    expect(out).toContain("data-testid=\"bug-finding-scores-card-list\"");
+    expect(out).toContain('data-testid="bug-finding-scores-card-list"');
     expect(out).toContain("Off-by-one");
     expect(out).toContain("Async race");
     // Untouched archetypes (attempts=0) are filtered out of the list.
-    expect(out).not.toContain("data-testid=\"bug-finding-row-shadowing\"");
+    expect(out).not.toContain('data-testid="bug-finding-row-shadowing"');
   });
 
   it("renders all 8 archetypes when each has at least 1 attempt (full state)", () => {
@@ -155,9 +152,7 @@ describe("BugFindingScoresCard — STORY-037b", () => {
 
   it("renders the 'Solid' band for high-score archetypes", () => {
     const out = html(
-      <BugFindingScoresCard
-        scores={[{ bug_archetype: "off_by_one", score: 0.9, attempts: 5 }]}
-      />,
+      <BugFindingScoresCard scores={[{ bug_archetype: "off_by_one", score: 0.9, attempts: 5 }]} />,
     );
     expect(out).toContain("Solid");
     expect(out).not.toContain("Still learning");
@@ -165,9 +160,7 @@ describe("BugFindingScoresCard — STORY-037b", () => {
 
   it("renders the 'Getting there' band for mid-score archetypes", () => {
     const out = html(
-      <BugFindingScoresCard
-        scores={[{ bug_archetype: "off_by_one", score: 0.55, attempts: 3 }]}
-      />,
+      <BugFindingScoresCard scores={[{ bug_archetype: "off_by_one", score: 0.55, attempts: 3 }]} />,
     );
     expect(out).toContain("Getting there");
     expect(out).not.toContain("Solid");
@@ -176,9 +169,7 @@ describe("BugFindingScoresCard — STORY-037b", () => {
 
   it("renders the 'Still learning' band for low-score archetypes (no shaming framing)", () => {
     const out = html(
-      <BugFindingScoresCard
-        scores={[{ bug_archetype: "off_by_one", score: 0.2, attempts: 4 }]}
-      />,
+      <BugFindingScoresCard scores={[{ bug_archetype: "off_by_one", score: 0.2, attempts: 4 }]} />,
     );
     expect(out).toContain("Still learning");
     expect(out).not.toContain("Solid");
@@ -205,17 +196,13 @@ describe("BugFindingScoresCard — STORY-037b", () => {
 
   it("pluralizes the attempt count correctly (1 attempt vs N attempts)", () => {
     const single = html(
-      <BugFindingScoresCard
-        scores={[{ bug_archetype: "off_by_one", score: 0.5, attempts: 1 }]}
-      />,
+      <BugFindingScoresCard scores={[{ bug_archetype: "off_by_one", score: 0.5, attempts: 1 }]} />,
     );
     expect(single).toContain("1 attempt");
     expect(single).not.toContain("1 attempts");
 
     const many = html(
-      <BugFindingScoresCard
-        scores={[{ bug_archetype: "off_by_one", score: 0.5, attempts: 7 }]}
-      />,
+      <BugFindingScoresCard scores={[{ bug_archetype: "off_by_one", score: 0.5, attempts: 7 }]} />,
     );
     expect(many).toContain("7 attempts");
   });

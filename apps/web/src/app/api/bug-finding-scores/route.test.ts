@@ -51,14 +51,12 @@ describe("GET /api/bug-finding-scores (Next.js Route Handler)", () => {
   });
 
   it("forwards the Auth.js session cookie upstream", async () => {
-    const fakeFetch = vi
-      .fn()
-      .mockResolvedValue(
-        new Response(JSON.stringify({ scores: [] }), {
-          status: 200,
-          headers: { "content-type": "application/json" },
-        }),
-      );
+    const fakeFetch = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ scores: [] }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      }),
+    );
     globalThis.fetch = fakeFetch as unknown as typeof fetch;
 
     await GET();
@@ -94,14 +92,12 @@ describe("GET /api/bug-finding-scores (Next.js Route Handler)", () => {
 
   it("defaults LEARNPRO_API_URL to http://localhost:4000", async () => {
     delete process.env["LEARNPRO_API_URL"];
-    const fakeFetch = vi
-      .fn()
-      .mockResolvedValue(
-        new Response(JSON.stringify({ scores: [] }), {
-          status: 200,
-          headers: { "content-type": "application/json" },
-        }),
-      ) as unknown as typeof fetch;
+    const fakeFetch = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ scores: [] }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      }),
+    ) as unknown as typeof fetch;
     globalThis.fetch = fakeFetch;
     await GET();
     expect(fakeFetch).toHaveBeenCalledWith(
