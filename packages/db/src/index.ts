@@ -230,6 +230,12 @@ export {
   type ProblemVariantRow,
 } from "./problem-variants.js";
 export {
+  listBugFindingScores,
+  upsertBugFindingScore,
+  type BugFindingScoreView,
+  type UpsertBugFindingScoreInput,
+} from "./bug-finding-scores.js";
+export {
   PREREQUISITES_YAML_PATH,
   loadPrerequisitesFromYaml,
   type LoadPrerequisitesOptions,

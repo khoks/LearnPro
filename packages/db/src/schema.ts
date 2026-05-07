@@ -655,6 +655,38 @@ export const profile_insights = pgTable(
   }),
 );
 
+// STORY-037a — per-(user, bug_archetype) EWMA score for the bug-finding skill axis. Mirrors
+// `skill_scores` shape but keyed by `bug_archetype` rather than `concept_id` — "found bug
+// correctly" is orthogonal to "wrote new code correctly" so it gets its own axis. The EWMA
+// semantics live in `packages/scoring/src/policies/bug-finding-policy.ts`. The composite
+// unique index on (user_id, bug_archetype, org_id) is the idempotency bedrock for the
+// upsert helper. Scores live in [0, 1]; the policy clamps. Bug archetype is one of the 8
+// from migration 0018 — mirrored here as a CHECK constraint at the DB level (migration 0022).
+export const bug_finding_scores = pgTable(
+  "bug_finding_scores",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    org_id: orgId(),
+    user_id: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    bug_archetype: text("bug_archetype").notNull(),
+    // double precision in [0, 1]; bug-finding-policy clamps. Cold-start seed is 0.5.
+    score: numeric("score", { precision: 10, scale: 6 }).notNull().default("0.5"),
+    confidence: numeric("confidence", { precision: 10, scale: 6 }).notNull().default("0"),
+    attempts: integer("attempts").notNull().default(0),
+    updated_at: updatedAt(),
+  },
+  (t) => ({
+    user_archetype_uniq: uniqueIndex("bug_finding_scores_user_archetype_uniq").on(
+      t.user_id,
+      t.bug_archetype,
+      t.org_id,
+    ),
+    user_idx: index("bug_finding_scores_user_idx").on(t.user_id),
+  }),
+);
+
 // STORY-041 — per-session personal cheatsheet. One row per generated cheatsheet derived from
 // one or more episodes the user just closed. `episodes_covered` is a jsonb array of episode
 // IDs. `entries` is the jsonb array of `{ concept, definition, code_example, gotcha }`
@@ -748,6 +780,8 @@ export type Cheatsheet = typeof cheatsheets.$inferSelect;
 export type NewCheatsheet = typeof cheatsheets.$inferInsert;
 export type ProblemVariant = typeof problem_variants.$inferSelect;
 export type NewProblemVariant = typeof problem_variants.$inferInsert;
+export type BugFindingScoreRow = typeof bug_finding_scores.$inferSelect;
+export type NewBugFindingScoreRow = typeof bug_finding_scores.$inferInsert;
 
 export const ALL_TABLES = [
   organizations,
@@ -775,6 +809,7 @@ export const ALL_TABLES = [
   profile_insights,
   cheatsheets,
   problem_variants,
+  bug_finding_scores,
 ] as const;
 
 // Auth.js tables (`accounts`, `sessions`, `verificationTokens`) are intentionally NOT in this
@@ -802,6 +837,7 @@ export const ORG_SCOPED_TABLES = [
   profile_insights,
   cheatsheets,
   problem_variants,
+  bug_finding_scores,
 ] as const;
 
 export const PGVECTOR_PROLOGUE_SQL = sql`CREATE EXTENSION IF NOT EXISTS vector`;
