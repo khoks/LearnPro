@@ -1,0 +1,49 @@
+slug: debug-product-range-off-by-one-ts
+name: Debug — product 1 to n (off-by-one) (TypeScript)
+language: typescript
+difficulty: 2
+track: typescript-fundamentals
+kind: debug
+bug_archetype: off_by_one
+concept_tags:
+  - control-flow
+  - numbers
+expected_median_time_to_solve_ms: 120000
+expected_behavior: |
+  Return the product of integers from 1 through n (inclusive). For n = 5 the
+  answer is 120. For n = 0 return 1.
+statement: |
+  This SHOULD return the product of 1..n (inclusive). The loop bound is off
+  by one and consistently undercounts by one factor. Find and fix the bug.
+starter_code: |
+  function solve(n: number): number {
+      let product = 1;
+      for (let i = 1; i < n; i++) {
+          product *= i;
+      }
+      return product;
+  }
+reference_solution: |
+  function solve(n: number): number {
+      let product = 1;
+      for (let i = 1; i <= n; i++) {
+          product *= i;
+      }
+      return product;
+  }
+public_examples:
+  - input: 5
+    expected: 120
+  - input: 0
+    expected: 1
+hidden_tests:
+  - input: 1
+    expected: 1
+  - input: 2
+    expected: 2
+  - input: 3
+    expected: 6
+  - input: 4
+    expected: 24
+  - input: 6
+    expected: 720

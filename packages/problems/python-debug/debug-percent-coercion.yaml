@@ -1,0 +1,40 @@
+slug: debug-percent-coercion
+name: Debug — percent string (type coercion)
+language: python
+difficulty: 2
+track: python-fundamentals
+kind: debug
+bug_archetype: type_coercion
+concept_tags:
+  - strings
+  - numbers
+expected_median_time_to_solve_ms: 150000
+expected_behavior: |
+  Given a string like "75%", return the integer percent value (0-100). For
+  "75%" return 75; for "0%" return 0; for "100%" return 100.
+statement: |
+  This SHOULD parse a percent string into the integer value. The code
+  forgets to strip the percent sign and feeds it straight to int(), which
+  raises ValueError. Find and fix the bug.
+starter_code: |
+  def solve(s):
+      return int(s)
+reference_solution: |
+  def solve(s):
+      return int(s.rstrip("%"))
+public_examples:
+  - input: "75%"
+    expected: 75
+  - input: "0%"
+    expected: 0
+hidden_tests:
+  - input: "100%"
+    expected: 100
+  - input: "1%"
+    expected: 1
+  - input: "50%"
+    expected: 50
+  - input: "99%"
+    expected: 99
+  - input: "10%"
+    expected: 10

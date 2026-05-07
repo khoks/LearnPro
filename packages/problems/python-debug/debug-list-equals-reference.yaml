@@ -1,0 +1,40 @@
+slug: debug-list-equals-reference
+name: Debug — list equality (reference)
+language: python
+difficulty: 2
+track: python-fundamentals
+kind: debug
+bug_archetype: reference_equality
+concept_tags:
+  - lists
+  - equality
+expected_median_time_to_solve_ms: 180000
+expected_behavior: |
+  Return True when lists `a` and `b` have the same contents in the same order;
+  False otherwise. Distinct list objects with the same contents must compare equal.
+statement: |
+  This SHOULD compare list contents. Using `is` instead of `==` checks
+  reference identity, so two distinct lists with the same contents return
+  False. Find and fix the bug.
+starter_code: |
+  def solve(a, b):
+      return a is b
+reference_solution: |
+  def solve(a, b):
+      return a == b
+public_examples:
+  - input: [[1, 2, 3], [1, 2, 3]]
+    expected: true
+  - input: [[1], [2]]
+    expected: false
+hidden_tests:
+  - input: [[], []]
+    expected: true
+  - input: [[1, 2], [1, 2]]
+    expected: true
+  - input: [[1, 2], [2, 1]]
+    expected: false
+  - input: [["a"], ["a"]]
+    expected: true
+  - input: [[1, 2, 3], [1, 2]]
+    expected: false

@@ -1,0 +1,48 @@
+slug: debug-empty-list-default-mutability
+name: Debug — empty-list default arg (mutability)
+language: python
+difficulty: 3
+track: python-fundamentals
+kind: debug
+bug_archetype: default_arg_mutability
+concept_tags:
+  - functions
+  - lists
+  - default-args
+expected_median_time_to_solve_ms: 240000
+expected_behavior: |
+  Return a fresh list of length n, every element equal to `value`. Independent
+  invocations must NOT share state — solve(2, 7) called twice should always
+  return [7, 7] both times.
+statement: |
+  This SHOULD return a fresh n-length list filled with `value`. The mutable
+  default-arg makes the same buffer grow across consecutive calls. Find and
+  fix the bug.
+starter_code: |
+  def solve(n, value, buf=[]):
+      while len(buf) < n:
+          buf.append(value)
+      return buf
+reference_solution: |
+  def solve(n, value, buf=None):
+      if buf is None:
+          buf = []
+      while len(buf) < n:
+          buf.append(value)
+      return buf
+public_examples:
+  - input: [3, 0]
+    expected: [0, 0, 0]
+  - input: [1, "a"]
+    expected: ["a"]
+hidden_tests:
+  - input: [0, 99]
+    expected: []
+  - input: [2, 7]
+    expected: [7, 7]
+  - input: [4, -1]
+    expected: [-1, -1, -1, -1]
+  - input: [5, "x"]
+    expected: ["x", "x", "x", "x", "x"]
+  - input: [3, 1]
+    expected: [1, 1, 1]

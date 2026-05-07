@@ -1,0 +1,45 @@
+slug: debug-append-default-mutability
+name: Debug — append-to-list default arg (mutability)
+language: python
+difficulty: 3
+track: python-fundamentals
+kind: debug
+bug_archetype: default_arg_mutability
+concept_tags:
+  - functions
+  - lists
+  - default-args
+expected_median_time_to_solve_ms: 240000
+expected_behavior: |
+  When called twice as solve(1) then solve(2), the second call should
+  return [2] — NOT [1, 2]. Default arguments should not leak state across calls.
+statement: |
+  This function SHOULD append `value` to a fresh list and return it on each
+  call. Calling it twice in a row keeps growing the same list across calls —
+  classic Python default-argument-mutability footgun. Find and fix the bug.
+starter_code: |
+  def solve(value, acc=[]):
+      acc.append(value)
+      return acc
+reference_solution: |
+  def solve(value, acc=None):
+      if acc is None:
+          acc = []
+      acc.append(value)
+      return acc
+public_examples:
+  - input: 1
+    expected: [1]
+  - input: 42
+    expected: [42]
+hidden_tests:
+  - input: 0
+    expected: [0]
+  - input: -5
+    expected: [-5]
+  - input: 100
+    expected: [100]
+  - input: 7
+    expected: [7]
+  - input: 999
+    expected: [999]

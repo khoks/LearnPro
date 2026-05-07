@@ -1,0 +1,40 @@
+slug: debug-int-from-string-coercion
+name: Debug — int from string (type coercion)
+language: python
+difficulty: 2
+track: python-fundamentals
+kind: debug
+bug_archetype: type_coercion
+concept_tags:
+  - strings
+  - numbers
+expected_median_time_to_solve_ms: 120000
+expected_behavior: |
+  Given a string `s` of an integer (e.g. "42"), return the value plus 1 as an
+  int (e.g. 43). The function must convert the string to an int before adding.
+statement: |
+  This SHOULD return s + 1 as an int. Concatenating a string with an int via
+  `+` is a TypeError; relying on Python's lack of implicit string-to-int
+  coercion bites this code. Find and fix the bug.
+starter_code: |
+  def solve(s):
+      return s + 1
+reference_solution: |
+  def solve(s):
+      return int(s) + 1
+public_examples:
+  - input: "1"
+    expected: 2
+  - input: "42"
+    expected: 43
+hidden_tests:
+  - input: "0"
+    expected: 1
+  - input: "100"
+    expected: 101
+  - input: "-1"
+    expected: 0
+  - input: "9999"
+    expected: 10000
+  - input: "7"
+    expected: 8

@@ -1,0 +1,43 @@
+slug: debug-falsy-zero-coercion
+name: Debug — falsy zero (type coercion)
+language: typescript
+difficulty: 2
+track: typescript-fundamentals
+kind: debug
+bug_archetype: type_coercion
+concept_tags:
+  - control-flow
+  - truthiness
+expected_median_time_to_solve_ms: 150000
+expected_behavior: |
+  Return `defaultValue` only when `value` is null OR undefined. The number 0
+  and the empty string "" are valid values — they should NOT trigger the
+  default branch.
+statement: |
+  This SHOULD return `defaultValue` only when `value` is null/undefined.
+  JavaScript falsiness collapses 0 and "" into the default branch. Find and
+  fix the bug (consider `??` or an explicit `=== undefined` check).
+starter_code: |
+  function solve(value: unknown, defaultValue: unknown): unknown {
+      return value || defaultValue;
+  }
+reference_solution: |
+  function solve(value: unknown, defaultValue: unknown): unknown {
+      return value ?? defaultValue;
+  }
+public_examples:
+  - input: [null, 42]
+    expected: 42
+  - input: [7, 99]
+    expected: 7
+hidden_tests:
+  - input: [0, 99]
+    expected: 0
+  - input: ["", "fallback"]
+    expected: ""
+  - input: [false, "y"]
+    expected: false
+  - input: ["x", "y"]
+    expected: "x"
+  - input: [null, "fallback"]
+    expected: "fallback"

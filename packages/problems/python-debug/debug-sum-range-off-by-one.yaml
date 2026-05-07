@@ -1,0 +1,46 @@
+slug: debug-sum-range-off-by-one
+name: Debug — sum 1 to n (off-by-one)
+language: python
+difficulty: 1
+track: python-fundamentals
+kind: debug
+bug_archetype: off_by_one
+concept_tags:
+  - control-flow
+  - numbers
+expected_median_time_to_solve_ms: 90000
+expected_behavior: |
+  Return the sum of integers from 1 through n (inclusive). For n = 5, the answer
+  is 1 + 2 + 3 + 4 + 5 = 15. For n = 0, return 0.
+statement: |
+  This code SHOULD return the sum of 1..n (inclusive), but it's broken — find
+  and fix the bug. The hidden tests describe the correct behavior; the fix is
+  one character.
+starter_code: |
+  def solve(n):
+      total = 0
+      for i in range(1, n):
+          total += i
+      return total
+reference_solution: |
+  def solve(n):
+      total = 0
+      for i in range(1, n + 1):
+          total += i
+      return total
+public_examples:
+  - input: 5
+    expected: 15
+  - input: 1
+    expected: 1
+hidden_tests:
+  - input: 0
+    expected: 0
+  - input: 1
+    expected: 1
+  - input: 5
+    expected: 15
+  - input: 10
+    expected: 55
+  - input: 100
+    expected: 5050

@@ -1,0 +1,47 @@
+slug: debug-array-equality-reference
+name: Debug — array equality (reference)
+language: typescript
+difficulty: 2
+track: typescript-fundamentals
+kind: debug
+bug_archetype: reference_equality
+concept_tags:
+  - arrays
+  - equality
+expected_median_time_to_solve_ms: 180000
+expected_behavior: |
+  Return true when arrays `a` and `b` have the same contents in the same order;
+  false otherwise. Two distinct array objects with identical contents must
+  compare equal.
+statement: |
+  This SHOULD compare array contents element by element. Using `===` between
+  arrays only checks reference identity — two equal arrays return false. Find
+  and fix the bug.
+starter_code: |
+  function solve(a: unknown[], b: unknown[]): boolean {
+      return a === b;
+  }
+reference_solution: |
+  function solve(a: unknown[], b: unknown[]): boolean {
+      if (a.length !== b.length) return false;
+      for (let i = 0; i < a.length; i++) {
+          if (a[i] !== b[i]) return false;
+      }
+      return true;
+  }
+public_examples:
+  - input: [[1, 2, 3], [1, 2, 3]]
+    expected: true
+  - input: [[1], [2]]
+    expected: false
+hidden_tests:
+  - input: [[], []]
+    expected: true
+  - input: [[1, 2], [1, 2]]
+    expected: true
+  - input: [[1, 2], [2, 1]]
+    expected: false
+  - input: [["a"], ["a"]]
+    expected: true
+  - input: [[1, 2, 3], [1, 2]]
+    expected: false

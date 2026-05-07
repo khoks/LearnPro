@@ -31,6 +31,13 @@ export {
 } from "./grade-prompt.js";
 
 export {
+  DEBUG_GRADE_PROMPT_VERSION,
+  buildDebugGradeSystemPrompt,
+  buildDebugGradeUserPrompt,
+  type DebugGradePromptOptions,
+} from "./debug-grade-prompt.js";
+
+export {
   SESSION_PLAN_SYSTEM_PROMPT,
   PROMPT_VERSION as SESSION_PLAN_PROMPT_VERSION,
   buildSessionPlanUserPrompt,

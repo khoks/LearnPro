@@ -1,0 +1,44 @@
+slug: debug-remove-evens-mutation-iteration
+name: Debug — remove evens (mutation in iteration)
+language: python
+difficulty: 3
+track: python-fundamentals
+kind: debug
+bug_archetype: mutation_in_iteration
+concept_tags:
+  - lists
+  - control-flow
+expected_median_time_to_solve_ms: 240000
+expected_behavior: |
+  Return a new list containing only the odd numbers from `nums`, in their
+  original order. The output list should be a fresh list — do not mutate the
+  caller's list.
+statement: |
+  This SHOULD return only the odd numbers from `nums`. Mutating the same list
+  while iterating over it skips elements — some evens slip through. Find and
+  fix the bug (a list comprehension or building a fresh list both work).
+starter_code: |
+  def solve(nums):
+      for x in list(nums):
+          if x % 2 == 0:
+              nums.remove(x)
+      return nums
+reference_solution: |
+  def solve(nums):
+      return [x for x in nums if x % 2 != 0]
+public_examples:
+  - input: [[1, 2, 3, 4, 5]]
+    expected: [1, 3, 5]
+  - input: [[2, 2, 2, 2]]
+    expected: []
+hidden_tests:
+  - input: [[]]
+    expected: []
+  - input: [[1, 1, 1]]
+    expected: [1, 1, 1]
+  - input: [[2, 4, 4, 6]]
+    expected: []
+  - input: [[1, 2, 2, 3, 4, 4, 5]]
+    expected: [1, 3, 5]
+  - input: [[6, 7, 8, 9, 10]]
+    expected: [7, 9]

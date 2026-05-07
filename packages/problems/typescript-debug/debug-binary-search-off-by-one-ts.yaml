@@ -1,0 +1,59 @@
+slug: debug-binary-search-off-by-one-ts
+name: Debug — binary search bound (off-by-one) (TypeScript)
+language: typescript
+difficulty: 3
+track: typescript-fundamentals
+kind: debug
+bug_archetype: off_by_one
+concept_tags:
+  - binary-search
+  - control-flow
+expected_median_time_to_solve_ms: 240000
+expected_behavior: |
+  Return the index of `target` in the sorted array `arr`, or -1 if absent.
+  Half-open binary search: lo starts at 0, hi at arr.length, loop continues
+  while lo < hi.
+statement: |
+  This SHOULD perform half-open binary search (lo < hi). The condition
+  `lo < hi - 1` skips elements at the boundary and returns -1 for valid hits.
+  Find and fix the bug.
+starter_code: |
+  function solve(arr: number[], target: number): number {
+      let lo = 0;
+      let hi = arr.length;
+      while (lo < hi - 1) {
+          const mid = (lo + hi) >>> 1;
+          if (arr[mid] === target) return mid;
+          if (arr[mid] < target) lo = mid + 1;
+          else hi = mid;
+      }
+      return -1;
+  }
+reference_solution: |
+  function solve(arr: number[], target: number): number {
+      let lo = 0;
+      let hi = arr.length;
+      while (lo < hi) {
+          const mid = (lo + hi) >>> 1;
+          if (arr[mid] === target) return mid;
+          if (arr[mid] < target) lo = mid + 1;
+          else hi = mid;
+      }
+      return -1;
+  }
+public_examples:
+  - input: [[1, 2, 3, 4, 5], 3]
+    expected: 2
+  - input: [[1, 2, 3], 5]
+    expected: -1
+hidden_tests:
+  - input: [[], 1]
+    expected: -1
+  - input: [[1], 1]
+    expected: 0
+  - input: [[1], 2]
+    expected: -1
+  - input: [[1, 3, 5, 7, 9], 1]
+    expected: 0
+  - input: [[1, 3, 5, 7, 9], 9]
+    expected: 4

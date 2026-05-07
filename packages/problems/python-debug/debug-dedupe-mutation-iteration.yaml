@@ -1,0 +1,53 @@
+slug: debug-dedupe-mutation-iteration
+name: Debug — dedupe in place (mutation in iteration)
+language: python
+difficulty: 3
+track: python-fundamentals
+kind: debug
+bug_archetype: mutation_in_iteration
+concept_tags:
+  - lists
+  - control-flow
+  - sets
+expected_median_time_to_solve_ms: 210000
+expected_behavior: |
+  Return a list of `nums` with duplicate values removed, preserving the order
+  of first occurrence. Do not mutate the caller's list.
+statement: |
+  This SHOULD return a deduplicated list preserving first-seen order. Removing
+  items from the same list it's iterating skips elements — duplicates remain.
+  Find and fix the bug.
+starter_code: |
+  def solve(nums):
+      seen = set()
+      for x in nums:
+          if x in seen:
+              nums.remove(x)
+          else:
+              seen.add(x)
+      return nums
+reference_solution: |
+  def solve(nums):
+      seen = set()
+      out = []
+      for x in nums:
+          if x not in seen:
+              seen.add(x)
+              out.append(x)
+      return out
+public_examples:
+  - input: [[1, 2, 1, 3, 2]]
+    expected: [1, 2, 3]
+  - input: [[1, 1, 1]]
+    expected: [1]
+hidden_tests:
+  - input: [[]]
+    expected: []
+  - input: [[5]]
+    expected: [5]
+  - input: [[1, 2, 3]]
+    expected: [1, 2, 3]
+  - input: [[1, 2, 2, 3, 3, 3]]
+    expected: [1, 2, 3]
+  - input: [[3, 1, 2, 1, 3, 2]]
+    expected: [3, 1, 2]

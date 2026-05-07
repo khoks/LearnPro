@@ -1,0 +1,47 @@
+slug: debug-remove-evens-mutation-iteration-ts
+name: Debug — remove evens (mutation in iteration) (TypeScript)
+language: typescript
+difficulty: 3
+track: typescript-fundamentals
+kind: debug
+bug_archetype: mutation_in_iteration
+concept_tags:
+  - arrays
+  - control-flow
+expected_median_time_to_solve_ms: 240000
+expected_behavior: |
+  Return a new array containing only the odd numbers from `nums`, in their
+  original order. Do not mutate the caller's array.
+statement: |
+  This SHOULD return only the odd numbers. Splicing items out of the same
+  array while iterating with index `i` skips the element after each splice.
+  Find and fix the bug (a `.filter` or fresh-array build both work).
+starter_code: |
+  function solve(nums: number[]): number[] {
+      for (let i = 0; i < nums.length; i++) {
+          if (nums[i] % 2 === 0) {
+              nums.splice(i, 1);
+          }
+      }
+      return nums;
+  }
+reference_solution: |
+  function solve(nums: number[]): number[] {
+      return nums.filter((x) => x % 2 !== 0);
+  }
+public_examples:
+  - input: [[1, 2, 3, 4, 5]]
+    expected: [1, 3, 5]
+  - input: [[2, 2, 2, 2]]
+    expected: []
+hidden_tests:
+  - input: [[]]
+    expected: []
+  - input: [[1, 1, 1]]
+    expected: [1, 1, 1]
+  - input: [[2, 4, 4, 6]]
+    expected: []
+  - input: [[1, 2, 2, 3, 4, 4, 5]]
+    expected: [1, 3, 5]
+  - input: [[2, 2, 1, 2, 2]]
+    expected: [1]

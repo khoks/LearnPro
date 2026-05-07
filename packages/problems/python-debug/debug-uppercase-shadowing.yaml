@@ -1,0 +1,42 @@
+slug: debug-uppercase-shadowing
+name: Debug — uppercase shadowing
+language: python
+difficulty: 2
+track: python-fundamentals
+kind: debug
+bug_archetype: shadowing
+concept_tags:
+  - strings
+  - functions
+expected_median_time_to_solve_ms: 150000
+expected_behavior: |
+  Return the uppercase version of `s`, then construct a fresh string from the
+  result. For "abc" return "ABC".
+statement: |
+  This SHOULD uppercase `s` and pass the result through `str()`. The local
+  variable `str` shadows the built-in `str` type so the final `str(upper)`
+  call raises TypeError. Find and fix the bug.
+starter_code: |
+  def solve(s):
+      str = s.upper()
+      return str(str)
+reference_solution: |
+  def solve(s):
+      upper = s.upper()
+      return str(upper)
+public_examples:
+  - input: "abc"
+    expected: "ABC"
+  - input: ""
+    expected: ""
+hidden_tests:
+  - input: "a"
+    expected: "A"
+  - input: "Hello"
+    expected: "HELLO"
+  - input: "abc def"
+    expected: "ABC DEF"
+  - input: "123"
+    expected: "123"
+  - input: "MIXedCase"
+    expected: "MIXEDCASE"

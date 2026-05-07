@@ -1,0 +1,49 @@
+slug: debug-count-evens-off-by-one-ts
+name: Debug — count evens up to n (off-by-one) (TypeScript)
+language: typescript
+difficulty: 1
+track: typescript-fundamentals
+kind: debug
+bug_archetype: off_by_one
+concept_tags:
+  - control-flow
+  - modulo
+expected_median_time_to_solve_ms: 90000
+expected_behavior: |
+  Count the even integers in the inclusive range [1, n]. For n = 10 the answer
+  is 5; for n = 0 the answer is 0.
+statement: |
+  This SHOULD count evens in [1, n] (inclusive) but the loop stops one short
+  of n. Find and fix the bug.
+starter_code: |
+  function solve(n: number): number {
+      let count = 0;
+      for (let i = 1; i < n; i++) {
+          if (i % 2 === 0) count++;
+      }
+      return count;
+  }
+reference_solution: |
+  function solve(n: number): number {
+      let count = 0;
+      for (let i = 1; i <= n; i++) {
+          if (i % 2 === 0) count++;
+      }
+      return count;
+  }
+public_examples:
+  - input: 10
+    expected: 5
+  - input: 1
+    expected: 0
+hidden_tests:
+  - input: 0
+    expected: 0
+  - input: 2
+    expected: 1
+  - input: 3
+    expected: 1
+  - input: 4
+    expected: 2
+  - input: 100
+    expected: 50

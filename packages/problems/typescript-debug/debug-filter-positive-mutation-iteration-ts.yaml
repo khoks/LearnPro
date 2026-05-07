@@ -1,0 +1,47 @@
+slug: debug-filter-positive-mutation-iteration-ts
+name: Debug — filter positives (mutation in iteration) (TypeScript)
+language: typescript
+difficulty: 2
+track: typescript-fundamentals
+kind: debug
+bug_archetype: mutation_in_iteration
+concept_tags:
+  - arrays
+  - control-flow
+expected_median_time_to_solve_ms: 180000
+expected_behavior: |
+  Return a new array with only the positive numbers from `nums`, in original
+  order. Negative numbers and zero are dropped.
+statement: |
+  This SHOULD return only the positives from `nums`. Splicing while iterating
+  shifts subsequent indices; consecutive non-positives slip through. Find and
+  fix the bug.
+starter_code: |
+  function solve(nums: number[]): number[] {
+      for (let i = 0; i < nums.length; i++) {
+          if (nums[i] <= 0) {
+              nums.splice(i, 1);
+          }
+      }
+      return nums;
+  }
+reference_solution: |
+  function solve(nums: number[]): number[] {
+      return nums.filter((x) => x > 0);
+  }
+public_examples:
+  - input: [[-1, 2, -3, 4]]
+    expected: [2, 4]
+  - input: [[1, 2, 3]]
+    expected: [1, 2, 3]
+hidden_tests:
+  - input: [[]]
+    expected: []
+  - input: [[-1, -1, -1]]
+    expected: []
+  - input: [[0, 0, 1, 2]]
+    expected: [1, 2]
+  - input: [[-2, -2, 3, -2]]
+    expected: [3]
+  - input: [[-1, -2, -3, 4]]
+    expected: [4]

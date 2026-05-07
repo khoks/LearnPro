@@ -120,6 +120,13 @@
       "when": 1779300000000,
       "tag": "0016_llm_mode",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1779500000000,
+      "tag": "0018_debug_problems",
+      "breakpoints": true
     }
   ]
 }

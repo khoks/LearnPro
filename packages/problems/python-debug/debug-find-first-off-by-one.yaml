@@ -1,0 +1,47 @@
+slug: debug-find-first-off-by-one
+name: Debug — find first occurrence (off-by-one)
+language: python
+difficulty: 1
+track: python-fundamentals
+kind: debug
+bug_archetype: off_by_one
+concept_tags:
+  - lists
+  - control-flow
+expected_median_time_to_solve_ms: 120000
+expected_behavior: |
+  Return the index of the first occurrence of `target` in `nums`, or -1 if it
+  is absent. For nums=[1,2,3] and target=2 the answer is 1; if target appears
+  at index 0 the answer is 0.
+statement: |
+  This SHOULD return the index of the first occurrence of `target` (or -1).
+  The code is off by one — it reports the index AFTER the match. Find and fix
+  the bug.
+starter_code: |
+  def solve(nums, target):
+      for i in range(len(nums)):
+          if nums[i] == target:
+              return i + 1
+      return -1
+reference_solution: |
+  def solve(nums, target):
+      for i in range(len(nums)):
+          if nums[i] == target:
+              return i
+      return -1
+public_examples:
+  - input: [[1, 2, 3], 2]
+    expected: 1
+  - input: [[1, 2, 3], 4]
+    expected: -1
+hidden_tests:
+  - input: [[], 1]
+    expected: -1
+  - input: [[5], 5]
+    expected: 0
+  - input: [[1, 2, 3], 1]
+    expected: 0
+  - input: [[1, 2, 3], 3]
+    expected: 2
+  - input: [[2, 2, 2], 2]
+    expected: 0

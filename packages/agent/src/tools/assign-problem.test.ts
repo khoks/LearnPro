@@ -15,6 +15,7 @@ const ORG_ID = "self";
 
 function pdef(opts: { slug: string; difficulty: number }): ProblemDef {
   return {
+    kind: "implement",
     slug: opts.slug,
     name: `Problem ${opts.slug}`,
     language: "python",
@@ -426,5 +427,81 @@ describe("createAssignProblemTool: STORY-031 spaced-repetition tie-break", () =>
     expect(out.problem_slug).toBe("alpha");
     expect(out.due_concepts_count).toBe(0);
     expect(out.review_session_suggested).toBe(false);
+  });
+});
+
+// STORY-037 — debug-bank kind discriminator surfaces on assign.
+describe("createAssignProblemTool: STORY-037 debug problem projection", () => {
+  function debugEntry(slug: string, archetype: string, behavior: string): ProblemCatalogEntry {
+    const def: ProblemDef = {
+      kind: "debug",
+      slug,
+      name: `Debug ${slug}`,
+      language: "python",
+      difficulty: 2,
+      track: "python-fundamentals",
+      concept_tags: ["control-flow"],
+      statement: "find and fix the bug",
+      starter_code: "def solve(n):\n    return n - 1\n",
+      reference_solution: "def solve(n):\n    return n\n",
+      public_examples: [{ input: 1, expected: 1 }],
+      hidden_tests: [{ input: 5, expected: 5 }],
+      expected_median_time_to_solve_ms: 90_000,
+      bug_archetype: archetype as never,
+      expected_behavior: behavior,
+    };
+    return {
+      problem_id: `00000000-0000-4000-8000-${slug.padStart(12, "0").slice(0, 12)}`,
+      problem_slug: slug,
+      def,
+    };
+  }
+
+  it("surfaces kind=debug + bug_archetype + expected_behavior on the assign payload", async () => {
+    const catalog = [debugEntry("debug-fix-it", "off_by_one", "Return n.")];
+    const deps: AssignProblemDeps = {
+      async loadRecentEpisodes() {
+        return [];
+      },
+      async loadProblemCatalog() {
+        return catalog;
+      },
+      async createEpisode() {
+        return {
+          episode_id: "99999999-9999-4999-8999-000000000010",
+          started_at: 1700000000000,
+        };
+      },
+    };
+    const tool = createAssignProblemTool({ deps });
+    const out = await tool.run({ user_id: USER_ID, org_id: ORG_ID, track_id: TRACK_ID });
+    expect(out.problem.kind).toBe("debug");
+    expect(out.problem.bug_archetype).toBe("off_by_one");
+    expect(out.problem.expected_behavior).toBe("Return n.");
+    // Debug problems pre-populate the editor with the buggy code.
+    expect(out.problem.starter_code).toContain("return n - 1");
+  });
+
+  it("kind=implement defaults bug_archetype + expected_behavior to null", async () => {
+    const catalog = [entry("impl-only", 1)];
+    const deps: AssignProblemDeps = {
+      async loadRecentEpisodes() {
+        return [];
+      },
+      async loadProblemCatalog() {
+        return catalog;
+      },
+      async createEpisode() {
+        return {
+          episode_id: "99999999-9999-4999-8999-000000000011",
+          started_at: 1700000000000,
+        };
+      },
+    };
+    const tool = createAssignProblemTool({ deps });
+    const out = await tool.run({ user_id: USER_ID, org_id: ORG_ID, track_id: TRACK_ID });
+    expect(out.problem.kind).toBe("implement");
+    expect(out.problem.bug_archetype).toBeNull();
+    expect(out.problem.expected_behavior).toBeNull();
   });
 });

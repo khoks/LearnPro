@@ -7,6 +7,7 @@ const EPISODE_ID = "11111111-1111-4111-8111-111111111111";
 
 function pdef(): ProblemDef {
   return {
+    kind: "implement",
     slug: "binary-search",
     name: "Binary search",
     language: "python",

@@ -1,0 +1,50 @@
+slug: debug-make-multipliers-late-binding-ts
+name: Debug — closure multipliers (late binding) (TypeScript)
+language: typescript
+difficulty: 4
+track: typescript-fundamentals
+kind: debug
+bug_archetype: late_binding
+concept_tags:
+  - functions
+  - closures
+expected_median_time_to_solve_ms: 270000
+expected_behavior: |
+  Build n closures where the i-th closure multiplies its argument by i. Calling
+  each closure with x should yield [0*x, 1*x, 2*x, ..., (n-1)*x].
+statement: |
+  This SHOULD build n closures (one per i), but `var` hoists `i` so every
+  closure shares the same final value of `i`. Calling each yields the same
+  result. Find and fix the bug — switching to `let` is the canonical fix.
+starter_code: |
+  function solve(n: number, x: number): number[] {
+      const multipliers: Array<() => number> = [];
+      for (var i = 0; i < n; i++) {
+          multipliers.push(() => i * x);
+      }
+      return multipliers.map((m) => m());
+  }
+reference_solution: |
+  function solve(n: number, x: number): number[] {
+      const multipliers: Array<() => number> = [];
+      for (let i = 0; i < n; i++) {
+          multipliers.push(() => i * x);
+      }
+      return multipliers.map((m) => m());
+  }
+public_examples:
+  - input: [3, 10]
+    expected: [0, 10, 20]
+  - input: [1, 5]
+    expected: [0]
+hidden_tests:
+  - input: [0, 99]
+    expected: []
+  - input: [2, 7]
+    expected: [0, 7]
+  - input: [4, 1]
+    expected: [0, 1, 2, 3]
+  - input: [5, 0]
+    expected: [0, 0, 0, 0, 0]
+  - input: [3, -2]
+    expected: [0, -2, -4]

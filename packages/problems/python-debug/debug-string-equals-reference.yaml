@@ -1,0 +1,40 @@
+slug: debug-string-equals-reference
+name: Debug — string equality (reference)
+language: python
+difficulty: 1
+track: python-fundamentals
+kind: debug
+bug_archetype: reference_equality
+concept_tags:
+  - strings
+  - equality
+expected_median_time_to_solve_ms: 90000
+expected_behavior: |
+  Return True when string `a` equals string `b`. Even when the strings come
+  from different sources (e.g. one is built from concatenation), equal contents
+  must return True.
+statement: |
+  This SHOULD compare string values. Using `is` is not reliable for strings
+  built dynamically — find and fix the bug.
+starter_code: |
+  def solve(a, b):
+      return a is b
+reference_solution: |
+  def solve(a, b):
+      return a == b
+public_examples:
+  - input: ["abc", "abc"]
+    expected: true
+  - input: ["x", "y"]
+    expected: false
+hidden_tests:
+  - input: ["", ""]
+    expected: true
+  - input: ["hello", "hello"]
+    expected: true
+  - input: ["A", "a"]
+    expected: false
+  - input: ["12", "12"]
+    expected: true
+  - input: ["abc", "ab"]
+    expected: false

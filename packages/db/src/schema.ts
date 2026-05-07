@@ -261,6 +261,16 @@ export const problems = pgTable(
     name: text("name").notNull(),
     language: submissionLanguageEnum("language").notNull(),
     difficulty: text("difficulty").notNull(),
+    // STORY-037 — `kind` discriminator: "implement" (default, legacy bank) | "debug" (broken-code,
+    // find-and-fix). STORY-038 will add "comprehension" using the same column. CHECK constraint
+    // in 0018 enforces the enum at the DB level so a stray free-text write never reaches the
+    // assigner.
+    kind: text("kind").notNull().default("implement"),
+    // STORY-037 — non-null only when kind="debug". One of the 8 archetypes from
+    // packages/problems/src/schema.ts BugArchetypeSchema. CHECK constraint in 0018 enforces the
+    // enum. The tutor's debug-grade prompt + the profile's bug_finding_score axis both consume
+    // this column.
+    bug_archetype: text("bug_archetype"),
     statement: text("statement").notNull(),
     starter_code: text("starter_code"),
     hidden_tests: jsonb("hidden_tests").notNull(),
@@ -268,6 +278,7 @@ export const problems = pgTable(
   },
   (t) => ({
     slug_uniq: uniqueIndex("problems_slug_uniq").on(t.org_id, t.track_id, t.slug),
+    track_kind_idx: index("problems_track_kind_idx").on(t.track_id, t.kind),
   }),
 );
 

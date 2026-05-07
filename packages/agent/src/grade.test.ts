@@ -21,8 +21,11 @@ import {
 
 const EPISODE = { episode_id: "11111111-1111-4111-8111-111111111111", user_id: "user-1" };
 
-function pdef(overrides: Partial<ProblemDef> = {}): ProblemDef {
+type ImplementOverrides = Partial<Omit<Extract<ProblemDef, { kind: "implement" }>, "kind">>;
+
+function pdef(overrides: ImplementOverrides = {}): ProblemDef {
   return {
+    kind: "implement",
     slug: "two-sum",
     name: "Two sum",
     language: "python",

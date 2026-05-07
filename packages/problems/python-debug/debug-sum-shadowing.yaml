@@ -1,0 +1,43 @@
+slug: debug-sum-shadowing
+name: Debug — sum shadowing builtin
+language: python
+difficulty: 2
+track: python-fundamentals
+kind: debug
+bug_archetype: shadowing
+concept_tags:
+  - functions
+  - lists
+expected_median_time_to_solve_ms: 150000
+expected_behavior: |
+  Return the sum of the squares of integers in `nums`. For [1, 2, 3] the
+  answer is 1 + 4 + 9 = 14.
+statement: |
+  This SHOULD return the sum of squares. The local `sum` shadows the built-in
+  function so the final `sum(squared)` call raises TypeError. Find and fix
+  the bug.
+starter_code: |
+  def solve(nums):
+      sum = 0
+      squared = [x * x for x in nums]
+      return sum(squared)
+reference_solution: |
+  def solve(nums):
+      squared = [x * x for x in nums]
+      return sum(squared)
+public_examples:
+  - input: [[1, 2, 3]]
+    expected: 14
+  - input: [[]]
+    expected: 0
+hidden_tests:
+  - input: [[0]]
+    expected: 0
+  - input: [[5]]
+    expected: 25
+  - input: [[1, 1, 1]]
+    expected: 3
+  - input: [[2, 4]]
+    expected: 20
+  - input: [[-3, -4]]
+    expected: 25
