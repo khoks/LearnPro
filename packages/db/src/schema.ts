@@ -286,6 +286,11 @@ export const episodes = pgTable(
     time_to_solve_ms: bigint("time_to_solve_ms", { mode: "number" }),
     embedding: vector("embedding", { dimensions: 1536 }),
     interactions_summary: jsonb("interactions_summary"),
+    // STORY-042 — per-episode "I got help" honesty flag. Set when the user opts in via the
+    // submission result panel's toggle (or accepts the paste-detect modal's "I got help" path).
+    // Skill-update logic short-circuits the concept-mastery bump for got_help=true episodes, but
+    // grading and XP still proceed normally. Anti-dark-pattern: never penalize, just don't reward.
+    got_help: boolean("got_help").notNull().default(false),
   },
   (t) => ({
     user_started_idx: index("episodes_user_started_idx").on(t.user_id, t.started_at),

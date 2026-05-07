@@ -99,6 +99,13 @@
       "when": 1779100000000,
       "tag": "0014_email_digests",
       "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1779200000000,
+      "tag": "0015_got_help",
+      "breakpoints": true
     }
   ]
 }

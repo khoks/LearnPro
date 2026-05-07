@@ -163,4 +163,26 @@ describe("updateSkillScore", () => {
     const next = updateSkillScore(skill({ concept_id: "dict-comp" }), ep());
     expect(next.concept_id).toBe("dict-comp");
   });
+
+  // STORY-042 — anti-cheat v1: when the user marked the submission as "I got help on this one",
+  // the EWMA + confidence + attempts must all be left unchanged. The submission was still graded
+  // and XP still awarded; we just don't reward concept mastery for code that wasn't theirs.
+  it("got_help=true returns prev unchanged (no skill bump on a clean solve)", () => {
+    const prev = skill({ skill: 0.5, confidence: 0.3, attempts: 5 });
+    const next = updateSkillScore(prev, ep({ got_help: true }));
+    expect(next).toEqual(prev);
+  });
+
+  it("got_help=true does not advance attempts even on a failing submission", () => {
+    const prev = skill({ skill: 0.4, confidence: 0.2, attempts: 3 });
+    const next = updateSkillScore(prev, ep({ passed: false, got_help: true }));
+    expect(next).toEqual(prev);
+  });
+
+  it("got_help=false (default) preserves the original behaviour", () => {
+    const prev = skill({ skill: 0.5, confidence: 0.3, attempts: 5 });
+    const next = updateSkillScore(prev, ep({ got_help: false }));
+    expect(next.skill).toBeCloseTo(0.7, 6);
+    expect(next.attempts).toBe(6);
+  });
 });

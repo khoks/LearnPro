@@ -44,6 +44,11 @@ export const EpisodeSignalInputSchema = z.object({
   submit_count: z.number().int().min(1),
   time_to_solve_ms: z.number().int().min(0),
   expected_time_ms: z.number().int().positive(),
+  // STORY-042 — when true, the user opted in to "I got help on this one" for this submission. The
+  // episode is still graded normally (tests still run, XP still awards) but `updateSkillScore`
+  // skips the concept-mastery bump so the user's profile stays honest. Default false; existing
+  // call sites that don't supply the flag get the original behavior.
+  got_help: z.boolean().default(false),
 });
 export type EpisodeSignalInput = z.infer<typeof EpisodeSignalInputSchema>;
 
@@ -97,11 +102,19 @@ export function episodeSuccessScore(
 // - skill: EWMA(prev.skill, this episode's success score).
 // - confidence: monotonically grows toward `confidence_max` as attempts accumulate.
 // - attempts: incremented.
+//
+// STORY-042 — when `episode.got_help === true`, the function returns prev unchanged. The user
+// opted in to "I got help on this one" for this submission; the submission was graded normally
+// (tests still run, XP still awarded) but we don't reward concept mastery for code that wasn't
+// theirs. Anti-dark-pattern: never *penalize* — just don't reward.
 export function updateSkillScore(
   prev: ConceptSkill,
   episode: EpisodeSignalInput,
   config: DifficultyHeuristicConfig = DEFAULT_DIFFICULTY_HEURISTIC,
 ): ConceptSkill {
+  if (episode.got_help) {
+    return prev;
+  }
   const x = episodeSuccessScore(episode, config);
   const skill = config.ewma_alpha * x + (1 - config.ewma_alpha) * prev.skill;
   const confidence = Math.min(
