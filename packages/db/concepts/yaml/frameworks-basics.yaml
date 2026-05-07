@@ -1,0 +1,307 @@
+concepts:
+  - slug: react.basics.components
+    name: React components
+    description: |
+      A component is a function returning JSX (or a class extending
+      `React.Component`). Pure components depend only on their props
+      and state. Compose, don't inherit; small components beat clever
+      ones.
+    default_difficulty: 2
+    tags: [react, frontend]
+    track_slugs: [frameworks-basics]
+
+  - slug: react.basics.props
+    name: Props
+    description: |
+      Props are the read-only inputs a parent passes to a child. Treat
+      them as immutable; never mutate `props.x = ...`. Spread `...rest`
+      to forward unknown props down to a wrapped element.
+    default_difficulty: 2
+    tags: [react, frontend]
+    track_slugs: [frameworks-basics]
+
+  - slug: react.basics.state
+    name: useState and local state
+    description: |
+      `const [v, setV] = useState(initial)` creates a piece of local
+      state. The setter triggers a re-render with the new value. Treat
+      state as immutable; produce a new object/array on every update.
+    default_difficulty: 2
+    tags: [react, frontend, hooks]
+    track_slugs: [frameworks-basics]
+
+  - slug: react.basics.effects
+    name: useEffect and side effects
+    description: |
+      `useEffect(fn, deps)` runs `fn` after commit, and re-runs when any
+      dep changes. Return a cleanup function for subscriptions. The
+      escape hatch out of React's pure-rendering world.
+    default_difficulty: 3
+    tags: [react, frontend, hooks]
+    track_slugs: [frameworks-basics]
+
+  - slug: react.basics.context
+    name: Context
+    description: |
+      `React.createContext` + `useContext` makes a value available to
+      every descendant without prop-drilling. Don't use it as a global
+      state store; reach for it for theme, locale, current user.
+    default_difficulty: 3
+    tags: [react, frontend, hooks]
+    track_slugs: [frameworks-basics]
+
+  - slug: react.basics.refs
+    name: useRef and refs
+    description: |
+      `useRef(initial)` returns a stable mutable object (`{ current }`)
+      that survives re-renders without causing them. The standard way
+      to grab a DOM node or store mutable values that should not
+      trigger renders.
+    default_difficulty: 3
+    tags: [react, frontend, hooks]
+    track_slugs: [frameworks-basics]
+
+  - slug: react.basics.memo
+    name: useMemo and useCallback
+    description: |
+      Memoise expensive derivations and stable callback identities.
+      Reach for them when measurement says you should — premature
+      memoisation costs more than it saves.
+    default_difficulty: 4
+    tags: [react, frontend, performance]
+    track_slugs: [frameworks-basics]
+
+  - slug: react.basics.forms
+    name: Forms and controlled inputs
+    description: |
+      A controlled input keeps its value in component state and
+      writes back via `onChange`. Uncontrolled inputs read values
+      from a ref on submit. Pick one consistently within a form.
+    default_difficulty: 3
+    tags: [react, frontend, forms]
+    track_slugs: [frameworks-basics]
+
+  - slug: react.basics.lists-keys
+    name: Lists and keys
+    description: |
+      Render arrays via `.map`. Each item needs a stable `key` prop —
+      ideally the entity's id, never the array index unless the list is
+      append-only and never reordered. Wrong keys break local state
+      across re-renders.
+    default_difficulty: 2
+    tags: [react, frontend]
+    track_slugs: [frameworks-basics]
+
+  - slug: react.basics.error-boundaries
+    name: Error boundaries
+    description: |
+      A class component implementing `componentDidCatch` /
+      `getDerivedStateFromError` catches render errors in its subtree
+      and renders a fallback. The only way to handle errors during
+      render before React 18's Suspense.
+    default_difficulty: 4
+    tags: [react, frontend]
+    track_slugs: [frameworks-basics]
+
+  - slug: react.basics.suspense
+    name: Suspense and lazy
+    description: |
+      `<Suspense fallback={...}>` shows a placeholder while child
+      components are loading. Pair with `React.lazy` for code splitting
+      or with a Suspense-compatible data fetcher.
+    default_difficulty: 4
+    tags: [react, frontend]
+    track_slugs: [frameworks-basics]
+
+  - slug: nextjs.basics.app-router
+    name: Next.js App Router
+    description: |
+      File-system routing under `app/`: `page.tsx` is a route, `layout.tsx`
+      wraps siblings, `loading.tsx` is a Suspense fallback,
+      `error.tsx` is an error boundary, `route.ts` is a Route Handler.
+    default_difficulty: 3
+    tags: [nextjs, frontend]
+    track_slugs: [frameworks-basics]
+
+  - slug: nextjs.basics.server-components
+    name: Server Components
+    description: |
+      A React component that runs on the server, never ships to the
+      client, can `await` data, and renders to HTML. Mark a file with
+      `"use client"` to opt into a Client Component.
+    default_difficulty: 4
+    tags: [nextjs, react, frontend]
+    track_slugs: [frameworks-basics]
+
+  - slug: nextjs.basics.route-handlers
+    name: Route Handlers
+    description: |
+      `app/api/.../route.ts` exports `GET` / `POST` / etc. that return
+      `Response` (or `NextResponse`). The Next equivalent of API routes;
+      runs in Node or Edge depending on the runtime.
+    default_difficulty: 3
+    tags: [nextjs, frontend, http]
+    track_slugs: [frameworks-basics]
+
+  - slug: express.basics.routing
+    name: Express routing
+    description: |
+      `app.get(path, handler)`, `app.post(path, handler)`. Route params
+      live on `req.params`; query string on `req.query`; body on
+      `req.body` once a body parser is mounted.
+    default_difficulty: 2
+    tags: [express, backend, http]
+    track_slugs: [frameworks-basics]
+
+  - slug: express.basics.middleware
+    name: Express middleware
+    description: |
+      A middleware is `(req, res, next) => ...`. Mount globally with
+      `app.use(fn)` or per-route. Call `next()` to pass control on,
+      `next(err)` to skip to error handlers.
+    default_difficulty: 3
+    tags: [express, backend, http]
+    track_slugs: [frameworks-basics]
+
+  - slug: express.basics.error-handling
+    name: Express error handling
+    description: |
+      An error handler has four params: `(err, req, res, next)`.
+      Mount it last. Wrapping async handlers in a small helper that
+      forwards rejections to `next` saves a lot of boilerplate.
+    default_difficulty: 3
+    tags: [express, backend, error-handling]
+    track_slugs: [frameworks-basics]
+
+  - slug: fastify.basics.routes
+    name: Fastify routes
+    description: |
+      `fastify.get(path, opts, handler)`. The opts object can carry a
+      schema for body / params / query / response that Fastify uses
+      both for validation and serialization.
+    default_difficulty: 2
+    tags: [fastify, backend, http]
+    track_slugs: [frameworks-basics]
+
+  - slug: fastify.basics.hooks
+    name: Fastify hooks
+    description: |
+      Lifecycle hooks: `onRequest`, `preParsing`, `preValidation`,
+      `preHandler`, `preSerialization`, `onSend`, `onResponse`. Use them
+      for cross-cutting concerns like auth, logging, and timing.
+    default_difficulty: 3
+    tags: [fastify, backend]
+    track_slugs: [frameworks-basics]
+
+  - slug: fastify.basics.plugins
+    name: Fastify plugins and encapsulation
+    description: |
+      `fastify.register(plugin)` creates an isolated context: a route or
+      hook added inside a plugin is scoped to it. The encapsulation
+      model is what makes Fastify composable.
+    default_difficulty: 3
+    tags: [fastify, backend]
+    track_slugs: [frameworks-basics]
+
+  - slug: fastapi.basics.routes
+    name: FastAPI routes
+    description: |
+      `@app.get("/path")` decorates a function. Path / query / body
+      parameters are inferred from the signature; Pydantic validates
+      them; OpenAPI docs are generated for free.
+    default_difficulty: 2
+    tags: [fastapi, backend, http, python]
+    track_slugs: [frameworks-basics]
+
+  - slug: fastapi.basics.dependency-injection
+    name: FastAPI dependency injection
+    description: |
+      `Depends(...)` resolves a dependency tree before calling the
+      handler. Used for shared DB sessions, current-user lookup,
+      pagination params. Sync or async; cached per-request.
+    default_difficulty: 3
+    tags: [fastapi, backend, python]
+    track_slugs: [frameworks-basics]
+
+  - slug: fastapi.basics.pydantic
+    name: Pydantic models
+    description: |
+      Declare request/response shapes as classes inheriting from
+      `BaseModel`. FastAPI parses incoming JSON, validates, and gives
+      you a typed instance. Use them as the boundary contract.
+    default_difficulty: 3
+    tags: [fastapi, backend, python, types]
+    track_slugs: [frameworks-basics]
+
+  - slug: nodejs.basics.event-loop
+    name: Node.js event loop
+    description: |
+      Single-threaded JavaScript on top of libuv. I/O completions queue
+      callbacks; the loop drains them between phases (timers, poll,
+      check). Blocking the loop blocks every request — never run heavy
+      sync work on it.
+    default_difficulty: 4
+    tags: [nodejs, backend, async]
+    track_slugs: [frameworks-basics]
+
+  - slug: nodejs.basics.streams
+    name: Node Streams
+    description: |
+      `Readable`, `Writable`, `Transform`, `Duplex`. Backpressured by
+      design — pipe with `.pipe()` or the modern `pipeline`. The right
+      tool for processing data that does not fit in memory.
+    default_difficulty: 3
+    tags: [nodejs, backend, streams]
+    track_slugs: [frameworks-basics]
+
+  - slug: nodejs.basics.cli
+    name: CLI tools with Node
+    description: |
+      `process.argv` carries the args; pick a parser like `commander`
+      or `yargs`. Add a shebang (`#!/usr/bin/env node`) and `chmod +x`,
+      or wire to a `bin` entry in `package.json`.
+    default_difficulty: 2
+    tags: [nodejs, backend, cli]
+    track_slugs: [frameworks-basics]
+
+  - slug: orm.basics.relational-mapping
+    name: Object-relational mapping basics
+    description: |
+      Map rows to objects: each table is a model, each row an instance.
+      Watch for the N+1 query trap when walking relations. Eager-load
+      with explicit joins, not implicit lazy fetches.
+    default_difficulty: 3
+    tags: [database, orm]
+    track_slugs: [frameworks-basics]
+
+  - slug: orm.basics.migrations
+    name: Schema migrations
+    description: |
+      Code-as-migration: every schema change is a versioned, ordered
+      file. The runner tracks which have been applied. Always write
+      reversible migrations when feasible; never edit a migration that
+      has shipped.
+    default_difficulty: 3
+    tags: [database, orm]
+    track_slugs: [frameworks-basics]
+
+  - slug: orm.basics.transactions
+    name: Database transactions
+    description: |
+      A transaction groups several statements into one atomic unit:
+      all commit or all roll back. Default isolation level is usually
+      Read Committed; bump to Serializable when you really need it.
+    default_difficulty: 4
+    tags: [database, orm]
+    track_slugs: [frameworks-basics]
+
+  - slug: testing.basics.unit-vs-integration
+    name: Unit vs integration tests
+    description: |
+      Unit tests exercise one module in isolation, fast and cheap.
+      Integration tests cross boundaries — DB, network, file system.
+      Most projects need a healthy mix; the right ratio depends on
+      where the bugs actually live.
+    default_difficulty: 2
+    tags: [testing]
+    track_slugs: [frameworks-basics]
