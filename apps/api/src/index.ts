@@ -102,6 +102,7 @@ import {
   buildProfileInsightsCron,
   enqueueProfileInsightsJob,
 } from "./profile-insights-cron.js";
+import { registerProfileInsightsRoutes } from "./profile-insights.js";
 import {
   SESSION_PLAN_PROMPT_VERSION,
   SESSION_PLAN_SYSTEM_PROMPT,
@@ -501,6 +502,12 @@ export function buildServer(opts: BuildServerOptions = {}) {
       ...(opts.ollamaBaseUrl !== undefined && { ollamaBaseUrl: opts.ollamaBaseUrl }),
       ...(opts.ollamaModel !== undefined && { ollamaModel: opts.ollamaModel }),
     });
+  }
+
+  // STORY-033 — `GET /v1/profile-insights` exposes the user's latest cross-episode insights +
+  // telemetry. Same injection pattern as the others; tests inject a fake DB.
+  if (opts.profileInsightsDb) {
+    registerProfileInsightsRoutes(app, { db: opts.profileInsightsDb, sessionResolver });
   }
 
   // STORY-060 deferred AC — friendly 429 mapping for the per-user daily token budget. Any handler

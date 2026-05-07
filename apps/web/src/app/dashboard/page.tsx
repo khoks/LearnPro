@@ -16,7 +16,13 @@ import { AutonomyBandIndicator } from "../../components/autonomy/AutonomyBandInd
 import { InstallPrompt } from "../../components/pwa/InstallPrompt.js";
 import { QuietHoursCard } from "../../components/settings/QuietHoursCard.js";
 import { TodayPlanSummaryCard, type TodayPlanShape } from "../plan/plan-view.js";
-import { DueReviewsCard, HonestSessionsCard, TrackProgressBar } from "./dashboard-components.js";
+import {
+  DueReviewsCard,
+  HonestSessionsCard,
+  ProfileInsightsCard,
+  TrackProgressBar,
+  type ProfileInsight,
+} from "./dashboard-components.js";
 import { DashboardCardsRow } from "./DashboardCardsRow.js";
 import { DashboardHeader } from "./DashboardHeader.js";
 
@@ -37,14 +43,16 @@ export default async function DashboardPage() {
   const userId = session.user.id;
   const db = getAuthDb();
   const today = new Date();
-  const [xp, streak, activeTrackSlugs, dueReviews, todayPlan, gotHelpCount] = await Promise.all([
-    getUserXp(db, userId),
-    getStreakSnapshot(db, userId, today, MONTHLY_GRACE_CAP),
-    getActiveTrackSlugs(db, userId),
-    getDueConcepts(db, userId, today),
-    loadTodayPlanForDashboard(),
-    countGotHelpEpisodes(db, userId),
-  ]);
+  const [xp, streak, activeTrackSlugs, dueReviews, todayPlan, gotHelpCount, insights] =
+    await Promise.all([
+      getUserXp(db, userId),
+      getStreakSnapshot(db, userId, today, MONTHLY_GRACE_CAP),
+      getActiveTrackSlugs(db, userId),
+      getDueConcepts(db, userId, today),
+      loadTodayPlanForDashboard(),
+      countGotHelpEpisodes(db, userId),
+      loadProfileInsightsForDashboard(),
+    ]);
 
   const trackProgress = (
     await Promise.all(activeTrackSlugs.map((slug) => getTrackProgress(db, userId, slug)))
@@ -97,6 +105,10 @@ export default async function DashboardPage() {
         <HonestSessionsCard count={gotHelpCount} />
       </section>
 
+      <section aria-label="Cross-session insights" style={{ marginTop: "1.25rem" }}>
+        <ProfileInsightsCard insights={insights} />
+      </section>
+
       <section aria-label="Per-track progress" style={{ marginTop: "2rem" }}>
         <h2 style={{ fontSize: "1.1rem", marginBottom: "0.75rem" }}>Tracks</h2>
         {trackProgress.length === 0 ? (
@@ -128,6 +140,31 @@ export default async function DashboardPage() {
       <SignOutButton />
     </main>
   );
+}
+
+// STORY-033 — fetch the user's latest 3 cross-episode insights via the Next.js proxy. The
+// proxy forwards the cookie to apps/api so the session resolver can identify the user. Fail-
+// soft: when the API is unreachable or returns 4xx/5xx, return an empty list — the card
+// renders the empty-state copy ("Patterns will show up here after a few sessions").
+async function loadProfileInsightsForDashboard(): Promise<ProfileInsight[]> {
+  try {
+    const incoming = await headers();
+    const cookie = incoming.get("cookie") ?? "";
+    const host = incoming.get("host") ?? "localhost:3000";
+    const proto = incoming.get("x-forwarded-proto") ?? "http";
+    const url = `${proto}://${host}/api/profile-insights?limit=3`;
+    const res = await fetch(url, {
+      headers: { ...(cookie ? { cookie } : {}) },
+      cache: "no-store",
+    });
+    if (!res.ok) return [];
+    const json = (await res.json().catch(() => null)) as
+      | { insights: ProfileInsight[] }
+      | null;
+    return json?.insights ?? [];
+  } catch {
+    return [];
+  }
 }
 
 async function loadTodayPlanForDashboard(): Promise<TodayPlanShape | null> {
