@@ -66,15 +66,15 @@ function variance(samples: ReadonlyArray<number>): number {
   return sumSq / samples.length;
 }
 
-function normalize0to1(samples: ReadonlyArray<number>): number[] {
-  // Project the unified [0,1] and split [1,5] onto the same scale so the variance comparison is
-  // apples-to-apples. (Variance compares spread, but the scales differ — projecting collapses
-  // that confound.)
-  const min = Math.min(...samples);
-  const max = Math.max(...samples);
-  if (max === min) return samples.map(() => 0.5);
-  return samples.map((v) => (v - min) / (max - min));
-}
+// Scale variance by the dimension's full possible range squared so the comparison stays
+// scale-aware. The unified rubric runs on [0,1] (range 1, so divide by 1² = 1); the split
+// rubric runs on integer [1,5] (range 4, so divide by 4² = 16). Min-max-rescaling each sample
+// set independently — what we tried first — washed out the very signal the AC asks about,
+// because the unified rubric's continuous values can occupy more bins after rescaling than
+// the split's integer-quantized 1-5 values can. Scaling by the dimension's *fixed* range
+// preserves both shape and magnitude, which is what "more discriminating" actually means.
+const UNIFIED_RANGE_SQ = 1; // (1 - 0)²
+const SPLIT_RANGE_SQ = 16; // (5 - 1)²
 
 describe("STORY-034 A/B: split grader rubric is more discriminating than unified", () => {
   it("the fixture has at least 10 samples", async () => {
@@ -104,14 +104,16 @@ describe("STORY-034 A/B: split grader rubric is more discriminating than unified
     }
   });
 
-  it("split-grader idiomatic variance ≥ unified idiomatic variance (on a normalized scale)", async () => {
+  it("split-grader idiomatic variance ≥ unified idiomatic variance (range-normalized)", async () => {
     const fix = await loadFixture();
     const unifiedIdiomatic = fix.samples.map((s) => s.unified.rubric.idiomatic);
     const splitIdiomatic = fix.samples.map((s) => s.split.rubric.idiomatic);
-    const unifiedVar = variance(normalize0to1(unifiedIdiomatic));
-    const splitVar = variance(normalize0to1(splitIdiomatic));
+    const unifiedVar = variance(unifiedIdiomatic) / UNIFIED_RANGE_SQ;
+    const splitVar = variance(splitIdiomatic) / SPLIT_RANGE_SQ;
     // Headline AC #6 — the split rubric uses more of its dynamic range than the unified one
-    // because integer 1-5 forces the grader off the "everyone gets 0.7-0.9" attractor.
+    // because integer 1-5 forces the grader off the "everyone gets 0.7-0.9" attractor. We
+    // divide each variance by the dimension's full range squared so the comparison stays
+    // scale-aware.
     expect(splitVar).toBeGreaterThanOrEqual(unifiedVar);
   });
 
