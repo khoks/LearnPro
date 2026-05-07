@@ -18,12 +18,14 @@ import type {
 //   3. `auto-fallback` → tries cloud, falls back on cloud failure.
 
 function makeFake(name: string, response: Partial<CompleteResponse> = {}): LLMProvider {
-  const complete = vi.fn(async (req: CompleteRequest): Promise<CompleteResponse> => ({
-    text: response.text ?? `${name}-text`,
-    model: response.model ?? `${name}-model`,
-    finish_reason: response.finish_reason ?? "end_turn",
-    usage: response.usage ?? { input_tokens: 1, output_tokens: 1 },
-  }));
+  const complete = vi.fn(
+    async (req: CompleteRequest): Promise<CompleteResponse> => ({
+      text: response.text ?? `${name}-text`,
+      model: response.model ?? `${name}-model`,
+      finish_reason: response.finish_reason ?? "end_turn",
+      usage: response.usage ?? { input_tokens: 1, output_tokens: 1 },
+    }),
+  );
   const stream = vi.fn(async function* (): AsyncIterable<StreamChunk> {
     yield { delta: name, done: false };
     yield { delta: "", done: true };

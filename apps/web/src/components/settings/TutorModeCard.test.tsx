@@ -56,9 +56,7 @@ describe("TutorModeCard", () => {
 
   it("defaults to cloud when no initialSettings is supplied", () => {
     const out = html();
-    expect(out).toMatch(
-      /data-testid="tutor-mode-radio-cloud"[\s\S]*?<input[^>]*checked/,
-    );
+    expect(out).toMatch(/data-testid="tutor-mode-radio-cloud"[\s\S]*?<input[^>]*checked/);
     // Local target should be hidden when the user is on cloud — only shown for local /
     // auto-fallback modes.
     expect(out).not.toContain('data-testid="tutor-mode-ollama-target"');
@@ -75,9 +73,7 @@ describe("TutorModeCard", () => {
         }}
       />,
     );
-    expect(out).toMatch(
-      /data-testid="tutor-mode-radio-local"[\s\S]*?<input[^>]*checked/,
-    );
+    expect(out).toMatch(/data-testid="tutor-mode-radio-local"[\s\S]*?<input[^>]*checked/);
     // Local target visible + populated.
     expect(out).toContain('data-testid="tutor-mode-ollama-target"');
     expect(out).toContain("192.168.1.42");

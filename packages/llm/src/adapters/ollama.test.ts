@@ -36,7 +36,7 @@ function streamResponse(chunks: string[]): Response {
 
 describe("OllamaTransport.complete", () => {
   it("posts to /api/chat at the default base URL with the user's messages and a system prompt", async () => {
-    const fetcher = vi.fn(async () =>
+    const fetcher = vi.fn<(url: string, init?: RequestInit) => Promise<Response>>(async () =>
       jsonResponse({
         model: DEFAULT_OLLAMA_MODEL,
         message: { role: "assistant", content: "Hi there." },
@@ -75,7 +75,7 @@ describe("OllamaTransport.complete", () => {
   });
 
   it("uses the explicit `model` override when supplied", async () => {
-    const fetcher = vi.fn(async () =>
+    const fetcher = vi.fn<(url: string, init?: RequestInit) => Promise<Response>>(async () =>
       jsonResponse({
         model: "qwen2.5-coder:14b-instruct",
         message: { role: "assistant", content: "ok" },
@@ -95,7 +95,7 @@ describe("OllamaTransport.complete", () => {
   });
 
   it("respects a custom baseUrl + defaultModel", async () => {
-    const fetcher = vi.fn(async () =>
+    const fetcher = vi.fn<(url: string, init?: RequestInit) => Promise<Response>>(async () =>
       jsonResponse({
         model: "tinyllama:1.1b",
         message: { role: "assistant", content: "ok" },
@@ -112,13 +112,14 @@ describe("OllamaTransport.complete", () => {
       max_tokens: 16,
       temperature: 0,
     });
-    expect(fetcher.mock.calls[0]?.[0]).toBe("http://192.168.1.42:11434/api/chat");
-    const body = JSON.parse(String(fetcher.mock.calls[0]?.[1]?.body));
+    const firstCall = fetcher.mock.calls[0];
+    expect(firstCall?.[0]).toBe("http://192.168.1.42:11434/api/chat");
+    const body = JSON.parse(String((firstCall?.[1] as { body?: string } | undefined)?.body ?? ""));
     expect(body.model).toBe("tinyllama:1.1b");
   });
 
   it("maps `done_reason: 'length'` to finish_reason: 'max_tokens'", async () => {
-    const fetcher = vi.fn(async () =>
+    const fetcher = vi.fn<(url: string, init?: RequestInit) => Promise<Response>>(async () =>
       jsonResponse({
         model: DEFAULT_OLLAMA_MODEL,
         message: { role: "assistant", content: "truncated" },
@@ -137,7 +138,7 @@ describe("OllamaTransport.complete", () => {
 
   it("emits zero-cost telemetry tagged pricing_version='local'", async () => {
     const sink = new InMemoryLLMTelemetrySink();
-    const fetcher = vi.fn(async () =>
+    const fetcher = vi.fn<(url: string, init?: RequestInit) => Promise<Response>>(async () =>
       jsonResponse({
         model: DEFAULT_OLLAMA_MODEL,
         message: { role: "assistant", content: "ok" },
@@ -169,9 +170,7 @@ describe("OllamaTransport.complete", () => {
   });
 
   it("wraps non-2xx responses in LLMRequestError", async () => {
-    const fetcher = vi.fn(async () =>
-      jsonResponse({ error: "model not found" }, { status: 404 }),
-    );
+    const fetcher = vi.fn(async () => jsonResponse({ error: "model not found" }, { status: 404 }));
     const transport = new OllamaTransport({ fetch: fetcher });
     await expect(
       transport.complete({
@@ -214,7 +213,7 @@ describe("OllamaTransport.complete", () => {
   });
 
   it("rejects payloads that don't match the Ollama response schema", async () => {
-    const fetcher = vi.fn(async () =>
+    const fetcher = vi.fn<(url: string, init?: RequestInit) => Promise<Response>>(async () =>
       jsonResponse({ model: "x", message: { content: "missing role" } }),
     );
     const transport = new OllamaTransport({ fetch: fetcher });
@@ -278,7 +277,7 @@ describe("OllamaTransport.embed", () => {
 
 describe("OllamaTransport.toolCall", () => {
   it("parses a JSON tool envelope into a ToolInvocation", async () => {
-    const fetcher = vi.fn(async () =>
+    const fetcher = vi.fn<(url: string, init?: RequestInit) => Promise<Response>>(async () =>
       jsonResponse({
         model: DEFAULT_OLLAMA_MODEL,
         message: {
@@ -309,7 +308,7 @@ describe("OllamaTransport.toolCall", () => {
   });
 
   it("returns text + empty tool_calls when JSON parsing fails", async () => {
-    const fetcher = vi.fn(async () =>
+    const fetcher = vi.fn<(url: string, init?: RequestInit) => Promise<Response>>(async () =>
       jsonResponse({
         model: DEFAULT_OLLAMA_MODEL,
         message: {
@@ -332,7 +331,7 @@ describe("OllamaTransport.toolCall", () => {
   });
 
   it("ignores a JSON envelope referencing a tool not in the allowed set", async () => {
-    const fetcher = vi.fn(async () =>
+    const fetcher = vi.fn<(url: string, init?: RequestInit) => Promise<Response>>(async () =>
       jsonResponse({
         model: DEFAULT_OLLAMA_MODEL,
         message: {
@@ -374,8 +373,6 @@ describe("parseToolJson", () => {
   });
 
   it("returns [] when the parsed tool is not allowed", () => {
-    expect(
-      parseToolJson('{"tool":"shutdown","input":{}}', ["grade", "give-hint"]),
-    ).toEqual([]);
+    expect(parseToolJson('{"tool":"shutdown","input":{}}', ["grade", "give-hint"])).toEqual([]);
   });
 });

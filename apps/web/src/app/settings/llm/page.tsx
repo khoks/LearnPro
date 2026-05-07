@@ -28,8 +28,8 @@ export default async function SettingsLlmModePage() {
       <header style={{ marginBottom: "2rem" }}>
         <h1 style={{ margin: 0 }}>Tutor mode</h1>
         <p style={{ margin: "0.5rem 0 0", color: "#555" }}>
-          Choose where the tutor&apos;s language model runs. Your choice is per-account and
-          can be changed at any time.
+          Choose where the tutor&apos;s language model runs. Your choice is per-account and can be
+          changed at any time.
         </p>
       </header>
 

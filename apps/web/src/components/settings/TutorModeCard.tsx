@@ -164,31 +164,30 @@ export function TutorModeCard(props: TutorModeCardProps = {}): React.ReactElemen
   const showOllamaTarget = mode === "local" || mode === "auto-fallback";
 
   return (
-    <section
-      aria-labelledby="tutor-mode-heading"
-      style={CARD_STYLE}
-      data-testid="tutor-mode-card"
-    >
+    <section aria-labelledby="tutor-mode-heading" style={CARD_STYLE} data-testid="tutor-mode-card">
       <div>
         <h2 id="tutor-mode-heading" style={{ margin: 0, fontSize: "1.05rem" }}>
           Tutor mode
         </h2>
         <p style={HELP_STYLE}>
-          Pick which large language model powers the tutor. Cloud is the default; local mode
-          is for self-hosters who want their data to stay on their own hardware.
+          Pick which large language model powers the tutor. Cloud is the default; local mode is for
+          self-hosters who want their data to stay on their own hardware.
         </p>
       </div>
 
       <fieldset
-        style={{ border: 0, padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "0.5rem" }}
+        style={{
+          border: 0,
+          padding: 0,
+          margin: 0,
+          display: "flex",
+          flexDirection: "column",
+          gap: "0.5rem",
+        }}
       >
         <legend style={{ ...LABEL_STYLE, marginBottom: "0.25rem" }}>Provider</legend>
         {MODE_OPTIONS.map((opt) => (
-          <label
-            key={opt.value}
-            style={ROW_STYLE}
-            data-testid={`tutor-mode-radio-${opt.value}`}
-          >
+          <label key={opt.value} style={ROW_STYLE} data-testid={`tutor-mode-radio-${opt.value}`}>
             <input
               type="radio"
               name="tutor-mode"

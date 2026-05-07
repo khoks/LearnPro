@@ -1,10 +1,5 @@
 import { z } from "zod";
-import {
-  TutorModeSchema,
-  getTutorMode,
-  updateTutorMode,
-  type LearnProDb,
-} from "@learnpro/db";
+import { TutorModeSchema, getTutorMode, updateTutorMode, type LearnProDb } from "@learnpro/db";
 import { DEFAULT_OLLAMA_BASE_URL, DEFAULT_OLLAMA_MODEL } from "@learnpro/llm";
 import type { FastifyInstance } from "fastify";
 import type { SessionResolver } from "./session.js";
@@ -23,10 +18,7 @@ export interface LlmModeRouteOptions {
 
 const PutBodySchema = z.object({ mode: TutorModeSchema });
 
-export function registerLlmModeRoutes(
-  app: FastifyInstance,
-  opts: LlmModeRouteOptions,
-): void {
+export function registerLlmModeRoutes(app: FastifyInstance, opts: LlmModeRouteOptions): void {
   const { db, sessionResolver } = opts;
   const ollamaBaseUrl = opts.ollamaBaseUrl ?? DEFAULT_OLLAMA_BASE_URL;
   const ollamaModel = opts.ollamaModel ?? DEFAULT_OLLAMA_MODEL;

@@ -357,10 +357,7 @@ function buildToolPrompt(
   tools: Array<{ name: string; description: string; input_schema: Record<string, unknown> }>,
 ): string {
   const list = tools
-    .map(
-      (t) =>
-        `- ${t.name}: ${t.description}\n  input_schema: ${JSON.stringify(t.input_schema)}`,
-    )
+    .map((t) => `- ${t.name}: ${t.description}\n  input_schema: ${JSON.stringify(t.input_schema)}`)
     .join("\n");
   return [
     "You can call one of the tools below by responding with a JSON object of the form:",

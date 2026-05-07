@@ -21,9 +21,10 @@ import type {
 
 export type TutorModeKind = "cloud" | "local" | "auto-fallback";
 
-export type GetTutorMode = (req: { user_id?: string; session_id?: string }) => Promise<
-  TutorModeKind
->;
+export type GetTutorMode = (req: {
+  user_id?: string;
+  session_id?: string;
+}) => Promise<TutorModeKind>;
 
 export interface LLMRouterOptions {
   cloud: LLMProvider;
@@ -31,10 +32,7 @@ export interface LLMRouterOptions {
   getMode: GetTutorMode;
   // Default mode used when the request has no `user_id` (e.g. unauthenticated dev pings).
   defaultMode?: TutorModeKind;
-  onFallback?: (
-    err: unknown,
-    req: { user_id?: string; session_id?: string; task: string },
-  ) => void;
+  onFallback?: (err: unknown, req: { user_id?: string; session_id?: string; task: string }) => void;
 }
 
 export class LLMRouter implements LLMProvider {
