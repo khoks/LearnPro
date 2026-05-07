@@ -1,5 +1,9 @@
 import type { SandboxProvider, SandboxRunResponse } from "@learnpro/sandbox";
-import { buildHarnessForProblem, parseVerdict } from "./harness.js";
+import {
+  buildHarnessForProblem,
+  buildMultiFileHarnessForProblem,
+  parseVerdict,
+} from "./harness.js";
 import type { ProblemDef } from "./schema.js";
 
 export interface ProblemValidationFailure {
@@ -47,16 +51,34 @@ export async function validateProblem(
   for (let i = 0; i < def.hidden_tests.length; i += 1) {
     const test = def.hidden_tests[i];
     if (!test) continue;
-    const code = buildHarnessForProblem(def, def.reference_solution, test);
+    // STORY-043 — multi-file path takes precedence when the problem declares a
+    // `starter_workspace`; the entry file's content is replaced with the harness, while
+    // every other file ships verbatim.  Single-file problems take the legacy `code` path.
+    const multi = buildMultiFileHarnessForProblem(def, def.reference_solution, test);
     let res: SandboxRunResponse;
     try {
-      res = await sandbox.run({
-        language: def.language,
-        code,
-        time_limit_ms: opts.time_limit_ms ?? 5_000,
-        memory_limit_mb: 128,
-        output_limit_bytes: 64 * 1024,
-      });
+      if (multi) {
+        res = await sandbox.run({
+          language: def.language,
+          files: [
+            { path: multi.entry_path, content: multi.entry_content },
+            ...multi.auxiliary_files,
+          ],
+          entry_file: multi.entry_path,
+          time_limit_ms: opts.time_limit_ms ?? 5_000,
+          memory_limit_mb: 128,
+          output_limit_bytes: 64 * 1024,
+        });
+      } else {
+        const code = buildHarnessForProblem(def, def.reference_solution, test);
+        res = await sandbox.run({
+          language: def.language,
+          code,
+          time_limit_ms: opts.time_limit_ms ?? 5_000,
+          memory_limit_mb: 128,
+          output_limit_bytes: 64 * 1024,
+        });
+      }
     } catch (err) {
       failures.push({
         test_index: i,

@@ -6,6 +6,7 @@ import {
   type SandboxProvider,
   type SandboxRunChunk,
   type SandboxRunRequest,
+  type SandboxRunRequestInput,
   type SandboxRunResponse,
 } from "@learnpro/sandbox";
 import { loadProblems } from "./loader.js";
@@ -16,9 +17,11 @@ const PISTON_URL = process.env["PISTON_URL"] ?? "http://localhost:2000";
 
 class StubPassingProvider implements SandboxProvider {
   readonly name = "stub-pass";
-  readonly calls: SandboxRunRequest[] = [];
+  // STORY-043 — `calls` is typed as the shorthand-or-multi-file *input* so the legacy `code`
+  // shorthand and the multi-file `files` shape both round-trip without coercion.
+  readonly calls: SandboxRunRequestInput[] = [];
 
-  async run(req: SandboxRunRequest): Promise<SandboxRunResponse> {
+  async run(req: SandboxRunRequestInput): Promise<SandboxRunResponse> {
     this.calls.push(req);
     return Promise.resolve({
       stdout: "__LEARNPRO_PASS__\n",
@@ -38,7 +41,7 @@ class StubPassingProvider implements SandboxProvider {
 class StubFailingProvider implements SandboxProvider {
   readonly name = "stub-fail";
 
-  async run(req: SandboxRunRequest): Promise<SandboxRunResponse> {
+  async run(req: SandboxRunRequestInput): Promise<SandboxRunResponse> {
     return Promise.resolve({
       stdout: "__LEARNPRO_FAIL__" + JSON.stringify({ detail: "mismatch", got: 0 }) + "\n",
       stderr: "",
@@ -57,7 +60,7 @@ class StubFailingProvider implements SandboxProvider {
 class StubExitNonZeroProvider implements SandboxProvider {
   readonly name = "stub-exit";
 
-  async run(req: SandboxRunRequest): Promise<SandboxRunResponse> {
+  async run(req: SandboxRunRequestInput): Promise<SandboxRunResponse> {
     return Promise.resolve({
       stdout: "",
       stderr: "Traceback ...\nNameError: name 'solve' is not defined\n",
@@ -113,9 +116,46 @@ describe("validateProblems (unit, mock sandbox)", () => {
     expect(sandbox.calls.length).toBe(sample[0]!.hidden_tests.length);
     for (const call of sandbox.calls) {
       expect(call.language).toBe(sample[0]!.language);
+      // sample[0] is a single-file problem (no starter_workspace) → validate uses the legacy
+      // `code` shorthand. Multi-file shapes are exercised by the dedicated test below.
+      if (!("code" in call) || typeof call.code !== "string") {
+        throw new Error("expected single-file shorthand for sample[0]");
+      }
       expect(call.code.length).toBeGreaterThan(0);
       expect(call.code).toContain(sample[0]!.reference_solution.trim());
     }
+  });
+
+  // STORY-043 — when a problem has a `starter_workspace`, validate ships the auxiliary
+  // files alongside the harness so cross-file imports resolve.
+  it("multi-file problems ship every starter_workspace auxiliary file to the sandbox", async () => {
+    const all = loadProblems();
+    const multi = all.find(
+      (p) => p.kind === "implement" && p.starter_workspace !== undefined,
+    );
+    if (!multi || multi.kind !== "implement" || !multi.starter_workspace) {
+      // No multi-file problems on disk yet — skip rather than fail.
+      return;
+    }
+    const sandbox = new StubPassingProvider();
+    await validateProblem(multi, sandbox);
+    const firstCall = sandbox.calls[0];
+    expect(firstCall).toBeDefined();
+    if (!firstCall || !("files" in firstCall) || !Array.isArray(firstCall.files)) {
+      throw new Error("expected multi-file shape in sandbox call");
+    }
+    // Every non-entry file from starter_workspace ships verbatim.
+    const entryPath =
+      multi.entry_file ?? (multi.language === "python" ? "main.py" : "index.ts");
+    for (const wsFile of multi.starter_workspace) {
+      if (wsFile.path === entryPath) continue;
+      const sentFile = firstCall.files.find(
+        (f: { path: string }) => f.path === wsFile.path,
+      );
+      expect(sentFile, `auxiliary file ${wsFile.path} should be shipped`).toBeDefined();
+      expect(sentFile?.content).toBe(wsFile.content);
+    }
+    expect(firstCall.entry_file).toBe(entryPath);
   });
 });
 

@@ -14,6 +14,7 @@ export {
   ProblemLanguageSchema,
   ProblemSlugSchema,
   PublicExampleSchema,
+  StarterWorkspaceFileSchema,
   TestCaseValueSchema,
   isComprehensionProblem,
   isDebugProblem,
@@ -29,6 +30,7 @@ export {
   type ProblemKind,
   type ProblemLanguage,
   type PublicExample,
+  type StarterWorkspaceFile,
 } from "./schema.js";
 
 export {
@@ -53,7 +55,9 @@ export {
   VERDICT_FAIL_TOKEN,
   buildHarness,
   buildHarnessForProblem,
+  buildMultiFileHarnessForProblem,
   parseVerdict,
   type BuildHarnessOptions,
+  type MultiFileHarnessResult,
   type Verdict,
 } from "./harness.js";
