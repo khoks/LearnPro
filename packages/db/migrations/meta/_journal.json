@@ -150,6 +150,20 @@
       "breakpoints": true
     },
     {
+      "idx": 21,
+      "version": "7",
+      "when": 1779800000000,
+      "tag": "0021_cheatsheets",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1779900000000,
+      "tag": "0022_bug_finding_scores",
+      "breakpoints": true
+    },
+    {
       "idx": 23,
       "version": "7",
       "when": 1780000000000,

@@ -2,6 +2,7 @@ import { relations } from "drizzle-orm";
 import {
   accounts,
   agent_calls,
+  bug_finding_scores,
   concept_reviews,
   concepts,
   episodes,
@@ -35,6 +36,7 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   concept_reviews: many(concept_reviews),
   portfolio_pushes: many(portfolio_pushes),
   profile_insights: many(profile_insights),
+  bug_finding_scores: many(bug_finding_scores),
 }));
 
 export const accountsRelations = relations(accounts, ({ one }) => ({
@@ -131,4 +133,8 @@ export const portfolioPushesRelations = relations(portfolio_pushes, ({ one }) =>
 
 export const profileInsightsRelations = relations(profile_insights, ({ one }) => ({
   user: one(users, { fields: [profile_insights.user_id], references: [users.id] }),
+}));
+
+export const bugFindingScoresRelations = relations(bug_finding_scores, ({ one }) => ({
+  user: one(users, { fields: [bug_finding_scores.user_id], references: [users.id] }),
 }));
