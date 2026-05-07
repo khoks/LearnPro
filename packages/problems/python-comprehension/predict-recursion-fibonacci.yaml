@@ -1,0 +1,31 @@
+slug: predict-recursion-fibonacci
+name: Predict — recursive Fibonacci
+language: python
+difficulty: 2
+track: python-fundamentals
+kind: comprehension
+comprehension_format: predict_output
+concept_tags:
+  - recursion
+  - control-flow
+expected_median_time_to_solve_ms: 40000
+statement: |
+  Predict what the program prints. Trace the recursion if needed.
+starter_code: |
+  def fib(n):
+      if n < 2:
+          return n
+      return fib(n - 1) + fib(n - 2)
+
+  print(fib(6))
+question: What does the program print?
+answer_format: multiple_choice
+multiple_choice_options:
+  - "5"
+  - "8"
+  - "13"
+  - "6"
+correct_answer_index: 1
+explanation: |
+  The Fibonacci sequence starting fib(0)=0, fib(1)=1 yields 0, 1, 1, 2, 3, 5, 8.
+  fib(6) is the seventh element, which is 8.

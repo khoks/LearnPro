@@ -1,0 +1,38 @@
+slug: reason-binary-search-complexity
+name: Reason — binary search complexity
+language: python
+difficulty: 3
+track: python-fundamentals
+kind: comprehension
+comprehension_format: reason_property
+concept_tags:
+  - complexity
+  - binary-search
+expected_median_time_to_solve_ms: 45000
+statement: |
+  What is the worst-case time complexity of this function as a function of
+  the length of `arr`?
+starter_code: |
+  def find(arr, target):
+      lo, hi = 0, len(arr)
+      while lo < hi:
+          mid = (lo + hi) // 2
+          if arr[mid] == target:
+              return mid
+          if arr[mid] < target:
+              lo = mid + 1
+          else:
+              hi = mid
+      return -1
+question: What is the worst-case time complexity of `find` in terms of n = len(arr)?
+answer_format: multiple_choice
+multiple_choice_options:
+  - "O(1)"
+  - "O(log n)"
+  - "O(n)"
+  - "O(n log n)"
+correct_answer_index: 1
+explanation: |
+  Each iteration halves the search range (hi - lo). Starting at n, the
+  range reaches 1 after log2(n) steps. That is O(log n) — characteristic
+  of binary search.

@@ -1,0 +1,29 @@
+slug: predict-object-spread
+name: Predict — object spread merge order
+language: typescript
+difficulty: 2
+track: typescript-fundamentals
+kind: comprehension
+comprehension_format: predict_output
+concept_tags:
+  - objects
+  - spread
+expected_median_time_to_solve_ms: 30000
+statement: |
+  Predict what the program logs. Later spread keys win on collision.
+starter_code: |
+  const base = { a: 1, b: 2 };
+  const override = { b: 99, c: 3 };
+  console.log({ ...base, ...override });
+question: What does the program log?
+answer_format: multiple_choice
+multiple_choice_options:
+  - "{ a: 1, b: 2 }"
+  - "{ a: 1, b: 99, c: 3 }"
+  - "{ a: 1, b: 2, c: 3 }"
+  - "{ b: 99, c: 3 }"
+correct_answer_index: 1
+explanation: |
+  Object spread merges left-to-right; on key collision the later value wins.
+  override.b (99) overrides base.b (2), and override.c is added — yielding
+  { a: 1, b: 99, c: 3 }.

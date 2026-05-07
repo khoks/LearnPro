@@ -1,0 +1,29 @@
+slug: trace-list-pop-index
+name: Trace — list.pop with index
+language: python
+difficulty: 2
+track: python-fundamentals
+kind: comprehension
+comprehension_format: trace_execution
+concept_tags:
+  - lists
+  - in-place-mutation
+expected_median_time_to_solve_ms: 35000
+statement: |
+  Trace the calls and report what the list looks like at the end.
+starter_code: |
+  items = ["a", "b", "c", "d", "e"]
+  items.pop(0)
+  items.pop()
+  # what is items?
+question: What is the value of `items` at the end?
+answer_format: multiple_choice
+multiple_choice_options:
+  - "['a', 'b', 'c', 'd']"
+  - "['b', 'c', 'd', 'e']"
+  - "['b', 'c', 'd']"
+  - "['a', 'c', 'e']"
+correct_answer_index: 2
+explanation: |
+  items.pop(0) removes the first element ("a"). items.pop() with no argument
+  removes the last element ("e"). What remains is the middle: ["b", "c", "d"].

@@ -92,6 +92,23 @@ export {
 } from "./grade.js";
 
 export {
+  ComprehensionAnswerSchema,
+  ComprehensionGradeResultSchema,
+  gradeComprehension,
+  parseComprehensionGraderResponse,
+  type ComprehensionAnswer,
+  type ComprehensionGradeInput,
+  type ComprehensionGradeResult,
+} from "./comprehension-grade.js";
+
+export {
+  buildComprehensionCommentary,
+  forbiddenPhrasesForCommentary,
+  type ComprehensionCommentary,
+  type ComprehensionCommentaryInput,
+} from "./comprehension-commentary.js";
+
+export {
   GRADER_BONUS_CLAMP,
   GRADER_BONUS_PER_DIMENSION,
   UpdateProfileEpisodeMissingError,

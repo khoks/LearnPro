@@ -1,0 +1,34 @@
+slug: reason-set-membership-faster
+name: Reason — set vs. list membership
+language: python
+difficulty: 2
+track: python-fundamentals
+kind: comprehension
+comprehension_format: reason_property
+concept_tags:
+  - sets
+  - performance
+  - hashing
+expected_median_time_to_solve_ms: 40000
+statement: |
+  Two implementations of the same predicate. Which is faster for large n,
+  and why?
+starter_code: |
+  def has_a(items, queries):
+      return [q in items for q in queries]
+
+  def has_b(items, queries):
+      lookup = set(items)
+      return [q in lookup for q in queries]
+question: Why is `has_b` faster than `has_a` when len(queries) is large?
+answer_format: multiple_choice
+multiple_choice_options:
+  - "Lists are slower because they cache each lookup."
+  - "Set membership is O(1) average; list membership is O(n) — has_b drops the per-query cost."
+  - "set() converts items to integers, which compare faster."
+  - "Both are equally fast — Python optimizes list `in` to a hash lookup."
+correct_answer_index: 1
+explanation: |
+  `q in list` scans the list linearly: O(n) per query. `q in set` uses a
+  hash table: O(1) average per query. Building the set up-front is O(n)
+  once; the per-query savings dominate for large query batches.

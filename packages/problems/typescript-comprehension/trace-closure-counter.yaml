@@ -1,0 +1,29 @@
+slug: trace-closure-counter
+name: Trace — closure counter
+language: typescript
+difficulty: 2
+track: typescript-fundamentals
+kind: comprehension
+comprehension_format: trace_execution
+concept_tags:
+  - closures
+  - functions
+expected_median_time_to_solve_ms: 35000
+statement: |
+  Trace the calls and report the final logged value.
+starter_code: |
+  function makeCounter() {
+    let n = 0;
+    return () => ++n;
+  }
+  const c = makeCounter();
+  c();
+  c();
+  console.log(c());
+question: What does the program log?
+answer_format: free_text
+expected_answer: "3"
+explanation: |
+  Each call to c() captures and increments the same `n` from the enclosing
+  scope. Three calls → n becomes 3. The third call's pre-increment returns
+  3, which is logged.

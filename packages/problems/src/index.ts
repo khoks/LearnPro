@@ -2,6 +2,8 @@ export const PACKAGE_NAME = "@learnpro/problems";
 
 export {
   BugArchetypeSchema,
+  ComprehensionFormatSchema,
+  ComprehensionProblemDefSchema,
   ConceptTagSchema,
   DebugProblemDefSchema,
   HiddenTestSchema,
@@ -13,9 +15,12 @@ export {
   ProblemSlugSchema,
   PublicExampleSchema,
   TestCaseValueSchema,
+  isComprehensionProblem,
   isDebugProblem,
   isImplementProblem,
   type BugArchetype,
+  type ComprehensionFormat,
+  type ComprehensionProblemDef,
   type DebugProblemDef,
   type HiddenTest,
   type ImplementProblemDef,

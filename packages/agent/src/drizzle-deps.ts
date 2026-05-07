@@ -224,6 +224,11 @@ export function buildGradeDrizzleDeps(opts: BuildDrizzleAgentDepsOptions): Grade
     },
     async runHiddenTests(input) {
       const out: HiddenTestResult[] = [];
+      // Comprehension problems don't have hidden_tests (they're free-text or multiple-choice).
+      // Callers shouldn't reach this path for kind="comprehension"; if they do, return empty.
+      if (input.problem.kind !== "implement" && input.problem.kind !== "debug") {
+        return out;
+      }
       for (let i = 0; i < input.problem.hidden_tests.length; i += 1) {
         const test = input.problem.hidden_tests[i];
         if (!test) continue;

@@ -1,0 +1,33 @@
+slug: trace-let-block-scope
+name: Trace — let block scoping
+language: typescript
+difficulty: 2
+track: typescript-fundamentals
+kind: comprehension
+comprehension_format: trace_execution
+concept_tags:
+  - scopes
+  - let
+expected_median_time_to_solve_ms: 35000
+statement: |
+  Trace through the block. `let` is block-scoped: the inner `x` shadows
+  the outer one for the duration of the block.
+starter_code: |
+  let x = 1;
+  if (true) {
+    let x = 2;
+    x += 10;
+  }
+  console.log(x);
+question: What does the program log?
+answer_format: multiple_choice
+multiple_choice_options:
+  - "1"
+  - "2"
+  - "11"
+  - "12"
+correct_answer_index: 0
+explanation: |
+  The inner `let x = 2` declares a new variable scoped to the if-block.
+  Mutations inside the block affect the inner x only. After the block
+  ends, the outer x is unchanged — still 1.

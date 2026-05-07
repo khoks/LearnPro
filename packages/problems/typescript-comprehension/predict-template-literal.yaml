@@ -1,0 +1,30 @@
+slug: predict-template-literal
+name: Predict — template literal coercion
+language: typescript
+difficulty: 1
+track: typescript-fundamentals
+kind: comprehension
+comprehension_format: predict_output
+concept_tags:
+  - strings
+  - template-literals
+expected_median_time_to_solve_ms: 25000
+statement: |
+  Predict what the program logs. Template literals coerce embedded
+  expressions to strings.
+starter_code: |
+  const a = 1;
+  const b = 2;
+  console.log(`${a + b}-${a}${b}`);
+question: What does the program log?
+answer_format: multiple_choice
+multiple_choice_options:
+  - "3-12"
+  - "1+2-1-2"
+  - "3-1-2"
+  - "12-12"
+correct_answer_index: 0
+explanation: |
+  ${a + b} evaluates the expression first (3), then converts to string;
+  ${a}${b} concatenates the two strings "1" and "2" with no separator,
+  yielding "12". The full output is "3-12".

@@ -1,12 +1,15 @@
 import { describe, expect, it } from "vitest";
 import {
   BugArchetypeSchema,
+  ComprehensionFormatSchema,
+  ComprehensionProblemDefSchema,
   ConceptTagSchema,
   DebugProblemDefSchema,
   ImplementProblemDefSchema,
   ProblemDefSchema,
   ProblemKindSchema,
   ProblemSlugSchema,
+  isComprehensionProblem,
   isDebugProblem,
   isImplementProblem,
 } from "./schema.js";
@@ -183,7 +186,7 @@ describe("ProblemDefSchema (STORY-037 kind discriminator)", () => {
   });
 
   it("rejects an unknown kind value", () => {
-    const result = ProblemDefSchema.safeParse({ ...VALID_PROBLEM, kind: "comprehension" });
+    const result = ProblemDefSchema.safeParse({ ...VALID_PROBLEM, kind: "fancy_new_kind" });
     expect(result.success).toBe(false);
   });
 
@@ -240,12 +243,163 @@ describe("BugArchetypeSchema", () => {
 });
 
 describe("ProblemKindSchema", () => {
-  it("accepts the two MVP kinds", () => {
+  it("accepts implement / debug / comprehension", () => {
     expect(ProblemKindSchema.safeParse("implement").success).toBe(true);
     expect(ProblemKindSchema.safeParse("debug").success).toBe(true);
+    expect(ProblemKindSchema.safeParse("comprehension").success).toBe(true);
   });
 
-  it("rejects future-but-not-yet kinds", () => {
-    expect(ProblemKindSchema.safeParse("comprehension").success).toBe(false);
+  it("rejects unknown kinds", () => {
+    expect(ProblemKindSchema.safeParse("fancy_new_kind").success).toBe(false);
+  });
+});
+
+// STORY-038 — comprehension problem variant.
+describe("ComprehensionProblemDefSchema (STORY-038)", () => {
+  const COMPREHENSION_BASE = {
+    kind: "comprehension" as const,
+    slug: "predict-list-comprehension",
+    name: "Predict — list comprehension",
+    language: "python" as const,
+    difficulty: 2,
+    track: "python-fundamentals",
+    concept_tags: ["list-comprehension", "control-flow"],
+    statement: "Predict what the list comprehension below produces.",
+    starter_code: "result = [x * 2 for x in [1, 2, 3] if x > 1]\nprint(result)\n",
+    expected_median_time_to_solve_ms: 30_000,
+    comprehension_format: "predict_output" as const,
+    question: "What does the program print?",
+    explanation:
+      "The comprehension iterates [1,2,3], filters values where x>1 (so 2 and 3), and doubles them — yielding [4, 6].",
+  };
+
+  it("accepts a multiple-choice comprehension problem", () => {
+    const def = {
+      ...COMPREHENSION_BASE,
+      answer_format: "multiple_choice" as const,
+      multiple_choice_options: ["[2, 4, 6]", "[4, 6]", "[1, 4, 6]", "[]"],
+      correct_answer_index: 1,
+    };
+    const result = ProblemDefSchema.safeParse(def);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.kind).toBe("comprehension");
+      expect(isComprehensionProblem(result.data)).toBe(true);
+      expect(isImplementProblem(result.data)).toBe(false);
+      expect(isDebugProblem(result.data)).toBe(false);
+    }
+  });
+
+  it("accepts a free-text comprehension problem", () => {
+    const def = {
+      ...COMPREHENSION_BASE,
+      comprehension_format: "reason_property" as const,
+      answer_format: "free_text" as const,
+      expected_answer: "O(n)",
+      question: "What is the time complexity?",
+    };
+    const result = ProblemDefSchema.safeParse(def);
+    expect(result.success).toBe(true);
+  });
+
+  it("does not require hidden_tests / public_examples / reference_solution", () => {
+    const def = {
+      ...COMPREHENSION_BASE,
+      answer_format: "multiple_choice" as const,
+      multiple_choice_options: ["a", "b", "c", "d"],
+      correct_answer_index: 0,
+    };
+    expect(ProblemDefSchema.safeParse(def).success).toBe(true);
+  });
+
+  it("rejects multiple_choice missing the options array", () => {
+    const def = {
+      ...COMPREHENSION_BASE,
+      answer_format: "multiple_choice" as const,
+      correct_answer_index: 0,
+    };
+    expect(ProblemDefSchema.safeParse(def).success).toBe(false);
+  });
+
+  it("rejects multiple_choice with the wrong number of options (3 instead of 4)", () => {
+    const def = {
+      ...COMPREHENSION_BASE,
+      answer_format: "multiple_choice" as const,
+      multiple_choice_options: ["a", "b", "c"],
+      correct_answer_index: 0,
+    };
+    expect(ProblemDefSchema.safeParse(def).success).toBe(false);
+  });
+
+  it("rejects multiple_choice with correct_answer_index out of range", () => {
+    const def = {
+      ...COMPREHENSION_BASE,
+      answer_format: "multiple_choice" as const,
+      multiple_choice_options: ["a", "b", "c", "d"],
+      correct_answer_index: 4,
+    };
+    expect(ProblemDefSchema.safeParse(def).success).toBe(false);
+  });
+
+  it("rejects free_text missing expected_answer", () => {
+    const def = {
+      ...COMPREHENSION_BASE,
+      answer_format: "free_text" as const,
+    };
+    expect(ProblemDefSchema.safeParse(def).success).toBe(false);
+  });
+
+  it("rejects unknown comprehension_format", () => {
+    const def = {
+      ...COMPREHENSION_BASE,
+      comprehension_format: "rewrite_idiomatic",
+      answer_format: "multiple_choice" as const,
+      multiple_choice_options: ["a", "b", "c", "d"],
+      correct_answer_index: 0,
+    };
+    expect(ProblemDefSchema.safeParse(def).success).toBe(false);
+  });
+
+  it("rejects missing explanation", () => {
+    const { explanation: _ignored, ...rest } = COMPREHENSION_BASE;
+    const def = {
+      ...rest,
+      answer_format: "multiple_choice" as const,
+      multiple_choice_options: ["a", "b", "c", "d"],
+      correct_answer_index: 0,
+    };
+    expect(ProblemDefSchema.safeParse(def).success).toBe(false);
+  });
+
+  it("ComprehensionProblemDefSchema rejects an implement-shaped object", () => {
+    const def = {
+      kind: "implement" as const,
+      slug: "x",
+      name: "x",
+      language: "python" as const,
+      difficulty: 1,
+      track: "python-fundamentals",
+      concept_tags: ["a"],
+      statement: "s",
+      starter_code: "c",
+      reference_solution: "r",
+      public_examples: [{ input: 1, expected: 1 }],
+      hidden_tests: [{ input: 1, expected: 1 }],
+      expected_median_time_to_solve_ms: 1,
+    };
+    expect(ComprehensionProblemDefSchema.safeParse(def).success).toBe(false);
+  });
+});
+
+describe("ComprehensionFormatSchema (STORY-038)", () => {
+  it("accepts the three sub-formats", () => {
+    expect(ComprehensionFormatSchema.safeParse("predict_output").success).toBe(true);
+    expect(ComprehensionFormatSchema.safeParse("trace_execution").success).toBe(true);
+    expect(ComprehensionFormatSchema.safeParse("reason_property").success).toBe(true);
+  });
+
+  it("rejects free-text format names", () => {
+    expect(ComprehensionFormatSchema.safeParse("predict-output").success).toBe(false);
+    expect(ComprehensionFormatSchema.safeParse("complexity").success).toBe(false);
   });
 });

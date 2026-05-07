@@ -1,0 +1,29 @@
+slug: predict-sort-string-coercion
+name: Predict — default sort with numbers
+language: typescript
+difficulty: 2
+track: typescript-fundamentals
+kind: comprehension
+comprehension_format: predict_output
+concept_tags:
+  - sorting
+  - type-coercion
+expected_median_time_to_solve_ms: 35000
+statement: |
+  Predict what the program logs. The default sort comparator on Array
+  treats elements as strings.
+starter_code: |
+  console.log([10, 2, 30, 4].sort());
+question: What does the program log?
+answer_format: multiple_choice
+multiple_choice_options:
+  - "[2, 4, 10, 30]"
+  - "[10, 2, 30, 4]"
+  - "[4, 2, 30, 10]"
+  - "[10, 30, 2, 4]"
+correct_answer_index: 3
+explanation: |
+  Array.prototype.sort with no comparator coerces elements to strings and
+  compares lexicographically. As strings, "10" < "2", "30" < "4", so the
+  sorted order is "10", "30", "2", "4" — yielding [10, 30, 2, 4]. To
+  sort numerically, pass a comparator like .sort((a, b) => a - b).

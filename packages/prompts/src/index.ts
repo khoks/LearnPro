@@ -38,6 +38,13 @@ export {
 } from "./debug-grade-prompt.js";
 
 export {
+  COMPREHENSION_GRADE_PROMPT_VERSION,
+  buildComprehensionGradeSystemPrompt,
+  buildComprehensionGradeUserPrompt,
+  type ComprehensionGradePromptOptions,
+} from "./comprehension-grade-prompt.js";
+
+export {
   SESSION_PLAN_SYSTEM_PROMPT,
   PROMPT_VERSION as SESSION_PLAN_PROMPT_VERSION,
   buildSessionPlanUserPrompt,

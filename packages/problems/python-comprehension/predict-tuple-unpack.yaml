@@ -1,0 +1,28 @@
+slug: predict-tuple-unpack
+name: Predict — tuple unpacking with star
+language: python
+difficulty: 2
+track: python-fundamentals
+kind: comprehension
+comprehension_format: predict_output
+concept_tags:
+  - tuples
+  - unpacking
+expected_median_time_to_solve_ms: 35000
+statement: |
+  Predict what the program prints. The star target in unpacking absorbs the
+  middle elements as a list.
+starter_code: |
+  a, *b, c = [1, 2, 3, 4, 5]
+  print(b)
+question: What does the program print?
+answer_format: multiple_choice
+multiple_choice_options:
+  - "[1, 2, 3, 4]"
+  - "[2, 3, 4]"
+  - "[1, 2, 3, 4, 5]"
+  - "(2, 3, 4)"
+correct_answer_index: 1
+explanation: |
+  a binds 1, c binds 5, and *b absorbs everything in between. b becomes the
+  list [2, 3, 4] — note it's a list, not a tuple.

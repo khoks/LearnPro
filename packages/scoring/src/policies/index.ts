@@ -11,3 +11,4 @@ export * from "./xp-policy.js";
 export * from "./streak-policy.js";
 export * from "./quiet-hours.js";
 export * from "./spaced-repetition.js";
+export * from "./comprehension-policy.js";

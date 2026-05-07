@@ -1,0 +1,36 @@
+slug: reason-string-concat-loop
+name: Reason — quadratic string concatenation
+language: python
+difficulty: 3
+track: python-fundamentals
+kind: comprehension
+comprehension_format: reason_property
+concept_tags:
+  - strings
+  - performance
+  - immutability
+expected_median_time_to_solve_ms: 50000
+statement: |
+  Why is repeated `+=` concatenation slow for large `pieces`, and what's
+  the canonical fix?
+starter_code: |
+  def concat_loop(pieces):
+      out = ""
+      for p in pieces:
+          out += p
+      return out
+
+  def concat_join(pieces):
+      return "".join(pieces)
+question: Why is `concat_loop` slow on long inputs, and why is `concat_join` faster?
+answer_format: free_text
+expected_answer: |
+  Strings are immutable, so each `out += p` allocates a brand-new string and
+  copies the prior content — making the loop O(n^2) total. `"".join(pieces)`
+  pre-computes the total length and copies each piece exactly once, giving
+  O(n) time.
+explanation: |
+  Strings are immutable. Each `out += p` allocates a new string and copies
+  the entire prior buffer plus p, so the total work is O(n^2). `"".join`
+  computes the total length up-front and copies each piece exactly once —
+  O(n). For appending in a loop, build a list and join at the end.

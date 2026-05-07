@@ -1,0 +1,29 @@
+slug: trace-array-reduce
+name: Trace — Array.reduce accumulator
+language: typescript
+difficulty: 2
+track: typescript-fundamentals
+kind: comprehension
+comprehension_format: trace_execution
+concept_tags:
+  - arrays
+  - reduce
+  - functional
+expected_median_time_to_solve_ms: 40000
+statement: |
+  Trace the reduce. The accumulator starts at the seed value (0) and the
+  callback returns the next accumulator each iteration.
+starter_code: |
+  const total = [1, 2, 3, 4].reduce((acc, x) => acc + x, 0);
+  // what is total?
+question: What is the value of `total`?
+answer_format: multiple_choice
+multiple_choice_options:
+  - "10"
+  - "24"
+  - "0"
+  - "[1, 2, 3, 4]"
+correct_answer_index: 0
+explanation: |
+  reduce starts with acc=0, then acc = 0+1=1, then 1+2=3, then 3+3=6,
+  then 6+4=10. The final accumulator is 10 — the sum of the array.

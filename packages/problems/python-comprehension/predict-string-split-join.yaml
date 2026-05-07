@@ -1,0 +1,29 @@
+slug: predict-string-split-join
+name: Predict — split and join roundtrip
+language: python
+difficulty: 1
+track: python-fundamentals
+kind: comprehension
+comprehension_format: predict_output
+concept_tags:
+  - strings
+  - text-processing
+expected_median_time_to_solve_ms: 30000
+statement: |
+  Predict what the program prints. Note .split() with no argument splits on
+  any whitespace and drops empty strings.
+starter_code: |
+  s = "  one  two   three  "
+  print("-".join(s.split()))
+question: What does the program print?
+answer_format: multiple_choice
+multiple_choice_options:
+  - "one-two-three"
+  - "  one--two---three  "
+  - "-one-two-three-"
+  - "one two three"
+correct_answer_index: 0
+explanation: |
+  s.split() with no argument splits on any whitespace run and drops empty
+  pieces, yielding ["one", "two", "three"]. "-".join(...) joins them with
+  a single hyphen between each, producing "one-two-three".

@@ -1,0 +1,31 @@
+slug: predict-sort-mutating
+name: Predict — Array.prototype.sort mutates in place
+language: typescript
+difficulty: 2
+track: typescript-fundamentals
+kind: comprehension
+comprehension_format: predict_output
+concept_tags:
+  - arrays
+  - in-place-mutation
+  - sorting
+expected_median_time_to_solve_ms: 35000
+statement: |
+  Predict what the program logs. Pay attention to whether `sort` returns
+  the same array or a copy.
+starter_code: |
+  const a = [3, 1, 2];
+  const b = a.sort();
+  console.log(a === b);
+question: What does the program log?
+answer_format: multiple_choice
+multiple_choice_options:
+  - "true"
+  - "false"
+  - "undefined"
+  - "TypeError"
+correct_answer_index: 0
+explanation: |
+  Array.prototype.sort sorts in place and returns the same array — so a
+  and b reference the same object. a === b is true. To get a sorted copy,
+  use [...a].sort() (or .toSorted() in modern runtimes).

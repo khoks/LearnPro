@@ -1,0 +1,39 @@
+slug: reason-event-loop-blocking
+name: Reason — synchronous CPU work blocks the event loop
+language: typescript
+difficulty: 4
+track: typescript-fundamentals
+kind: comprehension
+comprehension_format: reason_property
+concept_tags:
+  - event-loop
+  - performance
+  - async
+expected_median_time_to_solve_ms: 60000
+statement: |
+  In a Node server, why is `heavy_a` problematic, and what mitigates it?
+starter_code: |
+  function heavy_a(n: number): number {
+    let total = 0;
+    for (let i = 0; i < n; i++) total += i;
+    return total;
+  }
+
+  async function heavy_b(n: number): Promise<number> {
+    return new Promise((resolve) => {
+      setImmediate(() => resolve(heavy_a(n)));
+    });
+  }
+question: Why is `heavy_a` problematic in a Node server, and what does `heavy_b` (or a worker thread) mitigate?
+answer_format: free_text
+expected_answer: |
+  heavy_a runs synchronously on the main event loop, blocking every other
+  request, timer, and IO callback until it returns. heavy_b yields to the
+  event loop with setImmediate before starting the work — but only one
+  cycle of yield, so for very long jobs a worker_thread is the proper fix.
+explanation: |
+  Node is single-threaded; long synchronous CPU work blocks every other
+  request, timer, and IO callback. Wrapping the work in a microtask /
+  setImmediate barely helps if the work itself is CPU-bound. The proper
+  mitigation is a worker_thread (or a separate process) so the main loop
+  can stay responsive.

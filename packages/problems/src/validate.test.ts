@@ -74,7 +74,9 @@ class StubExitNonZeroProvider implements SandboxProvider {
 }
 
 describe("validateProblems (unit, mock sandbox)", () => {
-  const sample = loadProblems().slice(0, 3);
+  const sample = loadProblems()
+    .filter((p): p is Extract<typeof p, { kind: "implement" }> => p.kind === "implement")
+    .slice(0, 3);
 
   it("collects pass results across all problems and tests when sandbox returns __LEARNPRO_PASS__", async () => {
     const sandbox = new StubPassingProvider();

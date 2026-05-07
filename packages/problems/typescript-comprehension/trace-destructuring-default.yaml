@@ -1,0 +1,29 @@
+slug: trace-destructuring-default
+name: Trace — destructuring with defaults
+language: typescript
+difficulty: 2
+track: typescript-fundamentals
+kind: comprehension
+comprehension_format: trace_execution
+concept_tags:
+  - destructuring
+  - defaults
+expected_median_time_to_solve_ms: 35000
+statement: |
+  Trace each binding. Defaults apply only when the property is undefined
+  — null, 0, "", and false do NOT trigger defaults.
+starter_code: |
+  const { a = 10, b = 20 } = { a: undefined, b: null };
+  console.log(a, b);
+question: What does the program log?
+answer_format: multiple_choice
+multiple_choice_options:
+  - "10 20"
+  - "undefined null"
+  - "10 null"
+  - "undefined 20"
+correct_answer_index: 2
+explanation: |
+  `a` is undefined, so the default 10 applies. `b` is null — destructuring
+  defaults trigger ONLY for undefined, not null/0/empty-string. So b stays
+  null. Output: "10 null".

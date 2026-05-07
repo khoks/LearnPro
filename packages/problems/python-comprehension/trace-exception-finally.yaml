@@ -1,0 +1,35 @@
+slug: trace-exception-finally
+name: Trace — try/except/finally execution order
+language: python
+difficulty: 3
+track: python-fundamentals
+kind: comprehension
+comprehension_format: trace_execution
+concept_tags:
+  - exceptions
+  - control-flow
+expected_median_time_to_solve_ms: 45000
+statement: |
+  Trace the control flow through the try/except/finally block.
+starter_code: |
+  log = []
+  try:
+      log.append("try")
+      raise ValueError("oops")
+  except ValueError:
+      log.append("except")
+  finally:
+      log.append("finally")
+  # what is log?
+question: What is the final value of `log`?
+answer_format: multiple_choice
+multiple_choice_options:
+  - "['try', 'except']"
+  - "['try', 'except', 'finally']"
+  - "['try', 'finally']"
+  - "['try', 'finally', 'except']"
+correct_answer_index: 1
+explanation: |
+  The try block runs and raises; the except block catches and runs; the
+  finally block always runs after either path. Order is try → except →
+  finally, yielding ['try', 'except', 'finally'].

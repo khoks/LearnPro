@@ -1,0 +1,30 @@
+slug: trace-array-includes
+name: Trace — Array.includes with NaN
+language: typescript
+difficulty: 3
+track: typescript-fundamentals
+kind: comprehension
+comprehension_format: trace_execution
+concept_tags:
+  - arrays
+  - nan
+  - equality
+expected_median_time_to_solve_ms: 45000
+statement: |
+  Trace each call. Note: `===` thinks NaN !== NaN, but Array.prototype.includes
+  uses SameValueZero, which treats NaN as equal to NaN.
+starter_code: |
+  const arr = [1, 2, NaN];
+  console.log(arr.indexOf(NaN), arr.includes(NaN));
+question: What does the program log?
+answer_format: multiple_choice
+multiple_choice_options:
+  - "2 true"
+  - "-1 false"
+  - "-1 true"
+  - "2 false"
+correct_answer_index: 2
+explanation: |
+  arr.indexOf uses === comparison, and NaN !== NaN, so it returns -1.
+  arr.includes uses SameValueZero, which treats NaN as equal to NaN, so
+  it returns true. The two methods disagree only on NaN.

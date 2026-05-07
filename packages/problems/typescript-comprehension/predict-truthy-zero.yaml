@@ -1,0 +1,29 @@
+slug: predict-truthy-zero
+name: Predict — falsy values in JS
+language: typescript
+difficulty: 1
+track: typescript-fundamentals
+kind: comprehension
+comprehension_format: predict_output
+concept_tags:
+  - truthiness
+  - boolean-logic
+expected_median_time_to_solve_ms: 25000
+statement: |
+  Predict what the program logs. Recall that 0, "", null, undefined, NaN,
+  and false are the falsy values in JavaScript.
+starter_code: |
+  const values: unknown[] = [0, "hello", "", null, "world"];
+  const truthy = values.filter(Boolean);
+  console.log(truthy);
+question: What does the program log?
+answer_format: multiple_choice
+multiple_choice_options:
+  - "[0, 'hello', '', null, 'world']"
+  - "['hello', 'world']"
+  - "[0, '']"
+  - "['hello', '', 'world']"
+correct_answer_index: 1
+explanation: |
+  filter(Boolean) keeps only truthy values. 0, "", and null are falsy and
+  drop out; "hello" and "world" stay. Result: ["hello", "world"].

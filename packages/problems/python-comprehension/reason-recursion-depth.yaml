@@ -1,0 +1,34 @@
+slug: reason-recursion-depth
+name: Reason — recursion depth limit
+language: python
+difficulty: 3
+track: python-fundamentals
+kind: comprehension
+comprehension_format: reason_property
+concept_tags:
+  - recursion
+  - call-stack
+expected_median_time_to_solve_ms: 60000
+statement: |
+  Why does this function blow up for n = 5000 even though the math is
+  simple?
+starter_code: |
+  def total(n):
+      if n == 0:
+          return 0
+      return n + total(n - 1)
+
+  print(total(5000))
+question: Why does `total(5000)` typically raise RecursionError, and what's the canonical fix?
+answer_format: multiple_choice
+multiple_choice_options:
+  - "Python 3 disallows recursion past 100 levels."
+  - "The default recursion limit is ~1000; rewrite as a loop or use sys.setrecursionlimit."
+  - "Subtraction overflows for large n."
+  - "Recursion is always slower than iteration in Python."
+correct_answer_index: 1
+explanation: |
+  Python's default recursion limit is around 1000 frames. total(5000) needs
+  5001 frames and trips the limit. The Pythonic fix is to rewrite as a
+  loop (or use sum(range(n+1))). Raising sys.setrecursionlimit works but
+  risks crashing the interpreter; iteration is the safer answer.

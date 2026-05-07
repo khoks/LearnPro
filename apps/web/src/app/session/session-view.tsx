@@ -289,10 +289,30 @@ export function DebugProblemPanel({
   );
 }
 
-// STORY-037 — small uppercase pill for the problem kind. "implement" hides (the legacy default
-// shape stays visually unchanged); "debug" surfaces a yellow pill alongside the difficulty badge.
-export function KindBadge({ kind }: { kind: "implement" | "debug" }) {
+// STORY-037 / STORY-038 — small uppercase pill for the problem kind. "implement" hides (the legacy
+// default shape stays visually unchanged); "debug" surfaces a yellow pill; "comprehension" surfaces
+// a blue "Read" pill alongside the difficulty badge.
+export function KindBadge({ kind }: { kind: "implement" | "debug" | "comprehension" }) {
   if (kind === "implement") return null;
+  if (kind === "comprehension") {
+    return (
+      <span
+        data-testid="kind-badge"
+        style={{
+          background: "#e3f2fd",
+          color: "#0d47a1",
+          padding: "0.15rem 0.5rem",
+          borderRadius: 999,
+          fontSize: 12,
+          fontWeight: 600,
+          textTransform: "uppercase",
+          letterSpacing: 0.5,
+        }}
+      >
+        Read
+      </span>
+    );
+  }
   return (
     <span
       data-testid="kind-badge"
@@ -309,6 +329,207 @@ export function KindBadge({ kind }: { kind: "implement" | "debug" }) {
     >
       Debug
     </span>
+  );
+}
+
+// STORY-038 — comprehension framing panel. Renders below the header on `kind: "comprehension"`
+// problems so the user knows the editor is read-only and the answer goes in the widget below.
+// Coach-voice copy, no fire emoji or FOMO timers.
+export function ComprehensionProblemPanel({
+  comprehensionFormat,
+}: {
+  comprehensionFormat: "predict_output" | "trace_execution" | "reason_property" | null;
+}) {
+  const formatLabel = humanizeComprehensionFormat(comprehensionFormat);
+  return (
+    <section
+      data-testid="comprehension-problem-panel"
+      aria-label="Comprehension problem panel"
+      style={{
+        display: "grid",
+        gap: "0.5rem",
+        padding: "0.75rem",
+        background: "#e3f2fd",
+        border: "1px solid #90caf9",
+        borderRadius: 6,
+      }}
+    >
+      <div style={{ fontSize: 13, fontWeight: 600, color: "#0d47a1" }}>
+        This is a comprehension exercise — {formatLabel}.
+      </div>
+      <div style={{ fontSize: 13, color: "#0d47a1" }}>
+        The code editor is read-only. Pick the right answer (or write one) below the code.
+      </div>
+    </section>
+  );
+}
+
+function humanizeComprehensionFormat(
+  fmt: "predict_output" | "trace_execution" | "reason_property" | null,
+): string {
+  switch (fmt) {
+    case "predict_output":
+      return "predict the output";
+    case "trace_execution":
+      return "trace the execution";
+    case "reason_property":
+      return "reason about a property of the code";
+    default:
+      return "read the code";
+  }
+}
+
+export interface ComprehensionAnswerState {
+  selected_index: number | null;
+  free_text: string;
+}
+
+// STORY-038 — comprehension answer widget. Renders multiple-choice radio buttons or a free-text
+// textarea based on `answerFormat`. The state is fully controlled by the parent (so the parent
+// can clear it on Next-problem, restore from a draft, etc.).
+export function ComprehensionAnswerWidget({
+  answerFormat,
+  options,
+  state,
+  onSelectIndex,
+  onChangeText,
+  disabled,
+  question,
+}: {
+  answerFormat: "multiple_choice" | "free_text";
+  options: ReadonlyArray<string>;
+  state: ComprehensionAnswerState;
+  onSelectIndex: (idx: number) => void;
+  onChangeText: (text: string) => void;
+  disabled: boolean;
+  question: string;
+}) {
+  return (
+    <section
+      data-testid="comprehension-answer-widget"
+      aria-label="Comprehension answer"
+      style={{
+        display: "grid",
+        gap: "0.6rem",
+        padding: "0.75rem",
+        border: "1px solid #ccc",
+        borderRadius: 6,
+        background: "#fafafa",
+      }}
+    >
+      <div style={{ fontWeight: 600, fontSize: 14, lineHeight: 1.4 }}>{question}</div>
+      {answerFormat === "multiple_choice" ? (
+        <fieldset style={{ display: "grid", gap: "0.4rem", border: "none", padding: 0 }}>
+          <legend style={{ fontSize: 12, color: "#666" }}>Pick one</legend>
+          {options.map((opt, i) => (
+            <label
+              key={i}
+              data-testid={`comprehension-option-${i}`}
+              style={{
+                display: "flex",
+                gap: 8,
+                alignItems: "center",
+                fontSize: 14,
+                cursor: disabled ? "not-allowed" : "pointer",
+                color: disabled ? "#999" : "#222",
+              }}
+            >
+              <input
+                type="radio"
+                name="comprehension-answer"
+                value={String(i)}
+                checked={state.selected_index === i}
+                onChange={() => onSelectIndex(i)}
+                disabled={disabled}
+                aria-label={`Option ${i + 1}: ${opt}`}
+              />
+              <span style={{ whiteSpace: "pre-wrap" }}>{opt}</span>
+            </label>
+          ))}
+        </fieldset>
+      ) : (
+        <textarea
+          data-testid="comprehension-free-text"
+          aria-label="Free-text answer"
+          value={state.free_text}
+          onChange={(e) => onChangeText(e.target.value)}
+          disabled={disabled}
+          rows={4}
+          placeholder="Type your answer in plain English."
+          style={{
+            width: "100%",
+            padding: "0.5rem",
+            fontSize: 14,
+            fontFamily: "inherit",
+            border: "1px solid #ccc",
+            borderRadius: 4,
+            resize: "vertical",
+          }}
+        />
+      )}
+    </section>
+  );
+}
+
+// STORY-038 — comprehension grade-result panel. Replaces the GradeResultPanel for comprehension
+// problems: no rubric bars (no code to grade) and no hidden-tests table (no tests). Just the
+// pass/fail + the tutor's commentary which paraphrases the explanation in coach voice.
+export function ComprehensionGradeResultPanel({
+  correct,
+  reasoning,
+  explanation,
+  fallbackUsed,
+}: {
+  correct: boolean;
+  reasoning: string;
+  explanation: string;
+  fallbackUsed: boolean;
+}) {
+  return (
+    <section
+      data-testid="comprehension-grade-result"
+      aria-label="Comprehension grade result"
+      style={{
+        display: "grid",
+        gap: "0.6rem",
+        padding: "0.75rem",
+        border: "1px solid #ccc",
+        borderRadius: 6,
+        background: correct ? "#f1f8e9" : "#fff3e0",
+      }}
+    >
+      <div style={{ fontWeight: 700, fontSize: 16 }}>
+        <StatusBadge variant={correct ? "pass" : "fail"}>
+          {correct ? "Correct" : "Not quite"}
+        </StatusBadge>
+      </div>
+      {correct ? (
+        <p style={{ margin: 0, lineHeight: 1.5, whiteSpace: "pre-wrap" }}>
+          Here is why: {explanation}
+        </p>
+      ) : (
+        <>
+          <p style={{ margin: 0, lineHeight: 1.5, whiteSpace: "pre-wrap" }}>{reasoning}</p>
+          <p
+            style={{
+              margin: 0,
+              lineHeight: 1.5,
+              whiteSpace: "pre-wrap",
+              fontSize: 13,
+              color: "#5d4037",
+            }}
+          >
+            <strong>What good looks like: </strong>
+            {explanation}
+          </p>
+        </>
+      )}
+      {fallbackUsed ? (
+        <div style={{ fontSize: 12, color: "#999" }}>
+          The grader could not produce a confident verdict; the answer above is conservative.
+        </div>
+      ) : null}
+    </section>
   );
 }
 

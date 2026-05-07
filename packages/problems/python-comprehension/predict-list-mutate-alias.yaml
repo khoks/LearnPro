@@ -1,0 +1,31 @@
+slug: predict-list-mutate-alias
+name: Predict — aliased list mutation
+language: python
+difficulty: 3
+track: python-fundamentals
+kind: comprehension
+comprehension_format: predict_output
+concept_tags:
+  - mutability
+  - aliasing
+expected_median_time_to_solve_ms: 45000
+statement: |
+  Predict what the program prints. Pay attention to whether `b` is a copy or
+  a reference to the same list object as `a`.
+starter_code: |
+  a = [1, 2, 3]
+  b = a
+  b.append(4)
+  print(a)
+question: What does the program print?
+answer_format: multiple_choice
+multiple_choice_options:
+  - "[1, 2, 3]"
+  - "[1, 2, 3, 4]"
+  - "[4]"
+  - "TypeError"
+correct_answer_index: 1
+explanation: |
+  `b = a` creates a new name binding to the same list object — not a copy.
+  Mutating through b is visible through a, so a is [1, 2, 3, 4]. To copy use
+  `b = a[:]` or `b = list(a)`.

@@ -1,0 +1,36 @@
+slug: reason-stable-sort
+name: Reason — why stability matters here
+language: python
+difficulty: 3
+track: python-fundamentals
+kind: comprehension
+comprehension_format: reason_property
+concept_tags:
+  - sorting
+  - stability
+expected_median_time_to_solve_ms: 50000
+statement: |
+  Why does this code work despite sorting the data twice?
+starter_code: |
+  records = [
+      {"name": "Anna", "score": 80},
+      {"name": "Bob", "score": 90},
+      {"name": "Cara", "score": 80},
+  ]
+
+  records.sort(key=lambda r: r["name"])
+  records.sort(key=lambda r: -r["score"])
+  # records is now sorted primarily by score desc, ties broken by name asc.
+question: Why does sorting twice produce the desired (score desc, name asc) order?
+answer_format: free_text
+expected_answer: |
+  Python's sort is stable, so when sorting by score the relative order of records
+  with equal scores is preserved from the previous sort by name. Sort by the
+  weakest key first, then the strongest — equal-score rows keep their alphabetical
+  order.
+explanation: |
+  Python's Timsort is stable: rows with equal keys keep their previous relative
+  order. The first pass orders by name. The second pass groups by score (desc)
+  but doesn't disturb same-score rows, so within each score group the alphabetical
+  order from the first pass is preserved. The rule of thumb is to sort by the
+  weakest key first.

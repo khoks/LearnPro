@@ -1,0 +1,27 @@
+slug: predict-zip-pairs
+name: Predict — zip iteration over uneven lists
+language: python
+difficulty: 2
+track: python-fundamentals
+kind: comprehension
+comprehension_format: predict_output
+concept_tags:
+  - iteration
+  - zip
+expected_median_time_to_solve_ms: 35000
+statement: |
+  Predict what the program prints. Recall that zip stops at the shortest input.
+starter_code: |
+  pairs = list(zip([1, 2, 3], ["a", "b"]))
+  print(pairs)
+question: What does the program print?
+answer_format: multiple_choice
+multiple_choice_options:
+  - "[(1, 'a'), (2, 'b'), (3, None)]"
+  - "[(1, 'a'), (2, 'b')]"
+  - "[(1, 'a'), (2, 'b'), (3, '')]"
+  - "ValueError"
+correct_answer_index: 1
+explanation: |
+  zip stops at the shortest input. Since ["a", "b"] only has 2 elements, the
+  third element of [1, 2, 3] is dropped, producing [(1,'a'), (2,'b')].

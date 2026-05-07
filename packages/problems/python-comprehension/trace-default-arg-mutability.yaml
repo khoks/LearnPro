@@ -1,0 +1,35 @@
+slug: trace-default-arg-mutability
+name: Trace — mutable default argument
+language: python
+difficulty: 4
+track: python-fundamentals
+kind: comprehension
+comprehension_format: trace_execution
+concept_tags:
+  - functions
+  - default-arguments
+  - mutability
+expected_median_time_to_solve_ms: 60000
+statement: |
+  Trace the two calls and report the final returned value.
+starter_code: |
+  def append(x, acc=[]):
+      acc.append(x)
+      return acc
+
+  append(1)
+  result = append(2)
+  # what is result?
+question: What is the value of `result`?
+answer_format: multiple_choice
+multiple_choice_options:
+  - "[2]"
+  - "[1, 2]"
+  - "[1]"
+  - "[]"
+correct_answer_index: 1
+explanation: |
+  Default arguments are evaluated once at definition time and shared across
+  calls. The first call appends 1 to the shared list; the second call
+  appends 2 to the same list. result is [1, 2]. The fix is to use None as
+  the sentinel and create a fresh list inside the function.

@@ -1,0 +1,27 @@
+slug: predict-int-divmod
+name: Predict — integer division and modulo
+language: python
+difficulty: 1
+track: python-fundamentals
+kind: comprehension
+comprehension_format: predict_output
+concept_tags:
+  - arithmetic
+  - integers
+expected_median_time_to_solve_ms: 25000
+statement: |
+  Predict what the program prints. Integer division (//) discards the
+  remainder; (%) returns the remainder.
+starter_code: |
+  print(17 // 5, 17 % 5)
+question: What does the program print?
+answer_format: multiple_choice
+multiple_choice_options:
+  - "3 2"
+  - "3.4 0"
+  - "2 3"
+  - "3 5"
+correct_answer_index: 0
+explanation: |
+  17 // 5 is 3 (integer quotient); 17 % 5 is 2 (remainder). The print call
+  separates them with a space, yielding "3 2".
