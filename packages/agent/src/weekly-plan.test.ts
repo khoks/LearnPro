@@ -278,7 +278,7 @@ describe("buildWeeklyPlan — adaptive pace adjustments", () => {
     const recent: WeeklyPlanRecentEpisode[] = [];
     for (let i = 0; i < 12; i++) {
       recent.push(
-        passEp("python.basics.variables", new Date(WEDNESDAY_NOON.getTime() - i * 86400_000 / 2)),
+        passEp("python.basics.variables", new Date(WEDNESDAY_NOON.getTime() - (i * 86400_000) / 2)),
       );
     }
     const plan = buildWeeklyPlan({

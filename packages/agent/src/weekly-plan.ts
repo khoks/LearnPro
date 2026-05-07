@@ -285,9 +285,7 @@ function filterTrackEdges(
   return edges.filter((e) => trackSlugSet.has(e.from) && trackSlugSet.has(e.to));
 }
 
-function collectPassedSlugs(
-  recentEpisodes: ReadonlyArray<WeeklyPlanRecentEpisode>,
-): Set<string> {
+function collectPassedSlugs(recentEpisodes: ReadonlyArray<WeeklyPlanRecentEpisode>): Set<string> {
   const passed = new Set<string>();
   for (const ep of recentEpisodes) {
     if (ep.final_outcome !== "pass") continue;
@@ -302,7 +300,10 @@ function collectPassedSlugs(
 //   - User has passed concepts but they're scattered (e.g., they have passed #5 but not #2-4)
 //     → returns 2 (the first unpassed). The picker walks forward from there, skipping any
 //     already-passed slugs along the way.
-function computeFrontierIndex(topoOrder: ReadonlyArray<string>, passed: ReadonlySet<string>): number {
+function computeFrontierIndex(
+  topoOrder: ReadonlyArray<string>,
+  passed: ReadonlySet<string>,
+): number {
   for (let i = 0; i < topoOrder.length; i++) {
     const slug = topoOrder[i];
     if (slug === undefined) continue;
@@ -378,7 +379,7 @@ function composeDailySuggestions(themeConcepts: ReadonlyArray<string>): WeeklyPl
     const isThemeDay = day === 0 || day === 4 || day === 6;
     const slug = isThemeDay
       ? themeSlug
-      : themeConcepts[(day % Math.max(1, themeConcepts.length)) || 1] ?? themeSlug;
+      : (themeConcepts[day % Math.max(1, themeConcepts.length) || 1] ?? themeSlug);
     const reasoning = reasoningForDailyConcept({
       conceptName: slug,
       themeConceptName: themeSlug,
