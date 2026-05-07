@@ -2,6 +2,7 @@ import { and, eq } from "drizzle-orm";
 import {
   TutorSession,
   buildAssignProblemDrizzleDeps,
+  buildComprehensionGradeDrizzleDeps,
   buildGiveHintDrizzleDeps,
   buildGradeDrizzleDeps,
   buildUpdateProfileDrizzleDeps,
@@ -39,7 +40,13 @@ export function buildDrizzleTutorFactory(opts: BuildDrizzleTutorFactoryOptions):
     return {
       assignProblem: createAssignProblemTool({ deps: buildAssignProblemDrizzleDeps(depsOpts) }),
       giveHint: createGiveHintTool({ deps: buildGiveHintDrizzleDeps(depsOpts) }),
-      grade: createGradeTool({ deps: buildGradeDrizzleDeps(depsOpts) }),
+      grade: createGradeTool({
+        deps: buildGradeDrizzleDeps(depsOpts),
+        // STORY-038a — wire the comprehension dispatch adapter so kind="comprehension"
+        // episodes route to gradeComprehension (deterministic for multiple-choice, Haiku LLM
+        // rubric for free-text) instead of the implement/debug hidden-tests path.
+        comprehensionDeps: buildComprehensionGradeDrizzleDeps(depsOpts),
+      }),
       updateProfile: createUpdateProfileTool({
         deps: wrapWithGotHelpAwareSkillSkip(baseUpdateDeps, opts.db),
       }),

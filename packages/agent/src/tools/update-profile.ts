@@ -48,6 +48,11 @@ export const UpdateProfileInputSchema = z.object({
   // STORY-034 — optional grader rubric, propagated from the most-recent submit. Null on the
   // legacy unified-tutor codepath; pass-with-warning when fallback_used=true (no bonus applied).
   grader_rubric: GraderAgentRubricInputSchema.nullable().optional(),
+  // STORY-038a — optional comprehension verdict propagated from the most-recent
+  // submitComprehension(). Null on implement/debug episodes (and on legacy fixtures pre-038a).
+  // When non-null, the per-concept-tag comprehension-policy EWMA absorbs the signal via the
+  // optional `upsertComprehensionScore` dep.
+  comprehension_correct: z.boolean().nullable().optional(),
 });
 export type UpdateProfileInput = z.input<typeof UpdateProfileInputSchema>;
 

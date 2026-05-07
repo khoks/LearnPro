@@ -221,6 +221,7 @@ export {
 export {
   buildAssignProblemDrizzleDeps,
   buildGiveHintDrizzleDeps,
+  buildComprehensionGradeDrizzleDeps,
   buildGradeDrizzleDeps,
   buildUpdateProfileDrizzleDeps,
   loadEpisodeProblemRow,

@@ -606,3 +606,170 @@ describe("tutor errors → HTTP mapping", () => {
     await app.close();
   });
 });
+
+// STORY-038a — comprehension submit route tests. The route now accepts either
+// {code: string} or {comprehension_answer: ...} body shapes. The grade tool dispatches on
+// `episode.problem.kind` and routes accordingly; the route surfaces the
+// ComprehensionDepsNotWiredError → 503 and GradeInputShapeMismatchError → 400 mappings.
+describe("POST /v1/tutor/episodes/:id/submit (STORY-038a) — comprehension answer", () => {
+  function makeComprehensionFactory(opts: {
+    correct: boolean;
+    fallback?: boolean;
+  }): TutorAgentFactory {
+    let receivedAnswer: unknown = null;
+    const tools: TutorSessionTools = {
+      assignProblem: {
+        name: "assignProblem",
+        async run() {
+          return fakeAssignOutput();
+        },
+      },
+      giveHint: {
+        name: "giveHint",
+        async run({ rung }) {
+          return fakeHintOutput(rung as 1 | 2 | 3);
+        },
+      },
+      grade: {
+        name: "grade",
+        async run(input) {
+          if ("comprehension_answer" in input) {
+            receivedAnswer = input.comprehension_answer;
+            return {
+              passed: opts.correct,
+              hidden_test_results: [],
+              rubric: { correctness: opts.correct ? 1 : 0, idiomatic: 0, edge_case_coverage: 0 },
+              prose_explanation: opts.correct ? "Nice." : "Not quite.",
+              submission_id: SUBMISSION_ID,
+              runtime_ms: 5,
+              grader: null,
+              comprehension: {
+                correct: opts.correct,
+                reasoning: opts.correct ? "Correct because X." : "Misses Y.",
+                explanation: "The code prints [0, 2, 4].",
+                fallback_used: opts.fallback ?? false,
+              },
+            };
+          }
+          return fakeGradeOutput(true);
+        },
+      },
+      updateProfile: {
+        name: "updateProfile",
+        async run() {
+          return fakeUpdateProfileOutput();
+        },
+      },
+    };
+    void receivedAnswer;
+    return {
+      async createForAssign(input) {
+        return {
+          session: new TutorSession({
+            user_id: input.user_id,
+            org_id: input.org_id,
+            track_id: input.track_id,
+            tools,
+          }),
+          tools,
+        };
+      },
+      async createForExisting(input) {
+        return {
+          session: new TutorSession({
+            user_id: input.user_id,
+            org_id: input.org_id,
+            track_id: TRACK_ID,
+            tools,
+            initial_state: {
+              phase: "coding",
+              user_id: input.user_id,
+              org_id: input.org_id,
+              track_id: TRACK_ID,
+              episode_id: EPISODE_ID,
+              problem_id: PROBLEM_ID,
+              problem_slug: "comp-mc",
+              started_at: 1700000000000,
+              hints: [],
+              attempts: 0,
+            },
+          }),
+          tools,
+        };
+      },
+    };
+  }
+
+  it("accepts a multiple-choice comprehension answer + returns the verdict + explanation", async () => {
+    const app = buildServer({
+      tutorAgentFactory: makeComprehensionFactory({ correct: true }),
+      sessionResolver: userSession(USER_ID),
+    });
+    const res = await app.inject({
+      method: "POST",
+      url: `/v1/tutor/episodes/${EPISODE_ID}/submit`,
+      payload: { comprehension_answer: { kind: "multiple_choice", selected_index: 0 } },
+    });
+    expect(res.statusCode).toBe(200);
+    const body = res.json() as {
+      passed: boolean;
+      comprehension: { correct: boolean; explanation: string; reasoning: string };
+    };
+    expect(body.passed).toBe(true);
+    expect(body.comprehension.correct).toBe(true);
+    // The tutor commentary on a passed comprehension references the problem's `explanation`
+    // — wired through the comprehension verdict on the GradeOutput.
+    expect(body.comprehension.explanation).toContain("[0, 2, 4]");
+    await app.close();
+  });
+
+  it("accepts a free-text comprehension answer and surfaces fallback_used through", async () => {
+    const app = buildServer({
+      tutorAgentFactory: makeComprehensionFactory({ correct: false, fallback: true }),
+      sessionResolver: userSession(USER_ID),
+    });
+    const res = await app.inject({
+      method: "POST",
+      url: `/v1/tutor/episodes/${EPISODE_ID}/submit`,
+      payload: {
+        comprehension_answer: { kind: "free_text", text: "I don't know" },
+      },
+    });
+    expect(res.statusCode).toBe(200);
+    const body = res.json() as {
+      passed: boolean;
+      comprehension: { correct: boolean; fallback_used: boolean };
+    };
+    expect(body.passed).toBe(false);
+    expect(body.comprehension.fallback_used).toBe(true);
+    await app.close();
+  });
+
+  it("400 invalid_request when neither code nor comprehension_answer is provided", async () => {
+    const app = buildServer({
+      tutorAgentFactory: makeComprehensionFactory({ correct: true }),
+      sessionResolver: userSession(USER_ID),
+    });
+    const res = await app.inject({
+      method: "POST",
+      url: `/v1/tutor/episodes/${EPISODE_ID}/submit`,
+      payload: { foo: "bar" },
+    });
+    expect(res.statusCode).toBe(400);
+    await app.close();
+  });
+
+  it("400 invalid_request when comprehension_answer is malformed", async () => {
+    const app = buildServer({
+      tutorAgentFactory: makeComprehensionFactory({ correct: true }),
+      sessionResolver: userSession(USER_ID),
+    });
+    const res = await app.inject({
+      method: "POST",
+      url: `/v1/tutor/episodes/${EPISODE_ID}/submit`,
+      payload: { comprehension_answer: { kind: "bogus" } },
+    });
+    expect(res.statusCode).toBe(400);
+    await app.close();
+  });
+});
