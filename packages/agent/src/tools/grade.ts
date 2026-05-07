@@ -1,11 +1,28 @@
 import { z } from "zod";
-import type { GradeDeps, GradeRubric, GraderAgentRubric, HiddenTestResult } from "../ports.js";
+import type {
+  ComprehensionGradeDeps,
+  GradeDeps,
+  GradeRubric,
+  GraderAgentRubric,
+  HiddenTestResult,
+} from "../ports.js";
+import { ComprehensionAnswerSchema } from "../comprehension-grade.js";
 import { EpisodeNotFoundError } from "./give-hint.js";
 
-export const GradeInputSchema = z.object({
-  episode_id: z.string().uuid(),
-  code: z.string().min(1),
-});
+// STORY-038a - submit body union. Implement/debug episodes pass `code`; comprehension episodes
+// pass `comprehension_answer`. Either-or - the grade tool dispatches on `episode.problem.kind` to
+// decide which is required. Z.union accepts both shapes; the tool's runtime check rejects the
+// wrong shape with a friendly error before reaching the LLM.
+export const GradeInputSchema = z.union([
+  z.object({
+    episode_id: z.string().uuid(),
+    code: z.string().min(1),
+  }),
+  z.object({
+    episode_id: z.string().uuid(),
+    comprehension_answer: ComprehensionAnswerSchema,
+  }),
+]);
 export type GradeInput = z.input<typeof GradeInputSchema>;
 
 export const GradeRubricSchema = z.object({
@@ -33,6 +50,21 @@ export const GraderAgentRubricSchema = z.object({
   fallback_used: z.boolean(),
 });
 
+// STORY-038a — comprehension grade verdict surfaced on the GradeOutput when
+// `episode.problem.kind === "comprehension"`. Carries the deterministic verdict for
+// multiple-choice, the LLM rubric verdict for free-text, and the problem's authored
+// `explanation` so the tutor's commentary phase can quote it on a correct answer without a
+// second prompt round-trip. `fallback_used` flips when the LLM grader produced no parsable
+// verdict and the conservative "incorrect" fallback was used — surfaced so the UI can soften
+// the message.
+export const ComprehensionGradeOutputSchema = z.object({
+  correct: z.boolean(),
+  reasoning: z.string().min(1),
+  explanation: z.string().min(1),
+  fallback_used: z.boolean(),
+});
+export type ComprehensionGradeOutput = z.infer<typeof ComprehensionGradeOutputSchema>;
+
 export const GradeOutputSchema = z.object({
   passed: z.boolean(),
   hidden_test_results: z.array(
@@ -52,6 +84,9 @@ export const GradeOutputSchema = z.object({
   // or operator opt-out). Optional on construction so legacy fixtures don't need updating; the
   // tool always sets it (null or rubric) on the runtime path.
   grader: GraderAgentRubricSchema.nullable().optional(),
+  // STORY-038a — comprehension verdict carried alongside the implement/debug rubric on a
+  // comprehension episode. Null on implement/debug episodes (and on legacy fixtures pre-038a).
+  comprehension: ComprehensionGradeOutputSchema.nullable().optional(),
 });
 export type GradeOutput = z.infer<typeof GradeOutputSchema>;
 
@@ -62,6 +97,30 @@ export interface GradeTool {
 
 export interface CreateGradeToolOptions {
   deps: GradeDeps;
+  // STORY-038a — optional comprehension deps for the grade dispatch fan-out. When present, the
+  // tool detects `episode.problem.kind === "comprehension"` and routes to this dep instead of
+  // the implement/debug hidden-tests + rubric path. When omitted, comprehension episodes raise a
+  // ComprehensionDepsNotWiredError so callers fail fast (don't silently drop the verdict).
+  comprehensionDeps?: ComprehensionGradeDeps;
+}
+
+// STORY-038a — raised when a comprehension submission lands but the tool wasn't constructed
+// with comprehension deps wired. The API layer maps this to a 503 so the user sees a clear
+// "feature not configured" error rather than a generic 500.
+export class ComprehensionDepsNotWiredError extends Error {
+  constructor() {
+    super("grade: comprehension deps not configured on this server");
+    this.name = "ComprehensionDepsNotWiredError";
+  }
+}
+
+// STORY-038a — raised when a comprehension submission omits `comprehension_answer` (or vice-
+// versa for implement/debug). The API layer maps this to a 400 invalid-request.
+export class GradeInputShapeMismatchError extends Error {
+  constructor(message: string) {
+    super(`grade: ${message}`);
+    this.name = "GradeInputShapeMismatchError";
+  }
 }
 
 export function summarizeFailingTests(results: ReadonlyArray<HiddenTestResult>): string[] {
@@ -94,6 +153,70 @@ export function createGradeTool(opts: CreateGradeToolOptions): GradeTool {
       const ctx = await opts.deps.loadEpisodeProblem({ episode_id: input.episode_id });
       if (!ctx) throw new EpisodeNotFoundError(input.episode_id);
 
+      // STORY-038a — fan-out on `episode.problem.kind`. Comprehension episodes route to
+      // `gradeComprehension` (deterministic for multiple-choice, LLM rubric for free-text); the
+      // implement+debug branch keeps its existing hidden-tests-as-floor + grader-rubric path
+      // intact.
+      if (ctx.problem.kind === "comprehension") {
+        if (!opts.comprehensionDeps) throw new ComprehensionDepsNotWiredError();
+        if (!("comprehension_answer" in input)) {
+          throw new GradeInputShapeMismatchError(
+            "comprehension episode requires `comprehension_answer`, not `code`",
+          );
+        }
+        const startC = Date.now();
+        const comprehensionResult = await opts.comprehensionDeps.gradeComprehensionAnswer({
+          episode_id: input.episode_id,
+          user_id: ctx.user_id,
+          problem: ctx.problem,
+          answer: input.comprehension_answer,
+        });
+        const runtime_ms_c = Math.max(0, Date.now() - startC);
+        // Persist the submission as a JSON-serialized answer so the audit trail / data export
+        // round-trip the user's response. The implement+debug branch persists the user's source
+        // code; we use the same column with a structured payload here.
+        const code = JSON.stringify({
+          kind: "comprehension_answer",
+          answer: input.comprehension_answer,
+        });
+        const submission = await opts.deps.recordSubmission({
+          episode_id: input.episode_id,
+          user_id: ctx.user_id,
+          org_id: ctx.org_id,
+          code,
+          passed: comprehensionResult.correct,
+          runtime_ms: runtime_ms_c,
+        });
+        return {
+          passed: comprehensionResult.correct,
+          // No hidden tests on a comprehension episode.
+          hidden_test_results: [],
+          // Map the verdict onto a uniform rubric: correctness mirrors `correct`; idiomatic /
+          // edge-case-coverage default to 0 (the comprehension axis lives separately on the
+          // profile, not on this rubric).
+          rubric: {
+            correctness: comprehensionResult.correct ? 1 : 0,
+            idiomatic: 0,
+            edge_case_coverage: 0,
+          },
+          prose_explanation: comprehensionResult.reasoning,
+          submission_id: submission.submission_id,
+          runtime_ms: runtime_ms_c,
+          grader: null,
+          comprehension: {
+            correct: comprehensionResult.correct,
+            reasoning: comprehensionResult.reasoning,
+            explanation: comprehensionResult.explanation,
+            fallback_used: comprehensionResult.fallback_used,
+          },
+        };
+      }
+
+      if (!("code" in input)) {
+        throw new GradeInputShapeMismatchError(
+          "implement/debug episode requires `code`, not `comprehension_answer`",
+        );
+      }
       const start = Date.now();
       const test_results = await opts.deps.runHiddenTests({
         problem: ctx.problem,
@@ -159,6 +282,7 @@ export function createGradeTool(opts: CreateGradeToolOptions): GradeTool {
         submission_id: submission.submission_id,
         runtime_ms,
         grader,
+        comprehension: null,
       };
     },
   };

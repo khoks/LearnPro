@@ -265,6 +265,20 @@ export interface UpdateProfileDeps {
   // surface the "N more due" delta in the tool's output. Cheap call (capped at 50 in DB
   // helper). When unwired, the tool returns null for due_reviews_count.
   countDueConcepts?(input: { user_id: string }): Promise<number>;
+
+  // STORY-038a — per-(user, concept_tag) comprehension-policy EWMA upsert. Optional: when wired,
+  // updateProfile fires it once per concept_tag on the most-recent comprehension submission's
+  // verdict. Mirrors the bug-finding-policy upsert pattern (STORY-037a). When unwired, the
+  // comprehension axis simply doesn't update — a partial deployment that hasn't migrated the
+  // backing table can still process comprehension submissions; the verdict surfaces in the
+  // GradeOutput, the EWMA just doesn't move.
+  upsertComprehensionScore?(input: {
+    user_id: string;
+    org_id: string;
+    concept_tag: string;
+    correct: boolean;
+    got_help: boolean;
+  }): Promise<void>;
 }
 
 // Structural shape of the persisted FSRS card state. Lives here (not imported from
@@ -300,6 +314,60 @@ export interface UpdateProfileEpisodeContext {
   hints_used: number;
   attempts: number;
   started_at: number;
+}
+
+// STORY-038a — narrow port for the comprehension grade dispatch. The grade tool calls this
+// when `episode.problem.kind === "comprehension"`. Production wires this to
+// `gradeComprehension` in @learnpro/agent (deterministic for multiple-choice, Haiku LLM rubric
+// for free-text); tests inject a fake. Optional on `createGradeTool({ comprehensionDeps })` —
+// when absent the tool throws ComprehensionDepsNotWiredError so a comprehension YAML can never
+// silently no-op on a server that didn't wire the LLM provider.
+export interface ComprehensionGradeDeps {
+  gradeComprehensionAnswer(
+    input: ComprehensionGradeDepsInput,
+  ): Promise<ComprehensionGradeDepsResult>;
+}
+
+export interface ComprehensionGradeDepsInput {
+  episode_id: string;
+  user_id: string;
+  problem: ComprehensionProblemDefShape;
+  answer: ComprehensionAnswerShape;
+}
+
+// Structural shape of the comprehension problem the deps adapter accepts. Mirrors
+// `ComprehensionProblemDef` from @learnpro/problems but typed here in `ports.ts` so this leaf
+// module stays the source-of-truth for cross-tool types (the agent module imports this type).
+// The tool implementation imports the real `ComprehensionProblemDef` from @learnpro/problems
+// and TypeScript's structural typing accepts the assignment.
+export interface ComprehensionProblemDefShape {
+  kind: "comprehension";
+  slug: string;
+  name: string;
+  language: "python" | "typescript";
+  comprehension_format: "predict_output" | "trace_execution" | "reason_property";
+  question: string;
+  answer_format: "multiple_choice" | "free_text";
+  multiple_choice_options?: ReadonlyArray<string>;
+  correct_answer_index?: number;
+  expected_answer?: string;
+  explanation: string;
+  starter_code: string;
+  concept_tags: ReadonlyArray<string>;
+  difficulty: number;
+}
+
+// Structural shape of the comprehension answer the user submits. Mirrors
+// `ComprehensionAnswer` from `comprehension-grade.ts` but typed here so the leaf is consistent.
+export type ComprehensionAnswerShape =
+  | { kind: "multiple_choice"; selected_index: number }
+  | { kind: "free_text"; text: string };
+
+export interface ComprehensionGradeDepsResult {
+  correct: boolean;
+  reasoning: string;
+  explanation: string;
+  fallback_used: boolean;
 }
 
 // STORY-015 — session-plan agent. The planner LLM call is a one-shot completion (no tool use).

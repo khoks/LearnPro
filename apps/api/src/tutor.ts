@@ -1,9 +1,13 @@
 import { z } from "zod";
 import type { FastifyInstance, FastifyReply } from "fastify";
 import {
+  ComprehensionAnswerSchema,
+  ComprehensionDepsNotWiredError,
+  GradeInputShapeMismatchError,
   IllegalTransitionError,
   TutorSession,
   type AssignProblemTool,
+  type ComprehensionAnswer,
   type FinalOutcome,
   type GiveHintTool,
   type GradeTool,
@@ -52,9 +56,13 @@ const HintBodySchema = z.object({
   rung: z.union([z.literal(1), z.literal(2), z.literal(3)]),
 });
 
-const SubmitBodySchema = z.object({
-  code: z.string().min(1),
-});
+// STORY-038a — submit body union. Implement/debug episodes pass `code`; comprehension
+// episodes pass `comprehension_answer`. The grade tool dispatches on `episode.problem.kind`
+// to decide which is required.
+const SubmitBodySchema = z.union([
+  z.object({ code: z.string().min(1) }),
+  z.object({ comprehension_answer: ComprehensionAnswerSchema }),
+]);
 
 const GotHelpBodySchema = z.object({
   got_help: z.boolean(),
@@ -150,30 +158,42 @@ export function registerTutorRoutes(app: FastifyInstance, opts: RegisterTutorRou
   );
 
   // POST /v1/tutor/episodes/:id/submit — grade a submission.
-  app.post<{ Params: { id: string }; Body: { code: string } }>(
-    "/v1/tutor/episodes/:id/submit",
-    async (req, reply) => {
-      const session = await opts.sessionResolver(req);
-      if (!session) return reply.code(401).send({ error: "unauthorized" });
+  // STORY-038a — dispatch on body shape: implement/debug pass `code` (PII-redacted before the
+  // grade tool sees it); comprehension passes `comprehension_answer` (multiple-choice index OR
+  // free-text string). The grade tool's runtime check matches the body shape against
+  // `episode.problem.kind`; any mismatch raises GradeInputShapeMismatchError → 400.
+  app.post<{
+    Params: { id: string };
+    Body: { code: string } | { comprehension_answer: ComprehensionAnswer };
+  }>("/v1/tutor/episodes/:id/submit", async (req, reply) => {
+    const session = await opts.sessionResolver(req);
+    if (!session) return reply.code(401).send({ error: "unauthorized" });
 
-      const parsed = SubmitBodySchema.safeParse(req.body);
-      if (!parsed.success) {
-        return reply.code(400).send({ error: "invalid_request", issues: parsed.error.issues });
-      }
+    const parsed = SubmitBodySchema.safeParse(req.body);
+    if (!parsed.success) {
+      return reply.code(400).send({ error: "invalid_request", issues: parsed.error.issues });
+    }
 
-      const factoryResult = await loadExisting(opts, session, req.params.id);
-      if (!factoryResult) return reply.code(404).send({ error: "episode_not_found" });
+    const factoryResult = await loadExisting(opts, session, req.params.id);
+    if (!factoryResult) return reply.code(404).send({ error: "episode_not_found" });
 
-      const redaction = await opts.redactor.redact(parsed.data.code, { allowUrls: true });
-
-      try {
-        const out = await factoryResult.session.submit(redaction.redacted);
+    try {
+      if ("comprehension_answer" in parsed.data) {
+        // Comprehension answers don't need PII redaction — multiple-choice carries no user
+        // text, and free-text answers are short prose typed into a textarea (any URL/email
+        // would be off-topic). Skip redaction entirely.
+        const out = await factoryResult.session.submitComprehension(
+          parsed.data.comprehension_answer,
+        );
         return reply.code(200).send(out);
-      } catch (err) {
-        return mapToolError(reply, err);
       }
-    },
-  );
+      const redaction = await opts.redactor.redact(parsed.data.code, { allowUrls: true });
+      const out = await factoryResult.session.submit(redaction.redacted);
+      return reply.code(200).send(out);
+    } catch (err) {
+      return mapToolError(reply, err);
+    }
+  });
 
   // STORY-042 — POST /v1/tutor/episodes/:id/got-help — flip episodes.got_help for honest-self-mark
   // submissions. The submission itself was already graded normally (tests still run, XP still
@@ -278,6 +298,19 @@ async function loadExisting(
 //   anything else                → re-throw (Fastify error handler maps TokenBudgetExceededError
 //                                  → 429 + everything else → 500)
 function mapToolError(reply: FastifyReply, err: unknown): unknown {
+  // STORY-038a — comprehension dispatch errors.
+  if (err instanceof ComprehensionDepsNotWiredError) {
+    return reply.code(503).send({
+      error: "comprehension_deps_not_wired",
+      message: err.message,
+    });
+  }
+  if (err instanceof GradeInputShapeMismatchError) {
+    return reply.code(400).send({
+      error: "invalid_request",
+      message: err.message,
+    });
+  }
   if (err instanceof IllegalTransitionError) {
     return reply.code(409).send({
       error: "illegal_transition",

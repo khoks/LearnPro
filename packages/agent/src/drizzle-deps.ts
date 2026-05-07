@@ -409,6 +409,29 @@ export function buildGradeDrizzleDeps(opts: BuildDrizzleAgentDepsOptions): Grade
   };
 }
 
+// STORY-038a — production wiring for the comprehension grade dispatch. Wraps the pure
+// `gradeComprehension` agent in @learnpro/agent so it sees the same LLM provider as the
+// rest of the wiring (telemetry sink + budget gate apply uniformly). Mirrors the shape of
+// `buildGradeDrizzleDeps`'s `runGraderAgent` adapter.
+export function buildComprehensionGradeDrizzleDeps(opts: BuildDrizzleAgentDepsOptions) {
+  return {
+    async gradeComprehensionAnswer(input: {
+      episode_id: string;
+      user_id: string;
+      problem: import("@learnpro/problems").ComprehensionProblemDef;
+      answer: import("./comprehension-grade.js").ComprehensionAnswer;
+    }) {
+      const { gradeComprehension } = await import("./comprehension-grade.js");
+      return gradeComprehension({
+        llm: opts.llm,
+        user_id: input.user_id,
+        problem: input.problem,
+        answer: input.answer,
+      });
+    },
+  };
+}
+
 export function buildUpdateProfileDrizzleDeps(
   opts: BuildDrizzleAgentDepsOptions,
 ): UpdateProfileDeps {

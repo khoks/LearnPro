@@ -6,6 +6,7 @@ import {
   type TutorState,
 } from "./state.js";
 import type { GraderAgentRubric } from "./ports.js";
+import type { ComprehensionAnswer } from "./comprehension-grade.js";
 import type { AssignProblemTool, AssignProblemOutput } from "./tools/assign-problem.js";
 import type { GiveHintOutput, GiveHintTool } from "./tools/give-hint.js";
 import type { GradeOutput, GradeTool } from "./tools/grade.js";
@@ -92,6 +93,10 @@ export class TutorSession {
   // updateProfile on finish() so the profile-skill bonus uses it. Cleared on assign() (next
   // episode starts fresh). Not part of the persisted state schema — purely in-memory.
   private _lastGraderRubric: GraderAgentRubric | null = null;
+  // STORY-038a — the most-recent comprehension verdict from submitComprehension(). Passed to
+  // updateProfile on finish() so the comprehension-policy EWMA can absorb the per-episode
+  // signal. Null on implement/debug episodes (or before the first comprehension submit).
+  private _lastComprehensionCorrect: boolean | null = null;
 
   constructor(opts: TutorSessionOptions) {
     this.user_id = opts.user_id;
@@ -123,6 +128,12 @@ export class TutorSession {
     return this._lastGraderRubric;
   }
 
+  // STORY-038a — exposed for the API + tests. The session's most-recent comprehension verdict
+  // (or null when the episode wasn't a comprehension or hasn't been submitted yet).
+  get lastComprehensionCorrect(): boolean | null {
+    return this._lastComprehensionCorrect;
+  }
+
   // STORY-054 — ask the autonomy controller about a single "should I just do this?" branch
   // point. Returns null when no policy is wired (the AlwaysConfirm baseline behaviour: callers
   // must always confirm explicitly through the UI). Otherwise returns the policy's decision so
@@ -145,6 +156,8 @@ export class TutorSession {
     }
     // STORY-034 — start a fresh episode → discard the previous episode's grader rubric.
     this._lastGraderRubric = null;
+    // STORY-038a — same for the comprehension verdict.
+    this._lastComprehensionCorrect = null;
     const out = await this.tools.assignProblem.run({
       user_id: this.user_id,
       org_id: this.org_id,
@@ -188,6 +201,9 @@ export class TutorSession {
     // STORY-034 — capture the latest grader rubric (or null on the legacy unified-tutor codepath)
     // so `finish()` can hand it to the profile-skill update for the rubric-aware bonus.
     this._lastGraderRubric = out.grader ?? null;
+    // STORY-038a — comprehension verdict isn't expected on a `submit` (code) call. Reset to null
+    // in case a previous submit was comprehension and the user re-submitted code.
+    this._lastComprehensionCorrect = out.comprehension?.correct ?? null;
     // Each submit increments attempts. The state machine stays in `grading` until either the user
     // submits again (back to `grading`) or finishes the episode.
     const nextAttempts = this._state.attempts + 1;
@@ -206,6 +222,44 @@ export class TutorSession {
     };
     if (!out.passed) {
       // Failed submit → back to coding so the user can iterate.
+      this._state = { ...this._state, phase: "coding" };
+    }
+    return out;
+  }
+
+  // STORY-038a — comprehension submission. Mirrors `submit()` for code, but the body is a
+  // typed `ComprehensionAnswer` (multiple-choice index OR free-text string). The grade tool
+  // dispatches on `episode.problem.kind === "comprehension"` and routes to the
+  // `comprehensionDeps.gradeComprehensionAnswer` adapter.
+  async submitComprehension(answer: ComprehensionAnswer): Promise<GradeOutput> {
+    if (this._state.phase !== "coding" && this._state.phase !== "grading") {
+      throw new IllegalTransitionError(this._state.phase, "submit");
+    }
+    const episode_id = this._state.episode_id;
+    const out = await this.tools.grade.run({ episode_id, comprehension_answer: answer });
+    // Comprehension submissions never produce a grader rubric (the comprehension axis is the
+    // separate scoring axis). Reset the field so any stale rubric from a previous submit on
+    // the same episode can't bleed into the close.
+    this._lastGraderRubric = null;
+    // STORY-038a — capture the comprehension verdict so finish() can hand it to updateProfile
+    // for the comprehension-policy axis bump. Cleared on assign() (next episode starts fresh).
+    this._lastComprehensionCorrect = out.comprehension?.correct ?? null;
+
+    const nextAttempts = this._state.attempts + 1;
+    this._state = {
+      phase: "grading",
+      user_id: this.user_id,
+      org_id: this.org_id,
+      track_id: this.track_id,
+      episode_id,
+      problem_id: this._state.problem_id,
+      problem_slug: this._state.problem_slug,
+      started_at: this._state.started_at,
+      hints: this._state.hints,
+      attempts: nextAttempts,
+      last_passed: out.passed,
+    };
+    if (!out.passed) {
       this._state = { ...this._state, phase: "coding" };
     }
     return out;
@@ -236,6 +290,7 @@ export class TutorSession {
         hints_used: this._state.hints.length,
         finished_at_ms: this.now(),
         grader_rubric: this._lastGraderRubric,
+        comprehension_correct: this._lastComprehensionCorrect,
       });
       this._state = this.toDoneState("abandoned");
       return out;
@@ -264,6 +319,7 @@ export class TutorSession {
       hints_used: this._state.hints.length,
       finished_at_ms: this.now(),
       grader_rubric: this._lastGraderRubric,
+      comprehension_correct: this._lastComprehensionCorrect,
     });
     this._state = this.toDoneState(final_outcome);
     return out;

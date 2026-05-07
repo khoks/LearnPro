@@ -48,6 +48,11 @@ export const UpdateProfileInputSchema = z.object({
   // STORY-034 — optional grader rubric, propagated from the most-recent submit. Null on the
   // legacy unified-tutor codepath; pass-with-warning when fallback_used=true (no bonus applied).
   grader_rubric: GraderAgentRubricInputSchema.nullable().optional(),
+  // STORY-038a — optional comprehension verdict propagated from the most-recent
+  // submitComprehension(). Null on implement/debug episodes (and on legacy fixtures pre-038a).
+  // When non-null, the per-concept-tag comprehension-policy EWMA absorbs the signal via the
+  // optional `upsertComprehensionScore` dep.
+  comprehension_correct: z.boolean().nullable().optional(),
 });
 export type UpdateProfileInput = z.input<typeof UpdateProfileInputSchema>;
 
@@ -249,6 +254,39 @@ export function createUpdateProfileTool(opts: CreateUpdateProfileToolOptions): U
             });
           } catch {
             // intentional: spaced-repetition write is best-effort; never fail the close.
+          }
+        }
+      }
+
+      // STORY-038a — comprehension-policy axis bump. Fires only when the most-recent submit
+      // was a comprehension answer (i.e. comprehension_correct is non-null) AND the deps adapter
+      // wired the optional upsertComprehensionScore. One upsert per concept_tag on the
+      // problem; got_help propagates so the policy's anti-dark-pattern no-op kicks in.
+      // Best-effort: a hiccup never blocks the close (the user already got their XP + skill
+      // update on the implement/debug axis if applicable; the comprehension axis can absorb
+      // the next signal).
+      if (
+        input.comprehension_correct !== null &&
+        input.comprehension_correct !== undefined &&
+        opts.deps.upsertComprehensionScore
+      ) {
+        for (const slug of conceptSlugs) {
+          try {
+            await opts.deps.upsertComprehensionScore({
+              user_id: ctx.user_id,
+              org_id: ctx.org_id,
+              concept_tag: slug,
+              correct: input.comprehension_correct,
+              // STORY-042 — propagate the got_help marker so the comprehension-policy's
+              // got_help branch no-ops (anti-dark-pattern: never penalize, just don't reward).
+              // Currently always false here — the upstream `wrapWithGotHelpAwareSkillSkip`
+              // skipper applies to skill_scores, not the comprehension axis. A future
+              // wrapper can extend this when the user asks; for now the dep adapter is
+              // responsible for reading `got_help` if it cares.
+              got_help: false,
+            });
+          } catch {
+            // intentional: comprehension axis update is best-effort; never fail the close.
           }
         }
       }
