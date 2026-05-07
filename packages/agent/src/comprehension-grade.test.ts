@@ -157,9 +157,7 @@ describe("gradeComprehension — free_text (LLM grader)", () => {
 
   it("strips ```json fenced blocks before parsing", async () => {
     const llm = makeFakeLlm(
-      "```json\n" +
-        JSON.stringify({ correct: true, reasoning: "Right reasoning." }) +
-        "\n```",
+      "```json\n" + JSON.stringify({ correct: true, reasoning: "Right reasoning." }) + "\n```",
     );
     const result = await gradeComprehension({
       llm,
@@ -198,9 +196,9 @@ describe("ComprehensionAnswerSchema", () => {
   });
 
   it("accepts a free_text payload with non-empty text", () => {
-    expect(
-      ComprehensionAnswerSchema.safeParse({ kind: "free_text", text: "hello" }).success,
-    ).toBe(true);
+    expect(ComprehensionAnswerSchema.safeParse({ kind: "free_text", text: "hello" }).success).toBe(
+      true,
+    );
   });
 
   it("rejects an empty free_text payload", () => {
@@ -225,9 +223,7 @@ describe("ComprehensionGradeResultSchema", () => {
 
 describe("parseComprehensionGraderResponse", () => {
   it("parses a clean JSON response", () => {
-    const out = parseComprehensionGraderResponse(
-      JSON.stringify({ correct: true, reasoning: "x" }),
-    );
+    const out = parseComprehensionGraderResponse(JSON.stringify({ correct: true, reasoning: "x" }));
     expect(out).toEqual({ correct: true, reasoning: "x" });
   });
 

@@ -2,14 +2,14 @@
 id: STORY-038
 title: "Read this code" comprehension exercises (predict, trace, complexity)
 type: story
-status: backlog
+status: done
 priority: P1
 estimate: L
 parent: EPIC-007
 phase: v1
 tags: [problems, content, comprehension, v1]
 created: 2026-04-25
-updated: 2026-04-25
+updated: 2026-05-06
 ---
 
 ## Description
@@ -23,12 +23,20 @@ Three sub-formats:
 
 ## Acceptance criteria
 
-- [ ] Problem-type extension: support "comprehension" question type with multiple-choice or free-text answer.
-- [ ] At least 30 comprehension problems per language for v1 (mix of all three sub-formats).
-- [ ] Free-text answers graded by LLM rubric (factual correctness only — not style).
-- [ ] Multiple-choice answers graded deterministically.
-- [ ] Profile records "comprehension accuracy" as a separate skill axis.
-- [ ] Tutor commentary on free-text answers explains the *why* of the correct answer in 2–3 sentences.
+- [x] Problem-type extension: support "comprehension" question type with multiple-choice or free-text answer.
+- [x] At least 30 comprehension problems per language for v1 (mix of all three sub-formats).
+- [x] Free-text answers graded by LLM rubric (factual correctness only — not style).
+- [x] Multiple-choice answers graded deterministically.
+- [x] Profile records "comprehension accuracy" as a separate skill axis.
+- [x] Tutor commentary on free-text answers explains the *why* of the correct answer in 2–3 sentences.
+
+## Deferred (follow-ups)
+
+- Difficulty calibration for the comprehension axis (different from coding axis) — defer.
+- Multi-step comprehension (e.g. "trace 3 steps") — single-step only for now.
+- Wiring the comprehension grader into the assigner / API tutor route end-to-end — the components
+  ship in this Story; the tutor-route fan-out lives in a follow-up Story so the discriminated
+  assign/grade flow can be threaded carefully.
 
 ## Tasks under this Story
 
@@ -47,3 +55,15 @@ Three sub-formats:
 ## Activity log
 
 - 2026-04-25 — created
+- 2026-05-06 — picked up
+- 2026-05-06 — done. Schema discriminator extended to `kind: "comprehension"` with the three
+  sub-formats (predict_output / trace_execution / reason_property) and two answer formats
+  (multiple_choice / free_text). Migration 0020 widens the `problems.kind` CHECK and adds
+  `comprehension_format` + `answer_format` columns. 38 Python + 30 TS comprehension YAMLs
+  authored. `gradeComprehension()` lives in @learnpro/agent — deterministic for multiple-choice,
+  Haiku LLM rubric for free-text via the new `comprehension-grade-prompt`. Scoring adds a
+  per-concept-tag comprehension-accuracy EWMA axis (mirrors bug-finding shape). UI adds
+  ComprehensionProblemPanel + ComprehensionAnswerWidget + ComprehensionGradeResultPanel +
+  blue "Read" KindBadge. Tutor commentary helper builds the warm/coach-voice "Here is why" and
+  "What good looks like" prose. End-to-end wiring of the comprehension grader into the API
+  tutor route deferred to a follow-up Story (the discriminated assign/grade fan-out needs care).

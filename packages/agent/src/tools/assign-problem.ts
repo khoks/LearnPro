@@ -294,6 +294,11 @@ function countOverlap(tags: ReadonlyArray<string>, due: ReadonlySet<string>): nu
 }
 
 function projectProblem(def: ProblemDef): AssignProblemOutput["problem"] {
+  // STORY-038 — comprehension problems are routed via a separate assign path; the implement+debug
+  // path here doesn't surface them. Narrow defensively so the projection types are sound.
+  if (def.kind === "comprehension") {
+    throw new Error("assign-problem: comprehension problems use a separate route");
+  }
   return {
     name: def.name,
     language: def.language,

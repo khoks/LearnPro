@@ -31,7 +31,8 @@ describe("buildComprehensionCommentary (STORY-038)", () => {
     const out = buildComprehensionCommentary({
       correct: false,
       explanation: "Real explanation goes here.",
-      grader_reasoning: "Grader produced no parsable verdict; defaulting to conservative incorrect.",
+      grader_reasoning:
+        "Grader produced no parsable verdict; defaulting to conservative incorrect.",
       fallback_used: true,
     });
     expect(out.body).not.toContain("Grader produced no parsable verdict");

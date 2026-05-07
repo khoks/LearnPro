@@ -148,7 +148,9 @@ describe("ComprehensionAnswerWidget (STORY-038) — multiple-choice", () => {
         />,
       );
     });
-    const radios = container.querySelectorAll('input[type="radio"]') as NodeListOf<HTMLInputElement>;
+    const radios = container.querySelectorAll(
+      'input[type="radio"]',
+    ) as NodeListOf<HTMLInputElement>;
     expect(radios[0]?.checked).toBe(false);
     expect(radios[1]?.checked).toBe(false);
     expect(radios[2]?.checked).toBe(true);
@@ -169,7 +171,9 @@ describe("ComprehensionAnswerWidget (STORY-038) — multiple-choice", () => {
         />,
       );
     });
-    const radios = container.querySelectorAll('input[type="radio"]') as NodeListOf<HTMLInputElement>;
+    const radios = container.querySelectorAll(
+      'input[type="radio"]',
+    ) as NodeListOf<HTMLInputElement>;
     for (const r of Array.from(radios)) {
       expect(r.disabled).toBe(true);
     }
