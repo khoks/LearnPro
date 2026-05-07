@@ -18,17 +18,20 @@
     "db:seed": "tsx src/seed.ts",
     "db:gc": "tsx src/notifications-gc.ts",
     "db:retention": "tsx src/retention-sweep.ts",
-    "db:import": "tsx bin/import.ts"
+    "db:import": "tsx bin/import.ts",
+    "db:seed:concepts": "tsx bin/seed-concepts.ts"
   },
   "dependencies": {
     "@learnpro/llm": "workspace:*",
     "@learnpro/scoring": "workspace:*",
     "@learnpro/shared": "workspace:*",
     "drizzle-orm": "^0.36.4",
+    "js-yaml": "^4.1.0",
     "pg": "^8.13.1",
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@types/js-yaml": "^4.0.9",
     "@types/node": "^22.10.2",
     "@types/pg": "^8.11.10",
     "drizzle-kit": "^0.28.1",
