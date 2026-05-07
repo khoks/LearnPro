@@ -1,5 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
-import { assignEpisode, finishEpisode, requestHint, submitCode } from "./tutor-api";
+import {
+  assignEpisode,
+  finishEpisode,
+  requestHint,
+  submitCode,
+  submitComprehensionAnswer,
+} from "./tutor-api";
 
 const TRACK_ID = "11111111-1111-4111-8111-111111111111";
 const EPISODE_ID = "22222222-2222-4222-8222-222222222222";
@@ -48,6 +54,66 @@ describe("tutor-api", () => {
     expect(fakeFetch).toHaveBeenCalledWith(
       `/api/tutor/episodes/${EPISODE_ID}/submit`,
       expect.objectContaining({ method: "POST", body: JSON.stringify({ code: "x = 1" }) }),
+    );
+  });
+
+  it("submitComprehensionAnswer posts a multiple-choice index to the submit route (STORY-038a)", async () => {
+    const fakeFetch = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          passed: true,
+          comprehension: { correct: true, fallback_used: false },
+        }),
+        {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        },
+      ),
+    );
+    const r = await submitComprehensionAnswer(
+      EPISODE_ID,
+      { kind: "multiple_choice", selected_index: 2 },
+      { fetchImpl: fakeFetch },
+    );
+    expect(r.ok).toBe(true);
+    expect(fakeFetch).toHaveBeenCalledWith(
+      `/api/tutor/episodes/${EPISODE_ID}/submit`,
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({
+          comprehension_answer: { kind: "multiple_choice", selected_index: 2 },
+        }),
+      }),
+    );
+  });
+
+  it("submitComprehensionAnswer posts a free-text payload (STORY-038a)", async () => {
+    const fakeFetch = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          passed: false,
+          comprehension: { correct: false, fallback_used: false },
+        }),
+        {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        },
+      ),
+    );
+    const r = await submitComprehensionAnswer(
+      EPISODE_ID,
+      { kind: "free_text", text: "exponential subproblems" },
+      { fetchImpl: fakeFetch },
+    );
+    expect(r.ok).toBe(true);
+    expect(fakeFetch).toHaveBeenCalledWith(
+      `/api/tutor/episodes/${EPISODE_ID}/submit`,
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({
+          comprehension_answer: { kind: "free_text", text: "exponential subproblems" },
+        }),
+      }),
     );
   });
 

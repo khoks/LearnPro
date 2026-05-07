@@ -103,6 +103,23 @@ export function submitCode(
   );
 }
 
+// STORY-038a — comprehension answer submission. Mirrors `submitCode` for the comprehension
+// answer shape. The API route dispatches on `episode.problem.kind` and returns the same
+// `GradeOutput` shape (with `comprehension` populated, `hidden_test_results` empty).
+export function submitComprehensionAnswer(
+  episode_id: string,
+  comprehension_answer:
+    | { kind: "multiple_choice"; selected_index: number }
+    | { kind: "free_text"; text: string },
+  opts: TutorApiOptions = {},
+): Promise<TutorResult<GradeOutput>> {
+  return postJson<GradeOutput>(
+    `/api/tutor/episodes/${encodeURIComponent(episode_id)}/submit`,
+    { comprehension_answer },
+    opts,
+  );
+}
+
 export function finishEpisode(
   episode_id: string,
   body: { outcome?: FinalOutcome; reveal_clicked?: boolean } = {},
