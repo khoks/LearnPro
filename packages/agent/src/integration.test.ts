@@ -25,7 +25,6 @@ import {
   type SandboxLanguage,
   type SandboxProvider,
   type SandboxRunChunk,
-  type SandboxRunRequest,
   type SandboxRunResponse,
 } from "@learnpro/sandbox";
 import { ProblemDefSchema, type ProblemDef } from "@learnpro/problems";
@@ -372,7 +371,11 @@ class FakeSandbox implements SandboxProvider {
     this.remainingFailures = opts.failFirst ?? 0;
   }
 
-  async run(req: { language: SandboxLanguage; code?: string; files?: unknown }): Promise<SandboxRunResponse> {
+  async run(req: {
+    language: SandboxLanguage;
+    code?: string;
+    files?: unknown;
+  }): Promise<SandboxRunResponse> {
     const passed = this.alwaysPass || this.remainingFailures <= 0;
     if (!passed && this.remainingFailures > 0) this.remainingFailures -= 1;
     return {

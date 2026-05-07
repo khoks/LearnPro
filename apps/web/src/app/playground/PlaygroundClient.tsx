@@ -92,13 +92,10 @@ export function PlaygroundClient() {
   // STORY-043 — workspace state replaces the single `code` ref.  By default the workspace
   // contains exactly one file (per-language entry filename) so the single-file UX is
   // unchanged for the common case.  Users can add files via the FileTreeSidebar.
-  const [workspace, dispatchWorkspace] = useReducer(
-    reduceWorkspace,
-    null,
-    () =>
-      initWorkspaceFileTree([{ path: ENTRY_FILE.python, content: STARTERS.python }], {
-        entry_file: ENTRY_FILE.python,
-      }),
+  const [workspace, dispatchWorkspace] = useReducer(reduceWorkspace, null, () =>
+    initWorkspaceFileTree([{ path: ENTRY_FILE.python, content: STARTERS.python }], {
+      entry_file: ENTRY_FILE.python,
+    }),
   );
   const [workspaceError, setWorkspaceError] = useState<WorkspaceFileTreeError | null>(null);
   const [running, setRunning] = useState(false);
@@ -282,8 +279,8 @@ export function PlaygroundClient() {
           onClick={onRun}
           disabled={
             running ||
-            (workspace.files.find((f) => f.path === workspace.entry_file)?.content.trim()
-              .length ?? 0) === 0
+            (workspace.files.find((f) => f.path === workspace.entry_file)?.content.trim().length ??
+              0) === 0
           }
           aria-busy={running}
           style={{
@@ -385,8 +382,8 @@ export function PlaygroundClient() {
             />
           </div>
           <p id="playground-editor-help" style={{ margin: 0, fontSize: 12, color: "#666" }}>
-            Keyboard: <kbd>Esc</kbd> exits the editor focus trap; <kbd>Shift</kbd> +{" "}
-            <kbd>F10</kbd> opens the context menu. Editing: <code>{workspace.active_path}</code>.
+            Keyboard: <kbd>Esc</kbd> exits the editor focus trap; <kbd>Shift</kbd> + <kbd>F10</kbd>{" "}
+            opens the context menu. Editing: <code>{workspace.active_path}</code>.
           </p>
         </div>
       </section>

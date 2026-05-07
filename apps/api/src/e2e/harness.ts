@@ -49,6 +49,7 @@ import type {
   SandboxProvider,
   SandboxRunChunk,
   SandboxRunRequest,
+  SandboxRunRequestInput,
   SandboxRunResponse,
 } from "@learnpro/sandbox";
 import { buildServer, type BuildServerOptions } from "../index.js";
@@ -126,10 +127,12 @@ export function buildFakeLLM(opts: BuildFakeLLMOptions): LLMProvider {
 // just that line is enough to convince it.
 export class AlwaysPassSandbox implements SandboxProvider {
   readonly name = "fake-sandbox-always-pass";
-  public lastReq: SandboxRunRequest | null = null;
+  // STORY-043 — accept the union of single-file shorthand and multi-file shape so callers can
+  // pass either without coercion. The post-parse `SandboxRunRequest` is also accepted.
+  public lastReq: SandboxRunRequestInput | null = null;
   public calls = 0;
 
-  async run(req: SandboxRunRequest): Promise<SandboxRunResponse> {
+  async run(req: SandboxRunRequestInput): Promise<SandboxRunResponse> {
     this.lastReq = req;
     this.calls += 1;
     return {

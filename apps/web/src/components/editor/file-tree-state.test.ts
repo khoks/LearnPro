@@ -235,16 +235,16 @@ describe("workspaceFileTreeReducer — set_active / set_content / set_entry", ()
   });
 
   it("rejects set_active / set_content / set_entry on missing files", () => {
+    expect(workspaceFileTreeReducer(SEED, { type: "set_active", path: "ghost" }).error?.code).toBe(
+      "missing_path",
+    );
     expect(
-      workspaceFileTreeReducer(SEED, { type: "set_active", path: "ghost" }).error?.code,
+      workspaceFileTreeReducer(SEED, { type: "set_content", path: "ghost", content: "" }).error
+        ?.code,
     ).toBe("missing_path");
-    expect(
-      workspaceFileTreeReducer(SEED, { type: "set_content", path: "ghost", content: "" })
-        .error?.code,
-    ).toBe("missing_path");
-    expect(
-      workspaceFileTreeReducer(SEED, { type: "set_entry", path: "ghost" }).error?.code,
-    ).toBe("missing_path");
+    expect(workspaceFileTreeReducer(SEED, { type: "set_entry", path: "ghost" }).error?.code).toBe(
+      "missing_path",
+    );
   });
 });
 

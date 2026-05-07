@@ -130,9 +130,7 @@ describe("validateProblems (unit, mock sandbox)", () => {
   // files alongside the harness so cross-file imports resolve.
   it("multi-file problems ship every starter_workspace auxiliary file to the sandbox", async () => {
     const all = loadProblems();
-    const multi = all.find(
-      (p) => p.kind === "implement" && p.starter_workspace !== undefined,
-    );
+    const multi = all.find((p) => p.kind === "implement" && p.starter_workspace !== undefined);
     if (!multi || multi.kind !== "implement" || !multi.starter_workspace) {
       // No multi-file problems on disk yet — skip rather than fail.
       return;
@@ -145,13 +143,10 @@ describe("validateProblems (unit, mock sandbox)", () => {
       throw new Error("expected multi-file shape in sandbox call");
     }
     // Every non-entry file from starter_workspace ships verbatim.
-    const entryPath =
-      multi.entry_file ?? (multi.language === "python" ? "main.py" : "index.ts");
+    const entryPath = multi.entry_file ?? (multi.language === "python" ? "main.py" : "index.ts");
     for (const wsFile of multi.starter_workspace) {
       if (wsFile.path === entryPath) continue;
-      const sentFile = firstCall.files.find(
-        (f: { path: string }) => f.path === wsFile.path,
-      );
+      const sentFile = firstCall.files.find((f: { path: string }) => f.path === wsFile.path);
       expect(sentFile, `auxiliary file ${wsFile.path} should be shipped`).toBeDefined();
       expect(sentFile?.content).toBe(wsFile.content);
     }

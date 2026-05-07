@@ -424,9 +424,7 @@ describe("PistonSandboxProvider.run — STORY-043 multi-file workspace", () => {
       memory_limit_mb: 128,
       output_limit_bytes: 64 * 1024,
     });
-    expect(transport.lastParams?.files.find((f) => f.name === "lib/__init__.py")?.content).toBe(
-      "",
-    );
+    expect(transport.lastParams?.files.find((f) => f.name === "lib/__init__.py")?.content).toBe("");
   });
 });
 

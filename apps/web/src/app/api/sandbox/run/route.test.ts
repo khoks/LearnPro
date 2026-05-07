@@ -99,9 +99,7 @@ describe("POST /api/sandbox/run (Next.js Route Handler)", () => {
     expect(fwBody["language"]).toBe("python");
     const files = fwBody["files"] as Array<{ path: string; content: string }>;
     expect(files).toHaveLength(2);
-    expect(files.find((f) => f.path === "lib/util.py")?.content).toBe(
-      "def helper(): pass\n",
-    );
+    expect(files.find((f) => f.path === "lib/util.py")?.content).toBe("def helper(): pass\n");
     expect(fwBody["entry_file"]).toBe("main.py");
   });
 

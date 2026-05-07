@@ -73,9 +73,7 @@ export function initWorkspaceFileTree(
     seen.add(f.path);
   }
   const initialActive =
-    options.active_path && seen.has(options.active_path)
-      ? options.active_path
-      : files[0]!.path;
+    options.active_path && seen.has(options.active_path) ? options.active_path : files[0]!.path;
   const initialEntry =
     options.entry_file && seen.has(options.entry_file) ? options.entry_file : files[0]!.path;
   return {
@@ -188,7 +186,9 @@ function rename(
       error: { code: "duplicate_path", message: `${to} already exists.` },
     };
   }
-  const nextFiles = state.files.map((f) => (f.path === from ? { path: to, content: f.content } : f));
+  const nextFiles = state.files.map((f) =>
+    f.path === from ? { path: to, content: f.content } : f,
+  );
   // Keep the active pointer pointed at the same logical file after a rename. Same for entry.
   const nextActive = state.active_path === from ? to : state.active_path;
   const nextEntry = state.entry_file === from ? to : state.entry_file;
@@ -198,10 +198,7 @@ function rename(
   };
 }
 
-function remove(
-  state: WorkspaceFileTreeState,
-  path: string,
-): WorkspaceFileTreeReducerResult {
+function remove(state: WorkspaceFileTreeState, path: string): WorkspaceFileTreeReducerResult {
   if (state.files.length === 1) {
     return {
       state,
@@ -222,8 +219,7 @@ function remove(
     state.active_path === path
       ? (nextFiles[Math.max(0, remainingIdx - 1)] ?? nextFiles[0])!.path
       : state.active_path;
-  const nextEntry =
-    state.entry_file === path ? nextFiles[0]!.path : state.entry_file;
+  const nextEntry = state.entry_file === path ? nextFiles[0]!.path : state.entry_file;
   return {
     state: { ...state, files: nextFiles, active_path: nextActive, entry_file: nextEntry },
     error: null,

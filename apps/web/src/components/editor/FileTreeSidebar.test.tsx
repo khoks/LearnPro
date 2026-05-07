@@ -54,10 +54,7 @@ const noop = () => undefined;
 // "input"` doesn't propagate to React.  Use the prototype's native setter to bypass the
 // hijack — same pattern @testing-library/react uses internally.
 function setInputValue(input: HTMLInputElement, value: string) {
-  const setter = Object.getOwnPropertyDescriptor(
-    HTMLInputElement.prototype,
-    "value",
-  )?.set;
+  const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
   setter?.call(input, value);
   input.dispatchEvent(new Event("input", { bubbles: true }));
 }
@@ -232,9 +229,7 @@ describe("FileTreeSidebar — interactions", () => {
         />,
       );
     });
-    const del = container.querySelector(
-      "[data-testid='file-tree-delete']",
-    ) as HTMLButtonElement;
+    const del = container.querySelector("[data-testid='file-tree-delete']") as HTMLButtonElement;
     expect(del.disabled).toBe(true);
   });
 

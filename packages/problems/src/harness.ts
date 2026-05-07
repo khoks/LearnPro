@@ -81,8 +81,7 @@ export function buildMultiFileHarnessForProblem(
   test: HiddenTest,
 ): MultiFileHarnessResult | null {
   if (def.kind !== "implement" || !def.starter_workspace) return null;
-  const entryPath =
-    def.entry_file ?? (def.language === "python" ? "main.py" : "index.ts");
+  const entryPath = def.entry_file ?? (def.language === "python" ? "main.py" : "index.ts");
   const entryContent = buildHarness({ language: def.language, solve_code, test });
   const aux = def.starter_workspace.filter((f) => f.path !== entryPath);
   return {

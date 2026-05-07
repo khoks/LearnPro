@@ -2,10 +2,7 @@
 
 import * as React from "react";
 import { useCallback, useState } from "react";
-import type {
-  WorkspaceFileTreeError,
-  WorkspaceFileTreeState,
-} from "./file-tree-state";
+import type { WorkspaceFileTreeError, WorkspaceFileTreeState } from "./file-tree-state";
 
 // Reference React explicitly so vitest's classic-runtime JSX transform doesn't strip the import.
 void React;
@@ -239,17 +236,8 @@ interface FileRowProps {
 }
 
 function FileRow(props: FileRowProps): React.ReactElement {
-  const {
-    path,
-    active,
-    entry,
-    disabled,
-    canDelete,
-    onClick,
-    onRename,
-    onDelete,
-    onMakeEntry,
-  } = props;
+  const { path, active, entry, disabled, canDelete, onClick, onRename, onDelete, onMakeEntry } =
+    props;
   return (
     <div
       data-testid="file-tree-row"

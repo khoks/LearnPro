@@ -1,8 +1,4 @@
-import type {
-  SandboxRunChunk,
-  SandboxRunRequestInput,
-  SandboxRunResponse,
-} from "./types.js";
+import type { SandboxRunChunk, SandboxRunRequestInput, SandboxRunResponse } from "./types.js";
 
 export interface SandboxProvider {
   readonly name: string;
