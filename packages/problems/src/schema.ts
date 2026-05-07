@@ -116,11 +116,16 @@ export const StarterWorkspaceFileSchema = z.object({
 });
 export type StarterWorkspaceFile = z.infer<typeof StarterWorkspaceFileSchema>;
 
+// STORY-039 — `variant_of` references the source problem's slug. Present only on
+// LLM-generated variants of curated seed problems. Carrying it on the `ProblemDef` itself
+// (rather than as a side-channel) means a generated variant validates against the same Zod
+// schema as a hand-authored YAML, and the cache table stores the def verbatim.
 export const ImplementProblemDefSchema = z.object({
   kind: z.literal("implement"),
   ...codingProblemFields,
   starter_workspace: z.array(StarterWorkspaceFileSchema).min(1).max(64).optional(),
   entry_file: z.string().min(1).optional(),
+  variant_of: ProblemSlugSchema.optional(),
 });
 export type ImplementProblemDef = z.infer<typeof ImplementProblemDefSchema>;
 
@@ -136,6 +141,10 @@ export const DebugProblemDefSchema = z.object({
   ...codingProblemFields,
   bug_archetype: BugArchetypeSchema,
   expected_behavior: z.string().min(1),
+  // STORY-039 — same provenance pointer as the `implement` branch. Debug variants are out of
+  // v1 scope (the agent only generates implement variants), but reserving the slot keeps the
+  // schema consistent for future expansion.
+  variant_of: ProblemSlugSchema.optional(),
 });
 export type DebugProblemDef = z.infer<typeof DebugProblemDefSchema>;
 

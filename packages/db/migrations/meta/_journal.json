@@ -148,6 +148,13 @@
       "when": 1779700000000,
       "tag": "0020_comprehension_problems",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1780000000000,
+      "tag": "0023_problem_variants",
+      "breakpoints": true
     }
   ]
 }
