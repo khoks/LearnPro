@@ -803,3 +803,189 @@ describe("createUpdateProfileTool: spaced-repetition (STORY-031)", () => {
     expect(a.reviews_written).toEqual(b.reviews_written);
   });
 });
+
+describe("applyGraderBonus (STORY-034)", () => {
+  it("returns 0 when the rubric is null (legacy unified-tutor codepath)", async () => {
+    const { applyGraderBonus } = await import("./update-profile.js");
+    expect(applyGraderBonus({ rubric: null, passed: true })).toBe(0);
+    expect(applyGraderBonus({ rubric: undefined, passed: true })).toBe(0);
+  });
+
+  it("returns 0 when fallback_used=true (untrustworthy rubric)", async () => {
+    const { applyGraderBonus } = await import("./update-profile.js");
+    expect(
+      applyGraderBonus({
+        rubric: {
+          pass: true,
+          rubric: { idiomatic: 5, efficiency: 5, test_coverage_thinking: 5 },
+          reasoning: "x",
+          fallback_used: true,
+        },
+        passed: true,
+      }),
+    ).toBe(0);
+  });
+
+  it("returns 0 when the user didn't pass (rubric is advisory only on failures)", async () => {
+    const { applyGraderBonus } = await import("./update-profile.js");
+    expect(
+      applyGraderBonus({
+        rubric: {
+          pass: false,
+          rubric: { idiomatic: 5, efficiency: 5, test_coverage_thinking: 5 },
+          reasoning: "x",
+          fallback_used: false,
+        },
+        passed: false,
+      }),
+    ).toBe(0);
+  });
+
+  it("returns 0 on a 3/3/3 (workmanlike) rubric", async () => {
+    const { applyGraderBonus } = await import("./update-profile.js");
+    expect(
+      applyGraderBonus({
+        rubric: {
+          pass: true,
+          rubric: { idiomatic: 3, efficiency: 3, test_coverage_thinking: 3 },
+          reasoning: "ok",
+          fallback_used: false,
+        },
+        passed: true,
+      }),
+    ).toBe(0);
+  });
+
+  it("rewards a perfect 5/5/5 rubric with a positive clamped bonus", async () => {
+    const { applyGraderBonus, GRADER_BONUS_CLAMP } = await import("./update-profile.js");
+    const out = applyGraderBonus({
+      rubric: {
+        pass: true,
+        rubric: { idiomatic: 5, efficiency: 5, test_coverage_thinking: 5 },
+        reasoning: "x",
+        fallback_used: false,
+      },
+      passed: true,
+    });
+    expect(out).toBeGreaterThan(0);
+    expect(out).toBeLessThanOrEqual(GRADER_BONUS_CLAMP);
+  });
+
+  it("docks a 1/1/1 rubric below zero (not effusive — honest)", async () => {
+    const { applyGraderBonus, GRADER_BONUS_CLAMP } = await import("./update-profile.js");
+    const out = applyGraderBonus({
+      rubric: {
+        pass: true,
+        rubric: { idiomatic: 1, efficiency: 1, test_coverage_thinking: 1 },
+        reasoning: "x",
+        fallback_used: false,
+      },
+      passed: true,
+    });
+    expect(out).toBeLessThan(0);
+    expect(out).toBeGreaterThanOrEqual(-GRADER_BONUS_CLAMP);
+  });
+
+  it("blends mixed scores — high idiomatic + low efficiency + neutral coverage", async () => {
+    const { applyGraderBonus } = await import("./update-profile.js");
+    const out = applyGraderBonus({
+      rubric: {
+        pass: true,
+        rubric: { idiomatic: 5, efficiency: 1, test_coverage_thinking: 3 },
+        reasoning: "x",
+        fallback_used: false,
+      },
+      passed: true,
+    });
+    // mean delta = ((5-3)/2 + (1-3)/2 + (3-3)/2) / 3 = (1 + -1 + 0) / 3 = 0 → bonus 0
+    expect(out).toBe(0);
+  });
+});
+
+describe("createUpdateProfileTool: STORY-034 grader rubric → skill bonus", () => {
+  it("applies a positive bonus to skill_updates[*].next_skill when the grader scores high", async () => {
+    const deps = fakeDeps({});
+    const tool = createUpdateProfileTool({ deps });
+    const out = await tool.run({
+      episode_id: EPISODE_ID,
+      outcome: "passed",
+      passed: true,
+      submit_count: 1,
+      hints_used: 0,
+      finished_at_ms: 1700000060000,
+      grader_rubric: {
+        pass: true,
+        rubric: { idiomatic: 5, efficiency: 5, test_coverage_thinking: 5 },
+        reasoning: "Hash-map idiomatic.",
+        fallback_used: false,
+      },
+    });
+    for (const u of out.skill_updates) {
+      expect(u.grader_bonus ?? 0).toBeGreaterThan(0);
+      expect(u.next_skill).toBeGreaterThan(u.prev_skill);
+    }
+  });
+
+  it("grader_bonus = 0 on output when no rubric is supplied (backward-compatible)", async () => {
+    const deps = fakeDeps({});
+    const tool = createUpdateProfileTool({ deps });
+    const out = await tool.run({
+      episode_id: EPISODE_ID,
+      outcome: "passed",
+      passed: true,
+      submit_count: 1,
+      hints_used: 0,
+      finished_at_ms: 1700000060000,
+    });
+    for (const u of out.skill_updates) {
+      expect(u.grader_bonus ?? 0).toBe(0);
+    }
+  });
+
+  it("clamps next_skill to [0,1] even when bonus would push above 1", async () => {
+    // Seed the prior skill close to 1 to verify clamp.
+    const deps = fakeDeps({
+      prior_skill: { concept_id: "concept-arrays", skill: 0.99, confidence: 0.9, attempts: 10 },
+    });
+    const tool = createUpdateProfileTool({ deps });
+    const out = await tool.run({
+      episode_id: EPISODE_ID,
+      outcome: "passed",
+      passed: true,
+      submit_count: 1,
+      hints_used: 0,
+      finished_at_ms: 1700000060000,
+      grader_rubric: {
+        pass: true,
+        rubric: { idiomatic: 5, efficiency: 5, test_coverage_thinking: 5 },
+        reasoning: "x",
+        fallback_used: false,
+      },
+    });
+    for (const u of out.skill_updates) {
+      expect(u.next_skill).toBeLessThanOrEqual(1);
+    }
+  });
+
+  it("ignores the rubric when the user did not pass (rubric is advisory on failures)", async () => {
+    const deps = fakeDeps({});
+    const tool = createUpdateProfileTool({ deps });
+    const out = await tool.run({
+      episode_id: EPISODE_ID,
+      outcome: "failed",
+      passed: false,
+      submit_count: 3,
+      hints_used: 1,
+      finished_at_ms: 1700000180000,
+      grader_rubric: {
+        pass: false,
+        rubric: { idiomatic: 5, efficiency: 5, test_coverage_thinking: 5 },
+        reasoning: "x",
+        fallback_used: false,
+      },
+    });
+    for (const u of out.skill_updates) {
+      expect(u.grader_bonus ?? 0).toBe(0);
+    }
+  });
+});

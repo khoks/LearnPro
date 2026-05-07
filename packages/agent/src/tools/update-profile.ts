@@ -13,8 +13,27 @@ import {
   type FsrsCardState,
   type XpPolicyConfig,
 } from "@learnpro/scoring";
-import type { UpdateProfileDeps } from "../ports.js";
+import type { GraderAgentRubric, UpdateProfileDeps } from "../ports.js";
 import { FinalOutcomeSchema, type FinalOutcome } from "../state.js";
+
+// STORY-034 — optional grader rubric carried from the most-recent submit() call. When present,
+// `applyGraderBonus` adds a small per-concept skill delta (high idiomatic / efficiency rewards).
+const GraderAgentRubricInputSchema = z.object({
+  pass: z.boolean(),
+  rubric: z.object({
+    idiomatic: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4), z.literal(5)]),
+    efficiency: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4), z.literal(5)]),
+    test_coverage_thinking: z.union([
+      z.literal(1),
+      z.literal(2),
+      z.literal(3),
+      z.literal(4),
+      z.literal(5),
+    ]),
+  }),
+  reasoning: z.string().min(1),
+  fallback_used: z.boolean(),
+});
 
 export const UpdateProfileInputSchema = z.object({
   episode_id: z.string().uuid(),
@@ -26,6 +45,9 @@ export const UpdateProfileInputSchema = z.object({
   // hand them in directly.
   hints_used: z.number().int().min(0),
   finished_at_ms: z.number().int().nonnegative(),
+  // STORY-034 — optional grader rubric, propagated from the most-recent submit. Null on the
+  // legacy unified-tutor codepath; pass-with-warning when fallback_used=true (no bonus applied).
+  grader_rubric: GraderAgentRubricInputSchema.nullable().optional(),
 });
 export type UpdateProfileInput = z.input<typeof UpdateProfileInputSchema>;
 
@@ -45,6 +67,10 @@ export const UpdateProfileOutputSchema = z.object({
       next_skill: z.number(),
       next_confidence: z.number(),
       attempts: z.number().int().min(0),
+      // STORY-034 — additive delta applied on top of the EWMA result from the rubric scores.
+      // Optional for backward compatibility with fixtures pre-grader split. The tool's
+      // runtime path always sets it (0 or a clamped delta).
+      grader_bonus: z.number().optional(),
     }),
   ),
   // STORY-022 — XP grant for this episode. `awarded` is false when an idempotent re-run hit the
@@ -158,6 +184,14 @@ export function createUpdateProfileTool(opts: CreateUpdateProfileToolOptions): U
         expected_time_ms: ctx.problem.expected_median_time_to_solve_ms,
       });
 
+      // STORY-034 — apply the grader rubric ONCE (it's per-submission, not per-concept), then
+      // distribute the same bonus to each concept tag. Skip when the grader didn't run, the
+      // grader fell back, or the user didn't pass (we don't reward un-passed submissions).
+      const graderBonus = applyGraderBonus({
+        rubric: input.grader_rubric ?? null,
+        passed: input.passed,
+      });
+
       for (const slug of conceptSlugs) {
         const concept_id = idMap.get(slug);
         if (!concept_id) continue;
@@ -166,7 +200,11 @@ export function createUpdateProfileTool(opts: CreateUpdateProfileToolOptions): U
             user_id: ctx.user_id,
             concept_id,
           })) ?? coldStartSkill(concept_id);
-        const next = updateSkillScore(prev, signal, config);
+        const baseNext = updateSkillScore(prev, signal, config);
+        const next: ConceptSkill = {
+          ...baseNext,
+          skill: clamp01(baseNext.skill + graderBonus),
+        };
         await opts.deps.upsertSkillScore({
           user_id: ctx.user_id,
           org_id: ctx.org_id,
@@ -180,6 +218,7 @@ export function createUpdateProfileTool(opts: CreateUpdateProfileToolOptions): U
           next_skill: next.skill,
           next_confidence: next.confidence,
           attempts: next.attempts,
+          grader_bonus: graderBonus,
         });
 
         // STORY-031 — FSRS review write. Best-effort, swallows DB errors so a hiccup never
@@ -299,4 +338,45 @@ export function createUpdateProfileTool(opts: CreateUpdateProfileToolOptions): U
 
 export function coldStartSkill(concept_id: string): ConceptSkill {
   return { concept_id, skill: 0.5, confidence: 0, attempts: 0 };
+}
+
+// STORY-034 — translate a grader rubric (1-5 ints) into a small skill bonus delta.
+// Each dimension contributes (score - 3) / 2 * GRADER_BONUS_PER_DIMENSION; the dimensions are
+// averaged so the total stays bounded. With GRADER_BONUS_PER_DIMENSION = 0.04, a perfect 5/5/5
+// rubric adds +0.04 to skill, a 1/1/1 rubric subtracts -0.04, and a workmanlike 3/3/3 adds 0.
+// The bonus is clamped to ±0.05 so a single rubric never dominates the EWMA's per-episode delta.
+//
+// Skipped when:
+//   - the grader didn't run (rubric === null) → 0
+//   - the grader fell back to neutral 3/3/3 (fallback_used=true) → 0
+//   - the user didn't pass — rubric scores on a failing submission are advisory only (the
+//     base EWMA already reflects the failure)
+export const GRADER_BONUS_PER_DIMENSION = 0.04;
+export const GRADER_BONUS_CLAMP = 0.05;
+
+export function applyGraderBonus(args: {
+  rubric: GraderAgentRubric | null | undefined;
+  passed: boolean;
+}): number {
+  if (!args.passed) return 0;
+  const r = args.rubric;
+  if (!r) return 0;
+  if (r.fallback_used) return 0;
+  const dims = [r.rubric.idiomatic, r.rubric.efficiency, r.rubric.test_coverage_thinking];
+  const meanDelta = dims.reduce((acc, n) => acc + (n - 3) / 2, 0) / dims.length;
+  const bonus = meanDelta * GRADER_BONUS_PER_DIMENSION;
+  if (bonus > GRADER_BONUS_CLAMP) return GRADER_BONUS_CLAMP;
+  if (bonus < -GRADER_BONUS_CLAMP) return -GRADER_BONUS_CLAMP;
+  return round6(bonus);
+}
+
+function clamp01(n: number): number {
+  if (!Number.isFinite(n)) return 0;
+  if (n < 0) return 0;
+  if (n > 1) return 1;
+  return n;
+}
+
+function round6(n: number): number {
+  return Math.round(n * 1_000_000) / 1_000_000;
 }

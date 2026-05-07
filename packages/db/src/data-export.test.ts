@@ -441,6 +441,10 @@ function makeEpisode(overrides: Partial<Episode> = {}): Episode {
     embedding: null,
     interactions_summary: null,
     got_help: false,
+    rubric_idiomatic: null,
+    rubric_efficiency: null,
+    rubric_test_coverage: null,
+    rubric_reasoning: null,
     ...overrides,
   };
 }

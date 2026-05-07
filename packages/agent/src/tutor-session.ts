@@ -5,6 +5,7 @@ import {
   type HintRung,
   type TutorState,
 } from "./state.js";
+import type { GraderAgentRubric } from "./ports.js";
 import type { AssignProblemTool, AssignProblemOutput } from "./tools/assign-problem.js";
 import type { GiveHintOutput, GiveHintTool } from "./tools/give-hint.js";
 import type { GradeOutput, GradeTool } from "./tools/grade.js";
@@ -87,6 +88,10 @@ export class TutorSession {
   private readonly autonomyPolicy: AsyncAutonomyPolicy | undefined;
   private readonly episodeCount: number;
   private _state: TutorState;
+  // STORY-034 — the most-recent grader rubric from this session's submit() call. Passed to
+  // updateProfile on finish() so the profile-skill bonus uses it. Cleared on assign() (next
+  // episode starts fresh). Not part of the persisted state schema — purely in-memory.
+  private _lastGraderRubric: GraderAgentRubric | null = null;
 
   constructor(opts: TutorSessionOptions) {
     this.user_id = opts.user_id;
@@ -112,6 +117,12 @@ export class TutorSession {
     return this._state;
   }
 
+  // STORY-034 — exposed for the API + tests. The session's most-recent grader output (or null
+  // when the grader wasn't wired or hasn't run yet on this episode).
+  get lastGraderRubric(): GraderAgentRubric | null {
+    return this._lastGraderRubric;
+  }
+
   // STORY-054 — ask the autonomy controller about a single "should I just do this?" branch
   // point. Returns null when no policy is wired (the AlwaysConfirm baseline behaviour: callers
   // must always confirm explicitly through the UI). Otherwise returns the policy's decision so
@@ -132,6 +143,8 @@ export class TutorSession {
     if (this._state.phase !== "idle" && this._state.phase !== "done") {
       throw new IllegalTransitionError(this._state.phase, "assign");
     }
+    // STORY-034 — start a fresh episode → discard the previous episode's grader rubric.
+    this._lastGraderRubric = null;
     const out = await this.tools.assignProblem.run({
       user_id: this.user_id,
       org_id: this.org_id,
@@ -172,6 +185,9 @@ export class TutorSession {
     }
     const episode_id = this._state.episode_id;
     const out = await this.tools.grade.run({ episode_id, code });
+    // STORY-034 — capture the latest grader rubric (or null on the legacy unified-tutor codepath)
+    // so `finish()` can hand it to the profile-skill update for the rubric-aware bonus.
+    this._lastGraderRubric = out.grader ?? null;
     // Each submit increments attempts. The state machine stays in `grading` until either the user
     // submits again (back to `grading`) or finishes the episode.
     const nextAttempts = this._state.attempts + 1;
@@ -219,6 +235,7 @@ export class TutorSession {
         submit_count: Math.max(1, this._state.attempts),
         hints_used: this._state.hints.length,
         finished_at_ms: this.now(),
+        grader_rubric: this._lastGraderRubric,
       });
       this._state = this.toDoneState("abandoned");
       return out;
@@ -246,6 +263,7 @@ export class TutorSession {
       submit_count: Math.max(1, this._state.attempts),
       hints_used: this._state.hints.length,
       finished_at_ms: this.now(),
+      grader_rubric: this._lastGraderRubric,
     });
     this._state = this.toDoneState(final_outcome);
     return out;

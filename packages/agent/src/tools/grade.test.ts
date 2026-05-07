@@ -1,6 +1,11 @@
 import type { ProblemDef } from "@learnpro/problems";
 import { describe, expect, it, vi } from "vitest";
-import type { GradeDeps, GradeEpisodeContext, HiddenTestResult } from "../ports.js";
+import type {
+  GradeDeps,
+  GradeEpisodeContext,
+  GraderAgentRubric,
+  HiddenTestResult,
+} from "../ports.js";
 import { aggregatePassed, clampRubric, createGradeTool, summarizeFailingTests } from "./grade.js";
 import { EpisodeNotFoundError } from "./give-hint.js";
 
@@ -31,8 +36,19 @@ function fakeDeps(opts: {
     rubric: { correctness: number; idiomatic: number; edge_case_coverage: number };
     prose_explanation: string;
   };
-}): GradeDeps & { recordedSubmissions: number; rubricMock: ReturnType<typeof vi.fn> } {
+  // STORY-034 — when supplied, the fake wires `runGraderAgent` to return this rubric. When
+  // `graderThrows` is true the wired runner raises so tests can assert best-effort swallow.
+  grader?: GraderAgentRubric;
+  graderThrows?: boolean;
+  persistThrows?: boolean;
+}): GradeDeps & {
+  recordedSubmissions: number;
+  rubricMock: ReturnType<typeof vi.fn>;
+  graderMock: ReturnType<typeof vi.fn>;
+  persistedRubrics: GraderAgentRubric[];
+} {
   let recordedSubmissions = 0;
+  const persistedRubrics: GraderAgentRubric[] = [];
   const rubricMock = vi.fn(
     async () =>
       opts.rubric ?? {
@@ -40,8 +56,27 @@ function fakeDeps(opts: {
         prose_explanation: "solid solve",
       },
   );
-  return {
+  const graderMock = vi.fn(async (): Promise<GraderAgentRubric> => {
+    if (opts.graderThrows) throw new Error("grader boom");
+    return (
+      opts.grader ?? {
+        pass: true,
+        rubric: { idiomatic: 4, efficiency: 4, test_coverage_thinking: 4 },
+        reasoning: "Reasonable solve.",
+        fallback_used: false,
+      }
+    );
+  });
+  const wireGrader = opts.grader !== undefined || opts.graderThrows === true;
+  const deps: GradeDeps & {
+    recordedSubmissions: number;
+    rubricMock: ReturnType<typeof vi.fn>;
+    graderMock: ReturnType<typeof vi.fn>;
+    persistedRubrics: GraderAgentRubric[];
+  } = {
     rubricMock,
+    graderMock,
+    persistedRubrics,
     get recordedSubmissions() {
       return recordedSubmissions;
     },
@@ -70,6 +105,14 @@ function fakeDeps(opts: {
       return { submission_id: SUBMISSION_ID };
     },
   };
+  if (wireGrader) {
+    deps.runGraderAgent = graderMock;
+    deps.persistGraderRubric = async (input) => {
+      if (opts.persistThrows) throw new Error("persist boom");
+      persistedRubrics.push(input.rubric);
+    };
+  }
+  return deps;
 }
 
 describe("aggregatePassed", () => {
@@ -171,5 +214,57 @@ describe("createGradeTool", () => {
     const tool = createGradeTool({ deps });
     await tool.run({ episode_id: EPISODE_ID, code: "def solve(): pass" });
     expect(deps.rubricMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("STORY-034: when grader is wired, runs it AFTER tests-as-floor + AFTER unified rubric", async () => {
+    const grader: GraderAgentRubric = {
+      pass: true,
+      rubric: { idiomatic: 5, efficiency: 4, test_coverage_thinking: 3 },
+      reasoning: "Hash-map solve.",
+      fallback_used: false,
+    };
+    const deps = fakeDeps({ grader });
+    const tool = createGradeTool({ deps });
+    const out = await tool.run({ episode_id: EPISODE_ID, code: "def solve(): return [0,1]" });
+
+    expect(deps.graderMock).toHaveBeenCalledTimes(1);
+    expect(out.grader).toEqual(grader);
+    // Grader receives the test_results from the upstream check.
+    const callArg = deps.graderMock.mock.calls[0]?.[0] as
+      | { test_results: HiddenTestResult[] }
+      | undefined;
+    expect(callArg?.test_results).toHaveLength(2);
+    // Persistence happened with the same rubric.
+    expect(deps.persistedRubrics).toHaveLength(1);
+    expect(deps.persistedRubrics[0]).toEqual(grader);
+  });
+
+  it("STORY-034: grader output is null when the deps don't wire it (legacy unified-tutor codepath)", async () => {
+    const deps = fakeDeps({});
+    const tool = createGradeTool({ deps });
+    const out = await tool.run({ episode_id: EPISODE_ID, code: "def solve(): return [0,1]" });
+    expect(out.grader ?? null).toBeNull();
+  });
+
+  it("STORY-034: grader hiccup → grader=null, submission still records (best-effort)", async () => {
+    const deps = fakeDeps({ graderThrows: true });
+    const tool = createGradeTool({ deps });
+    const out = await tool.run({ episode_id: EPISODE_ID, code: "def solve(): return [0,1]" });
+    expect(out.grader ?? null).toBeNull();
+    expect(deps.recordedSubmissions).toBe(1);
+  });
+
+  it("STORY-034: rubric persistence hiccup doesn't fail the close", async () => {
+    const grader: GraderAgentRubric = {
+      pass: true,
+      rubric: { idiomatic: 4, efficiency: 4, test_coverage_thinking: 4 },
+      reasoning: "ok",
+      fallback_used: false,
+    };
+    const deps = fakeDeps({ grader, persistThrows: true });
+    const tool = createGradeTool({ deps });
+    const out = await tool.run({ episode_id: EPISODE_ID, code: "def solve(): return [0,1]" });
+    expect(out.grader).toEqual(grader);
+    expect(deps.recordedSubmissions).toBe(1);
   });
 });

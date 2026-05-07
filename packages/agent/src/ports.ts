@@ -107,6 +107,24 @@ export interface GradeDeps {
     passed: boolean;
     runtime_ms: number;
   }): Promise<{ submission_id: string }>;
+
+  // STORY-034 — split critique/grader agent. Optional: when wired, the tool calls this AFTER the
+  // tests-as-floor pass/fail check; the production adapter drives `gradeAgent` (Haiku, cooler
+  // tone) and persists the rubric to the episode row. When unwired, the tool skips the grader
+  // step (GradeOutput.grader is null) — keeps the unified-tutor codepath as a fallback for the
+  // A/B comparison and for tests that don't want to mock yet another LLM.
+  runGraderAgent?(input: {
+    episode_id: string;
+    user_id: string;
+    org_id: string;
+    problem: ProblemDef;
+    user_code: string;
+    test_results: HiddenTestResult[];
+  }): Promise<GraderAgentRubric>;
+
+  // STORY-034 — persists the grader's rubric to the episode row. Optional, mirrors
+  // `runGraderAgent` so adapters can wire either both or neither.
+  persistGraderRubric?(input: { episode_id: string; rubric: GraderAgentRubric }): Promise<void>;
 }
 
 export interface GradeEpisodeContext {
@@ -129,6 +147,20 @@ export interface GradeRubric {
   correctness: number;
   idiomatic: number;
   edge_case_coverage: number;
+}
+
+// STORY-034 — split critique/grader agent rubric on the wire. Mirrors the `gradeAgent` return
+// shape but typed here in `ports.ts` so this leaf module stays the source-of-truth for cross-tool
+// types (the agent module imports this type).
+export interface GraderAgentRubric {
+  pass: boolean;
+  rubric: {
+    idiomatic: 1 | 2 | 3 | 4 | 5;
+    efficiency: 1 | 2 | 3 | 4 | 5;
+    test_coverage_thinking: 1 | 2 | 3 | 4 | 5;
+  };
+  reasoning: string;
+  fallback_used: boolean;
 }
 
 export interface UpdateProfileDeps {
