@@ -208,6 +208,21 @@ export {
   type LoadConceptsOptions,
 } from "./concepts-seed.js";
 export {
+  CheatsheetEntriesSchema,
+  CheatsheetEntrySchema,
+  CheatsheetEpisodesCoveredSchema,
+  createCheatsheet,
+  findCheatsheetForEpisodes,
+  getCheatsheetForUser,
+  listCheatsheetsForUser,
+  updateCheatsheetMarkdown,
+  type CheatsheetEntry,
+  type CheatsheetView,
+  type CreateCheatsheetInput,
+  type ListCheatsheetsOptions,
+  type UpdateCheatsheetMarkdownOptions,
+} from "./cheatsheets.js";
+export {
   PREREQUISITES_YAML_PATH,
   loadPrerequisitesFromYaml,
   type LoadPrerequisitesOptions,

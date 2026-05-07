@@ -647,6 +647,31 @@ export const profile_insights = pgTable(
   }),
 );
 
+// STORY-041 — per-session personal cheatsheet. One row per generated cheatsheet derived from
+// one or more episodes the user just closed. `episodes_covered` is a jsonb array of episode
+// IDs. `entries` is the jsonb array of `{ concept, definition, code_example, gotcha }`
+// objects (max ~6 entries — the agent prompt enforces the cap). `markdown_content` holds the
+// rendered markdown the user can edit in place; `updated_at` tracks edits so the profile
+// history can show "edited" markers when relevant.
+export const cheatsheets = pgTable(
+  "cheatsheets",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    org_id: orgId(),
+    user_id: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    episodes_covered: jsonb("episodes_covered").notNull(),
+    entries: jsonb("entries").notNull(),
+    markdown_content: text("markdown_content").notNull(),
+    created_at: createdAt(),
+    updated_at: updatedAt(),
+  },
+  (t) => ({
+    user_created_idx: index("cheatsheets_user_created_idx").on(t.user_id, t.created_at),
+  }),
+);
+
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type Account = typeof accounts.$inferSelect;
@@ -691,6 +716,8 @@ export type PortfolioPush = typeof portfolio_pushes.$inferSelect;
 export type NewPortfolioPush = typeof portfolio_pushes.$inferInsert;
 export type ProfileInsight = typeof profile_insights.$inferSelect;
 export type NewProfileInsight = typeof profile_insights.$inferInsert;
+export type Cheatsheet = typeof cheatsheets.$inferSelect;
+export type NewCheatsheet = typeof cheatsheets.$inferInsert;
 
 export const ALL_TABLES = [
   organizations,
@@ -716,6 +743,7 @@ export const ALL_TABLES = [
   concept_reviews,
   portfolio_pushes,
   profile_insights,
+  cheatsheets,
 ] as const;
 
 // Auth.js tables (`accounts`, `sessions`, `verificationTokens`) are intentionally NOT in this
@@ -741,6 +769,7 @@ export const ORG_SCOPED_TABLES = [
   concept_reviews,
   portfolio_pushes,
   profile_insights,
+  cheatsheets,
 ] as const;
 
 export const PGVECTOR_PROLOGUE_SQL = sql`CREATE EXTENSION IF NOT EXISTS vector`;

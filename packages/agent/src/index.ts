@@ -172,3 +172,14 @@ export {
   type ProfileInsightsAgentOutput,
   type ProfileInsightsResult,
 } from "./profile-insights.js";
+export {
+  CheatsheetAgentResultSchema,
+  CheatsheetEntrySchema as CheatsheetAgentEntrySchema,
+  DEFAULT_CHEATSHEET_MAX_ENTRIES,
+  cheatsheetAgent,
+  entriesToMarkdown,
+  parseCheatsheetResponse,
+  type CheatsheetAgentInput,
+  type CheatsheetAgentResult,
+  type CheatsheetEntry as CheatsheetAgentEntry,
+} from "./cheatsheet.js";
