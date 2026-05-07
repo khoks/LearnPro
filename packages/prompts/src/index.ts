@@ -58,3 +58,10 @@ export {
   type ProfileInsightsEpisodeShape,
   type ProfileInsightsPromptOptions,
 } from "./profile-insights-prompt.js";
+export {
+  CHEATSHEET_PROMPT_VERSION,
+  buildCheatsheetSystemPrompt,
+  buildCheatsheetUserPrompt,
+  type CheatsheetEpisodeInput,
+  type CheatsheetPromptOptions,
+} from "./cheatsheet-prompt.js";
