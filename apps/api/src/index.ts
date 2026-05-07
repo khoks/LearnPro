@@ -62,6 +62,11 @@ import {
 import { registerEmailDigestRoutes } from "./email-digest.js";
 import { registerLlmModeRoutes } from "./llm-mode.js";
 import {
+  buildDbCheatsheetEpisodeFetcher,
+  registerCheatsheetRoutes,
+  type CheatsheetEpisodeFetcher,
+} from "./cheatsheet.js";
+import {
   loadExportWindowMs,
   noDbExporter,
   registerExportRoute,
@@ -209,6 +214,12 @@ export interface BuildServerOptions {
   // STORY-033 — optional DB handle for the `GET /v1/profile-insights` route. Same wiring
   // pattern as the others; production shares the single `db` instance via defaultsFromEnv.
   profileInsightsDb?: import("@learnpro/db").LearnProDb;
+  // STORY-041 — cheatsheet routes. When supplied (alongside `cheatsheetEpisodeFetcher`),
+  // registers GET/POST/PUT /v1/cheatsheets + the export route. Tests inject a fake DB +
+  // fake fetcher; production wires `buildDbCheatsheetEpisodeFetcher(db)` via
+  // `defaultsFromEnv()`.
+  cheatsheetDb?: import("@learnpro/db").LearnProDb;
+  cheatsheetEpisodeFetcher?: CheatsheetEpisodeFetcher;
 }
 
 // Default impl when no store is provided — drops events on the floor. Useful for tests and
@@ -510,6 +521,17 @@ export function buildServer(opts: BuildServerOptions = {}) {
     registerProfileInsightsRoutes(app, { db: opts.profileInsightsDb, sessionResolver });
   }
 
+  // STORY-041 — cheatsheet routes. Wired only when both the DB and the per-episode fetcher
+  // are supplied; the fetcher is the production-versus-test injection seam.
+  if (opts.cheatsheetDb && opts.cheatsheetEpisodeFetcher) {
+    registerCheatsheetRoutes(app, {
+      db: opts.cheatsheetDb,
+      llm,
+      episodeFetcher: opts.cheatsheetEpisodeFetcher,
+      sessionResolver,
+    });
+  }
+
   // STORY-060 deferred AC — friendly 429 mapping for the per-user daily token budget. Any handler
   // that calls into the LLM provider can throw `TokenBudgetExceededError`; this hook catches it
   // before Fastify's default 500 path so the playground can render the friendly message AC from
@@ -564,6 +586,8 @@ function defaultsFromEnv(): {
   ollamaModel?: string;
   onEpisodeFinish?: BuildServerOptions["onEpisodeFinish"];
   profileInsightsDb?: import("@learnpro/db").LearnProDb;
+  cheatsheetDb?: import("@learnpro/db").LearnProDb;
+  cheatsheetEpisodeFetcher?: CheatsheetEpisodeFetcher;
 } {
   const exportRateLimiter = buildExportRateLimiterFromEnv(process.env);
   const url = process.env["DATABASE_URL"];
@@ -657,6 +681,8 @@ function defaultsFromEnv(): {
     llmModeDb: db,
     ollamaBaseUrl: process.env["OLLAMA_BASE_URL"] ?? DEFAULT_OLLAMA_BASE_URL,
     ollamaModel: process.env["OLLAMA_MODEL"] ?? DEFAULT_OLLAMA_MODEL,
+    cheatsheetDb: db,
+    cheatsheetEpisodeFetcher: buildDbCheatsheetEpisodeFetcher(db),
     ...(exportRateLimiter ? { exportRateLimiter } : {}),
     // STORY-033 — async profile-update agent. Build the BullMQ cron from REDIS_URL (returns null
     // when unset, in which case the enqueue helper is a soft no-op). Wire the session-end hook
