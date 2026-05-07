@@ -104,6 +104,7 @@ import {
 import { buildDbTodayPlanDeps, registerTodayPlanRoutes } from "./today-plan.js";
 import {
   buildDbWeeklyPlanDeps,
+  buildWeeklyThemeGeneratorFromEnv,
   registerWeeklyPlanRoutes,
   type WeeklyPlanDeps,
 } from "./weekly-plan.js";
@@ -203,6 +204,11 @@ export interface BuildServerOptions {
   // `POST /v1/weekly-plan/replan`. Tests inject a fake deps object; production wires
   // `buildDbWeeklyPlanDeps(db)` via defaultsFromEnv.
   weeklyPlanDeps?: WeeklyPlanDeps;
+  // STORY-046c — optional LLM-backed weekly-theme generator. Wired only on the replan path
+  // (cost gate: GETs never fire it). Production builds it from the same `LLMProvider`
+  // wired everywhere else, gated on `LEARNPRO_WEEKLY_THEME_LLM=1` (default on). Tests inject
+  // a fake to assert call shape.
+  weeklyThemeGenerator?: import("@learnpro/agent").WeeklyPlanThemeGenerator;
   // STORY-040 — DB handle for the portfolio routes (state / connect-init / disconnect / push /
   // settings). Same injection pattern; tests inject a fake DB. `webBaseUrl` lets tests override
   // the apps/web origin used to build the connect-init start URL.
@@ -479,10 +485,15 @@ export function buildServer(opts: BuildServerOptions = {}) {
   // + recent episodes + due reviews and composes a per-day theme via `buildWeeklyPlan`. Wired
   // only when weekly-plan deps are supplied. Tests inject a fake deps object; production wires
   // `buildDbWeeklyPlanDeps(db)` via defaultsFromEnv.
+  // STORY-046c — when `weeklyThemeGenerator` is also supplied, the replan path uses it to
+  // produce LLM-generated theme names. The GET path NEVER fires the generator (cost gate).
   if (opts.weeklyPlanDeps) {
     registerWeeklyPlanRoutes(app, {
       weeklyPlanDeps: opts.weeklyPlanDeps,
       sessionResolver,
+      ...(opts.weeklyThemeGenerator !== undefined
+        ? { themeGenerator: opts.weeklyThemeGenerator }
+        : {}),
     });
   }
 
@@ -629,6 +640,7 @@ function defaultsFromEnv(): {
   installEligibleDb?: import("@learnpro/db").LearnProDb;
   todayPlanDeps?: TodayPlanDeps;
   weeklyPlanDeps?: WeeklyPlanDeps;
+  weeklyThemeGenerator?: import("@learnpro/agent").WeeklyPlanThemeGenerator;
   portfolio?: BuildServerOptions["portfolio"];
   exportRateLimiter?: RateLimiter;
   emailDigestDb?: import("@learnpro/db").LearnProDb;
@@ -724,6 +736,13 @@ function defaultsFromEnv(): {
     installEligibleDb: db,
     todayPlanDeps: buildDbTodayPlanDeps({ db }),
     weeklyPlanDeps: buildDbWeeklyPlanDeps({ db }),
+    // STORY-046c — wire the LLM theme generator only when enabled (default on). The
+    // generator uses the same `LLMProvider` everywhere else uses; the GET path of
+    // `/v1/weekly-plan` never fires it (cost gate).
+    ...(() => {
+      const themeGen = buildWeeklyThemeGeneratorFromEnv({ llm, env: process.env });
+      return themeGen ? { weeklyThemeGenerator: themeGen } : {};
+    })(),
     portfolio: { db },
     redactor: buildDefaultRedactor({ llm }),
     dataControls: {
