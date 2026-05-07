@@ -1,0 +1,31 @@
+slug: trace-nested-loop-collect
+name: Trace — nested loop accumulator
+language: python
+difficulty: 2
+track: python-fundamentals
+kind: comprehension
+comprehension_format: trace_execution
+concept_tags:
+  - loops
+  - accumulator
+expected_median_time_to_solve_ms: 40000
+statement: |
+  Trace the nested loop and report the final value of `total`.
+starter_code: |
+  total = 0
+  for i in range(1, 4):
+      for j in range(i):
+          total += 1
+  # what is total here?
+question: What is the final value of `total`?
+answer_format: multiple_choice
+multiple_choice_options:
+  - "3"
+  - "6"
+  - "9"
+  - "12"
+correct_answer_index: 1
+explanation: |
+  i=1: range(1) yields one value, inner runs once. i=2: range(2) yields
+  two, inner runs twice. i=3: range(3) yields three. total increments
+  1 + 2 + 3 = 6.

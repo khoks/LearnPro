@@ -1,0 +1,42 @@
+slug: reason-async-await-sequential
+name: Reason — sequential vs. parallel awaits
+language: typescript
+difficulty: 4
+track: typescript-fundamentals
+kind: comprehension
+comprehension_format: reason_property
+concept_tags:
+  - async
+  - promises
+  - performance
+expected_median_time_to_solve_ms: 60000
+statement: |
+  Two implementations of the same function. Why is the second one faster
+  when the underlying calls are slow?
+starter_code: |
+  async function load_a(urls: string[]): Promise<string[]> {
+    const out: string[] = [];
+    for (const u of urls) {
+      out.push(await fetchOne(u));
+    }
+    return out;
+  }
+
+  async function load_b(urls: string[]): Promise<string[]> {
+    return Promise.all(urls.map(fetchOne));
+  }
+
+  declare function fetchOne(url: string): Promise<string>;
+question: Why is `load_b` typically much faster than `load_a` for slow IO?
+answer_format: free_text
+expected_answer: |
+  load_a awaits each fetch sequentially — total time is the sum of every
+  request. load_b kicks off all fetches concurrently with Promise.all, so
+  total time is roughly the slowest single request — assuming the work is
+  IO-bound.
+explanation: |
+  load_a's `await` inside the loop blocks each iteration on the previous
+  one, so wall-clock time is the SUM of all request latencies. load_b
+  starts every request concurrently and Promise.all waits for the slowest
+  — wall-clock time is the MAX. The trade-off is bursty load on the
+  remote service; for unbounded fan-out, use a concurrency-limited pool.

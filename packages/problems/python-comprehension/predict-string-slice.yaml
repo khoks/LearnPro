@@ -1,0 +1,28 @@
+slug: predict-string-slice
+name: Predict — string slice with negative index
+language: python
+difficulty: 1
+track: python-fundamentals
+kind: comprehension
+comprehension_format: predict_output
+concept_tags:
+  - strings
+  - slicing
+expected_median_time_to_solve_ms: 30000
+statement: |
+  Predict what the program prints. Recall that negative indices count from the
+  end; slices are half-open (stop is exclusive).
+starter_code: |
+  s = "hello"
+  print(s[1:-1])
+question: What does the program print?
+answer_format: multiple_choice
+multiple_choice_options:
+  - "ell"
+  - "hell"
+  - "ello"
+  - "hello"
+correct_answer_index: 0
+explanation: |
+  s[1:-1] starts at index 1 ('e') and stops before index -1 ('o' exclusive),
+  yielding "ell".

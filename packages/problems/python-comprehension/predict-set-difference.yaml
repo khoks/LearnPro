@@ -1,0 +1,29 @@
+slug: predict-set-difference
+name: Predict — set difference
+language: python
+difficulty: 2
+track: python-fundamentals
+kind: comprehension
+comprehension_format: predict_output
+concept_tags:
+  - sets
+  - set-operations
+expected_median_time_to_solve_ms: 30000
+statement: |
+  Predict what the program prints. Recall set difference (a - b) keeps elements
+  in a that are not in b. The output is sorted to make ordering deterministic.
+starter_code: |
+  a = {1, 2, 3, 4}
+  b = {3, 4, 5, 6}
+  print(sorted(a - b))
+question: What does the program print?
+answer_format: multiple_choice
+multiple_choice_options:
+  - "[1, 2]"
+  - "[5, 6]"
+  - "[1, 2, 5, 6]"
+  - "[3, 4]"
+correct_answer_index: 0
+explanation: |
+  a - b is the set of elements in a but not in b, so {1, 2}. Sorting that
+  produces [1, 2].

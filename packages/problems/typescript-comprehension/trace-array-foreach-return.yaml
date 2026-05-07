@@ -1,0 +1,35 @@
+slug: trace-array-foreach-return
+name: Trace — return inside forEach
+language: typescript
+difficulty: 3
+track: typescript-fundamentals
+kind: comprehension
+comprehension_format: trace_execution
+concept_tags:
+  - arrays
+  - control-flow
+expected_median_time_to_solve_ms: 40000
+statement: |
+  Trace the function and report the return value. Pay attention to what
+  `return` inside a forEach callback does.
+starter_code: |
+  function findFirstEven(nums: number[]): number | null {
+    let result: number | null = null;
+    nums.forEach((n) => {
+      if (n % 2 === 0) {
+        result = n;
+        return;
+      }
+    });
+    return result;
+  }
+  console.log(findFirstEven([1, 3, 4, 6, 8]));
+question: What does the program log?
+answer_format: free_text
+expected_answer: "8"
+explanation: |
+  `return` inside a forEach callback only exits THAT callback iteration —
+  it does NOT break out of the loop. So result is overwritten by every
+  even number: 4, then 6, then 8. The function returns 8 — not the
+  first even (4). To stop at the first match, use Array.find or a
+  classic for-loop.

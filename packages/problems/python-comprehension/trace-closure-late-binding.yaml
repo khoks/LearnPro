@@ -1,0 +1,33 @@
+slug: trace-closure-late-binding
+name: Trace — closure late binding in loop
+language: python
+difficulty: 4
+track: python-fundamentals
+kind: comprehension
+comprehension_format: trace_execution
+concept_tags:
+  - closures
+  - functions
+  - late-binding
+expected_median_time_to_solve_ms: 60000
+statement: |
+  Trace the closure inside the loop. Pay attention to when `i` is resolved.
+starter_code: |
+  funcs = []
+  for i in range(3):
+      funcs.append(lambda: i)
+  result = [f() for f in funcs]
+  # what is result?
+question: What is the value of `result`?
+answer_format: multiple_choice
+multiple_choice_options:
+  - "[0, 1, 2]"
+  - "[2, 2, 2]"
+  - "[3, 3, 3]"
+  - "[None, None, None]"
+correct_answer_index: 1
+explanation: |
+  The lambda captures the variable `i` by reference, not its value. By the
+  time each lambda is called, the loop has finished and `i` is 2, so all
+  three return 2. The fix is to bind the value at definition time:
+  `lambda i=i: i`.

@@ -1,0 +1,28 @@
+slug: predict-array-flat
+name: Predict — Array.flat depth
+language: typescript
+difficulty: 2
+track: typescript-fundamentals
+kind: comprehension
+comprehension_format: predict_output
+concept_tags:
+  - arrays
+  - flat
+expected_median_time_to_solve_ms: 30000
+statement: |
+  Predict what the program logs. Recall that Array.flat() defaults to
+  depth 1.
+starter_code: |
+  console.log([1, [2, [3, [4]]]].flat());
+question: What does the program log?
+answer_format: multiple_choice
+multiple_choice_options:
+  - "[1, 2, 3, 4]"
+  - "[1, 2, [3, [4]]]"
+  - "[1, [2, [3, [4]]]]"
+  - "[1, 2, [3, 4]]"
+correct_answer_index: 1
+explanation: |
+  Array.flat() with no argument flattens one level deep. The outer array
+  is flattened, but the inner [3, [4]] is preserved as-is — yielding
+  [1, 2, [3, [4]]]. To go all the way down, pass Infinity.

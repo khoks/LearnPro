@@ -1,0 +1,29 @@
+slug: predict-truthy-empty
+name: Predict — truthiness of empty containers
+language: python
+difficulty: 1
+track: python-fundamentals
+kind: comprehension
+comprehension_format: predict_output
+concept_tags:
+  - truthiness
+  - control-flow
+expected_median_time_to_solve_ms: 25000
+statement: |
+  Predict what the program prints. Empty containers (lists, dicts, strings)
+  evaluate to False; non-empty ones evaluate to True.
+starter_code: |
+  values = ([], "", {}, 0, None, [0])
+  print(sum(1 for v in values if v))
+question: What does the program print?
+answer_format: multiple_choice
+multiple_choice_options:
+  - "0"
+  - "1"
+  - "5"
+  - "6"
+correct_answer_index: 1
+explanation: |
+  Of the six values, only [0] is truthy — empty list, empty string, empty
+  dict, 0, and None are all falsy. [0] has one element so it's truthy. The
+  generator expression keeps just that one, summing to 1.

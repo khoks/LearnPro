@@ -1,0 +1,31 @@
+slug: trace-is-vs-equals
+name: Trace — `is` vs `==`
+language: python
+difficulty: 3
+track: python-fundamentals
+kind: comprehension
+comprehension_format: trace_execution
+concept_tags:
+  - identity
+  - equality
+expected_median_time_to_solve_ms: 40000
+statement: |
+  Trace each comparison and report the printed result. `is` checks identity
+  (same object); `==` checks equality (same value).
+starter_code: |
+  a = [1, 2, 3]
+  b = [1, 2, 3]
+  print(a == b, a is b)
+question: What does the program print?
+answer_format: multiple_choice
+multiple_choice_options:
+  - "True True"
+  - "True False"
+  - "False True"
+  - "False False"
+correct_answer_index: 1
+explanation: |
+  a and b have the same elements so a == b is True (value equality). They
+  are two separately-allocated list objects, so a is b is False (different
+  identities). Use == for value comparison; reserve `is` for None and
+  similar singletons.

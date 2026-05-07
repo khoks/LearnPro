@@ -1,0 +1,33 @@
+slug: trace-this-binding-arrow
+name: Trace — arrow vs. function `this`
+language: typescript
+difficulty: 4
+track: typescript-fundamentals
+kind: comprehension
+comprehension_format: trace_execution
+concept_tags:
+  - this
+  - arrow-functions
+  - methods
+expected_median_time_to_solve_ms: 60000
+statement: |
+  Trace what `getValue` returns. Arrow functions inherit `this` from the
+  enclosing scope; regular functions get their own `this` based on the
+  call site.
+starter_code: |
+  const obj = {
+    value: 42,
+    getValue: function () {
+      const inner = () => this.value;
+      return inner();
+    },
+  };
+  console.log(obj.getValue());
+question: What does the program log?
+answer_format: free_text
+expected_answer: "42"
+explanation: |
+  obj.getValue() is invoked as a method, so its `this` is obj. The arrow
+  function `inner` inherits that `this`, so this.value is obj.value (42).
+  If `inner` had been a regular function, `this` inside would have been
+  undefined (in strict mode) or globalThis.

@@ -1,0 +1,28 @@
+slug: predict-string-format
+name: Predict — f-string formatting
+language: python
+difficulty: 1
+track: python-fundamentals
+kind: comprehension
+comprehension_format: predict_output
+concept_tags:
+  - strings
+  - formatting
+expected_median_time_to_solve_ms: 25000
+statement: |
+  Predict what the program prints. The f-string format spec uses width and
+  precision rules.
+starter_code: |
+  pi = 3.14159
+  print(f"{pi:.2f}")
+question: What does the program print?
+answer_format: multiple_choice
+multiple_choice_options:
+  - "3.14"
+  - "3.14159"
+  - "3.142"
+  - "3.1"
+correct_answer_index: 0
+explanation: |
+  ".2f" specifies fixed-point notation with 2 decimal places, so 3.14159
+  rounds to "3.14".

@@ -1,0 +1,33 @@
+slug: trace-shadowing-builtin
+name: Trace — shadowed built-in
+language: python
+difficulty: 3
+track: python-fundamentals
+kind: comprehension
+comprehension_format: trace_execution
+concept_tags:
+  - scopes
+  - shadowing
+expected_median_time_to_solve_ms: 45000
+statement: |
+  Trace what `total` evaluates to. Note that `sum` is reassigned at the
+  top of the snippet.
+starter_code: |
+  sum = 42
+  values = [1, 2, 3]
+  total = sum(values)
+  # what does this evaluate to?
+question: What happens when `total = sum(values)` runs?
+answer_format: multiple_choice
+multiple_choice_options:
+  - "total is 6"
+  - "total is 42"
+  - "TypeError: 'int' object is not callable"
+  - "NameError: sum is not defined"
+correct_answer_index: 2
+explanation: |
+  The first line shadows the built-in sum with the int 42. Calling
+  sum(values) then tries to call an int, raising
+  "TypeError: 'int' object is not callable". The fix is to avoid using
+  built-in names as variable names — or to access the original via
+  builtins.sum.

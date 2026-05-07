@@ -1,0 +1,29 @@
+slug: predict-spread-array
+name: Predict — array spread
+language: typescript
+difficulty: 1
+track: typescript-fundamentals
+kind: comprehension
+comprehension_format: predict_output
+concept_tags:
+  - arrays
+  - spread
+expected_median_time_to_solve_ms: 25000
+statement: |
+  Predict what the program logs. The spread operator copies all elements
+  into the surrounding array literal.
+starter_code: |
+  const a = [1, 2, 3];
+  const b = [0, ...a, 4];
+  console.log(b);
+question: What does the program log?
+answer_format: multiple_choice
+multiple_choice_options:
+  - "[0, [1, 2, 3], 4]"
+  - "[0, 1, 2, 3, 4]"
+  - "[1, 2, 3]"
+  - "[0, 4]"
+correct_answer_index: 1
+explanation: |
+  Spreading `...a` inlines its elements into the surrounding array, giving
+  [0, 1, 2, 3, 4] — flat, not nested.

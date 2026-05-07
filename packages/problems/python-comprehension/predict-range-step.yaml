@@ -1,0 +1,26 @@
+slug: predict-range-step
+name: Predict — range with step
+language: python
+difficulty: 1
+track: python-fundamentals
+kind: comprehension
+comprehension_format: predict_output
+concept_tags:
+  - range
+  - iteration
+expected_median_time_to_solve_ms: 25000
+statement: |
+  Predict what the program prints. range(start, stop, step) is half-open.
+starter_code: |
+  print(list(range(10, 0, -2)))
+question: What does the program print?
+answer_format: multiple_choice
+multiple_choice_options:
+  - "[10, 8, 6, 4, 2]"
+  - "[10, 8, 6, 4, 2, 0]"
+  - "[8, 6, 4, 2, 0]"
+  - "[10, 8, 6, 4]"
+correct_answer_index: 0
+explanation: |
+  range with step -2 yields 10, 8, 6, 4, 2 — stops before 0 (stop is
+  exclusive). The result is [10, 8, 6, 4, 2].

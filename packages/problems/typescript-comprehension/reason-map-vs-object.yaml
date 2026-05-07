@@ -1,0 +1,36 @@
+slug: reason-map-vs-object
+name: Reason — Map vs. plain object
+language: typescript
+difficulty: 3
+track: typescript-fundamentals
+kind: comprehension
+comprehension_format: reason_property
+concept_tags:
+  - map
+  - objects
+expected_median_time_to_solve_ms: 50000
+statement: |
+  When should you reach for `Map` over a plain object as a dictionary?
+starter_code: |
+  const a: Record<string, number> = {};
+  a["__proto__"] = 1;
+  a["constructor"] = 2;
+
+  const b = new Map<string, number>();
+  b.set("__proto__", 1);
+  b.set("constructor", 2);
+question: Why is Map safer than a plain object when keys are user-provided strings?
+answer_format: multiple_choice
+multiple_choice_options:
+  - "Map allows non-string keys; plain object always coerces keys to strings — but that's purely a typing concern."
+  - "Map separates user keys from prototype properties; plain objects can be poisoned by user-provided '__proto__' / 'constructor' keys."
+  - "Map is always faster than a plain object."
+  - "Map preserves type information at runtime."
+correct_answer_index: 1
+explanation: |
+  A plain object inherits from Object.prototype, so user-provided strings
+  like "__proto__", "constructor", or "toString" can collide with
+  prototype properties — a footgun and (historically) an attack vector.
+  Map stores keys in an internal slot separate from any prototype, so
+  user input is just data. Map also accepts any value as a key (including
+  objects) and preserves insertion order on iteration.

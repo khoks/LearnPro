@@ -1,0 +1,35 @@
+slug: reason-dict-vs-list-lookup
+name: Reason — why dict lookup outperforms scanning
+language: python
+difficulty: 2
+track: python-fundamentals
+kind: comprehension
+comprehension_format: reason_property
+concept_tags:
+  - dict
+  - performance
+  - hashing
+expected_median_time_to_solve_ms: 50000
+statement: |
+  Both functions return the score for a given name. Why is the second
+  faster when called many times?
+starter_code: |
+  def find_score_a(records, name):
+      for r in records:
+          if r["name"] == name:
+              return r["score"]
+      return None
+
+  def find_score_b(by_name, name):
+      return by_name.get(name)
+question: What is the asymptotic per-call complexity of each, and why is the dict-based one faster for repeated lookups?
+answer_format: free_text
+expected_answer: |
+  find_score_a is O(n) per call because it scans the records list. find_score_b
+  is O(1) average per call because dict.get is a hash-table lookup. For repeated
+  lookups, the dict approach amortizes the one-time O(n) cost of building the
+  index.
+explanation: |
+  find_score_a does a linear scan: O(n) per call. find_score_b does a hash
+  lookup: O(1) average per call. Building the by_name dict is O(n) once, but
+  it pays back after just a few lookups.

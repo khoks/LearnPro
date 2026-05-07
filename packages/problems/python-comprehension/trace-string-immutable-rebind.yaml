@@ -1,0 +1,34 @@
+slug: trace-string-immutable-rebind
+name: Trace — string immutability and rebind
+language: python
+difficulty: 2
+track: python-fundamentals
+kind: comprehension
+comprehension_format: trace_execution
+concept_tags:
+  - strings
+  - immutability
+expected_median_time_to_solve_ms: 35000
+statement: |
+  Trace the function call and report the value of `s` after the call.
+starter_code: |
+  def shout(text):
+      text = text.upper()
+      return text
+
+  s = "hello"
+  shout(s)
+  # what is s here?
+question: What is the value of `s` after the call to shout(s)?
+answer_format: multiple_choice
+multiple_choice_options:
+  - "'HELLO'"
+  - "'hello'"
+  - "None"
+  - "'shout'"
+correct_answer_index: 1
+explanation: |
+  Strings are immutable. Inside shout, `text = text.upper()` rebinds the
+  local name to a new string — the caller's `s` is unaffected. The
+  function's return value is also discarded by the caller, so `s` stays
+  "hello".

@@ -1,0 +1,33 @@
+slug: trace-dict-iteration-order
+name: Trace — dict insertion-order iteration
+language: python
+difficulty: 2
+track: python-fundamentals
+kind: comprehension
+comprehension_format: trace_execution
+concept_tags:
+  - dict
+  - iteration
+expected_median_time_to_solve_ms: 30000
+statement: |
+  Trace the loop. Recall that dict iteration in Python 3.7+ preserves
+  insertion order.
+starter_code: |
+  d = {}
+  d["b"] = 1
+  d["a"] = 2
+  d["c"] = 3
+  result = list(d.keys())
+  # what is result?
+question: What is the value of `result`?
+answer_format: multiple_choice
+multiple_choice_options:
+  - "['a', 'b', 'c']"
+  - "['b', 'a', 'c']"
+  - "['c', 'a', 'b']"
+  - "iteration order is undefined"
+correct_answer_index: 1
+explanation: |
+  Since Python 3.7, dicts preserve insertion order — not alphabetical or
+  hash order. The keys were inserted in the order b, a, c, so list(d.keys())
+  is ['b', 'a', 'c'].

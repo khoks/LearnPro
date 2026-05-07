@@ -1,0 +1,28 @@
+slug: predict-and-or-precedence
+name: Predict — and / or precedence
+language: python
+difficulty: 2
+track: python-fundamentals
+kind: comprehension
+comprehension_format: predict_output
+concept_tags:
+  - boolean-logic
+  - operator-precedence
+expected_median_time_to_solve_ms: 30000
+statement: |
+  Predict what the program prints. Recall that `and` binds tighter than
+  `or`.
+starter_code: |
+  print(True or False and False)
+question: What does the program print?
+answer_format: multiple_choice
+multiple_choice_options:
+  - "True"
+  - "False"
+  - "None"
+  - "TypeError"
+correct_answer_index: 0
+explanation: |
+  `and` binds tighter than `or`, so this parses as
+  `True or (False and False)`. The right side evaluates to False; True or
+  False is True.

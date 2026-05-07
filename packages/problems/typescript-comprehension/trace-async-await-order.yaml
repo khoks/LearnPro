@@ -1,0 +1,30 @@
+slug: trace-async-await-order
+name: Trace — sync vs. microtask logging
+language: typescript
+difficulty: 4
+track: typescript-fundamentals
+kind: comprehension
+comprehension_format: trace_execution
+concept_tags:
+  - async
+  - microtasks
+  - event-loop
+expected_median_time_to_solve_ms: 60000
+statement: |
+  Trace what gets printed and in what order.
+starter_code: |
+  console.log("a");
+  Promise.resolve().then(() => console.log("b"));
+  console.log("c");
+question: What is logged, in order?
+answer_format: multiple_choice
+multiple_choice_options:
+  - "a, b, c"
+  - "a, c, b"
+  - "b, a, c"
+  - "c, a, b"
+correct_answer_index: 1
+explanation: |
+  The synchronous statements run first: "a" and "c". The promise's .then
+  callback is queued as a microtask and runs after the current synchronous
+  code finishes — printing "b" last. Order: a, c, b.

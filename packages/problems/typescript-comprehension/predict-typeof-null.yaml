@@ -1,0 +1,27 @@
+slug: predict-typeof-null
+name: Predict — typeof null
+language: typescript
+difficulty: 1
+track: typescript-fundamentals
+kind: comprehension
+comprehension_format: predict_output
+concept_tags:
+  - typeof
+  - nullish
+expected_median_time_to_solve_ms: 20000
+statement: |
+  Predict what the program logs.
+starter_code: |
+  console.log(typeof null);
+question: What does the program log?
+answer_format: multiple_choice
+multiple_choice_options:
+  - "'null'"
+  - "'undefined'"
+  - "'object'"
+  - "'NaN'"
+correct_answer_index: 2
+explanation: |
+  `typeof null` returns "object" — a famous historical quirk of JavaScript
+  preserved for backwards compatibility. To check for null specifically,
+  compare with === null.

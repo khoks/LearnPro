@@ -1,0 +1,24 @@
+slug: trace-promise-then-chain
+name: Trace — promise then-chain
+language: typescript
+difficulty: 3
+track: typescript-fundamentals
+kind: comprehension
+comprehension_format: trace_execution
+concept_tags:
+  - promises
+  - async
+expected_median_time_to_solve_ms: 50000
+statement: |
+  Trace the promise chain and report the final resolved value.
+starter_code: |
+  const p = Promise.resolve(1)
+    .then((x) => x + 1)
+    .then((x) => x * 10);
+  // what does p resolve to?
+question: What value does `p` resolve to?
+answer_format: free_text
+expected_answer: "20"
+explanation: |
+  Promise.resolve(1) starts the chain. The first .then maps 1 → 2; the
+  second maps 2 → 20. The chain resolves to 20.

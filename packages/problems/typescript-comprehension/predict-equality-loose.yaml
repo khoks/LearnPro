@@ -1,0 +1,28 @@
+slug: predict-equality-loose
+name: Predict — `==` vs `===`
+language: typescript
+difficulty: 2
+track: typescript-fundamentals
+kind: comprehension
+comprehension_format: predict_output
+concept_tags:
+  - equality
+  - type-coercion
+expected_median_time_to_solve_ms: 30000
+statement: |
+  Predict what the program logs. The `==` operator coerces operands to
+  the same type before comparing; `===` does not.
+starter_code: |
+  console.log(0 == "0", 0 === "0");
+question: What does the program log?
+answer_format: multiple_choice
+multiple_choice_options:
+  - "true true"
+  - "true false"
+  - "false true"
+  - "false false"
+correct_answer_index: 1
+explanation: |
+  `0 == "0"` coerces "0" to a number first, comparing 0 == 0 → true.
+  `0 === "0"` requires the same type and is false (number vs. string).
+  Always prefer === to avoid surprising coercions.

@@ -1,0 +1,38 @@
+slug: reason-debounce-vs-throttle
+name: Reason — debounce vs. throttle
+language: typescript
+difficulty: 3
+track: typescript-fundamentals
+kind: comprehension
+comprehension_format: reason_property
+concept_tags:
+  - performance
+  - events
+  - timers
+expected_median_time_to_solve_ms: 50000
+statement: |
+  When wiring a "search-as-you-type" handler, why is debouncing usually
+  preferable to throttling?
+starter_code: |
+  // Debounce: fire only after `delay` ms of silence.
+  // Throttle: fire at most once per `delay` ms while events keep arriving.
+  function debounce<T extends (...args: unknown[]) => void>(fn: T, delay: number): T {
+    let t: ReturnType<typeof setTimeout> | null = null;
+    return ((...args: unknown[]) => {
+      if (t) clearTimeout(t);
+      t = setTimeout(() => fn(...args), delay);
+    }) as T;
+  }
+question: For "search-as-you-type", why is debounce usually a better fit than throttle?
+answer_format: multiple_choice
+multiple_choice_options:
+  - "Throttle is slower than debounce in all cases."
+  - "Debounce only fires after the user pauses, so the search runs once on the final query — not on every intermediate keystroke."
+  - "Throttle drops events at random; debounce never drops any."
+  - "Throttle requires a server roundtrip for every keystroke."
+correct_answer_index: 1
+explanation: |
+  Debounce delays the action until input stops for `delay` ms — perfect
+  for "wait until the user is done typing, THEN search". Throttle fires
+  at a steady cadence, which would issue search requests for intermediate
+  queries the user is still composing — wasted work and noisy results.

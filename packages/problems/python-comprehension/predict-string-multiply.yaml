@@ -1,0 +1,27 @@
+slug: predict-string-multiply
+name: Predict — string multiplication
+language: python
+difficulty: 1
+track: python-fundamentals
+kind: comprehension
+comprehension_format: predict_output
+concept_tags:
+  - strings
+  - operators
+expected_median_time_to_solve_ms: 25000
+statement: |
+  Predict what the program prints. Recall that string * int repeats the
+  string.
+starter_code: |
+  print("ab" * 3)
+question: What does the program print?
+answer_format: multiple_choice
+multiple_choice_options:
+  - "ababab"
+  - "ab ab ab"
+  - "abababab"
+  - "TypeError"
+correct_answer_index: 0
+explanation: |
+  "ab" * 3 concatenates "ab" three times, producing "ababab" — no
+  separator, six characters total.

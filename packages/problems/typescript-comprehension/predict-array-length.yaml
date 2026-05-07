@@ -1,0 +1,29 @@
+slug: predict-array-length
+name: Predict — sparse-array length
+language: typescript
+difficulty: 2
+track: typescript-fundamentals
+kind: comprehension
+comprehension_format: predict_output
+concept_tags:
+  - arrays
+  - length
+expected_median_time_to_solve_ms: 30000
+statement: |
+  Predict what the program logs. Setting an index past the end extends
+  `length`; intermediate slots become `undefined` (sparse holes).
+starter_code: |
+  const a: unknown[] = [1, 2, 3];
+  a[10] = 99;
+  console.log(a.length);
+question: What does the program log?
+answer_format: multiple_choice
+multiple_choice_options:
+  - "4"
+  - "10"
+  - "11"
+  - "RangeError"
+correct_answer_index: 2
+explanation: |
+  Setting a[10] = 99 extends length to 11 (indices 0..10). The slots from
+  index 3 through 9 are sparse holes, but length still counts them.

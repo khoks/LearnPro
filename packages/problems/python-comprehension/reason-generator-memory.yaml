@@ -1,0 +1,29 @@
+slug: reason-generator-memory
+name: Reason — generator vs. list memory cost
+language: python
+difficulty: 3
+track: python-fundamentals
+kind: comprehension
+comprehension_format: reason_property
+concept_tags:
+  - generators
+  - lazy-evaluation
+  - memory
+expected_median_time_to_solve_ms: 50000
+statement: |
+  Two equivalent expressions. Why does the generator form use less memory
+  for large n?
+starter_code: |
+  list_form = sum([x * x for x in range(10_000_000)])
+  gen_form = sum(x * x for x in range(10_000_000))
+question: Why does `gen_form` use much less memory than `list_form`?
+answer_format: free_text
+expected_answer: |
+  The list comprehension materializes all 10 million squared values in memory
+  before sum runs. The generator expression yields one value at a time, so
+  only one item is alive at any moment — peak memory is O(1) instead of O(n).
+explanation: |
+  The list comprehension allocates a list of 10 million ints up-front. The
+  generator expression is lazy — it yields one value at a time and sum()
+  consumes them in a streaming fashion. Peak memory drops from O(n) to
+  O(1). Generators are the right default for one-pass aggregations.

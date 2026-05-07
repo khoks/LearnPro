@@ -1,0 +1,33 @@
+slug: reason-cache-opportunity
+name: Reason — where caching helps
+language: python
+difficulty: 3
+track: python-fundamentals
+kind: comprehension
+comprehension_format: reason_property
+concept_tags:
+  - performance
+  - memoization
+expected_median_time_to_solve_ms: 60000
+statement: |
+  Where in this code would adding a cache (e.g. functools.lru_cache) most
+  reduce the wall-clock time for fib(30)?
+starter_code: |
+  def fib(n):
+      if n < 2:
+          return n
+      return fib(n - 1) + fib(n - 2)
+
+  print(fib(30))
+question: Why is fib slow for n=30, and what does memoizing fib do to the runtime?
+answer_format: free_text
+expected_answer: |
+  Without memoization, fib re-computes overlapping subproblems exponentially many
+  times. Memoizing fib reduces each fib(k) to a single computation, dropping the
+  runtime from O(2^n) to O(n).
+explanation: |
+  fib has overlapping subproblems: fib(n-1) and fib(n-2) both recurse through
+  fib(n-3), and so on. Without a cache the same subtree is recomputed,
+  giving exponential O(phi^n) time. lru_cache memoizes each fib(k) to a
+  single computation, making the algorithm O(n) — the canonical
+  dynamic-programming win.

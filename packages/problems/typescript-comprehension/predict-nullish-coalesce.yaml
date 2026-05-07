@@ -1,0 +1,29 @@
+slug: predict-nullish-coalesce
+name: Predict — `??` vs `||`
+language: typescript
+difficulty: 2
+track: typescript-fundamentals
+kind: comprehension
+comprehension_format: predict_output
+concept_tags:
+  - nullish-coalescing
+  - falsy-values
+expected_median_time_to_solve_ms: 30000
+statement: |
+  Predict what the program logs. The nullish-coalescing operator `??`
+  triggers only on null and undefined, NOT on 0 or "".
+starter_code: |
+  console.log(0 ?? 99, 0 || 99);
+question: What does the program log?
+answer_format: multiple_choice
+multiple_choice_options:
+  - "99 99"
+  - "0 0"
+  - "0 99"
+  - "99 0"
+correct_answer_index: 2
+explanation: |
+  `??` falls back only on null/undefined. 0 is neither, so 0 ?? 99 is 0.
+  `||` falls back on any falsy value, and 0 is falsy — so 0 || 99 is 99.
+  Use `??` for "is the value missing?"; use `||` for "is the value
+  falsy?".

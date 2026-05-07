@@ -1,0 +1,32 @@
+slug: trace-deep-copy-shallow
+name: Trace — shallow copy of nested list
+language: python
+difficulty: 3
+track: python-fundamentals
+kind: comprehension
+comprehension_format: trace_execution
+concept_tags:
+  - mutability
+  - copies
+expected_median_time_to_solve_ms: 50000
+statement: |
+  Trace the mutation. .copy() on a list is SHALLOW — nested objects are
+  shared, not duplicated.
+starter_code: |
+  a = [[1, 2], [3, 4]]
+  b = a.copy()
+  b[0].append(99)
+  # what does a look like?
+question: What is the value of `a` at the end?
+answer_format: multiple_choice
+multiple_choice_options:
+  - "[[1, 2], [3, 4]]"
+  - "[[1, 2, 99], [3, 4]]"
+  - "[[1, 2], [3, 4, 99]]"
+  - "TypeError"
+correct_answer_index: 1
+explanation: |
+  a.copy() creates a new outer list but the inner lists are shared by
+  reference. Mutating b[0] mutates the same inner list reachable from a[0],
+  so a becomes [[1, 2, 99], [3, 4]]. For an independent copy, use
+  copy.deepcopy(a).

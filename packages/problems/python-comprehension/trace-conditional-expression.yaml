@@ -1,0 +1,29 @@
+slug: trace-conditional-expression
+name: Trace — short-circuit evaluation
+language: python
+difficulty: 2
+track: python-fundamentals
+kind: comprehension
+comprehension_format: trace_execution
+concept_tags:
+  - control-flow
+  - boolean-logic
+expected_median_time_to_solve_ms: 35000
+statement: |
+  Trace the boolean expression. Recall that `or` returns the first truthy
+  operand (short-circuit) — not necessarily a boolean.
+starter_code: |
+  result = "" or 0 or "fallback" or None
+  # what is result?
+question: What is the value of `result`?
+answer_format: multiple_choice
+multiple_choice_options:
+  - "True"
+  - "False"
+  - "'fallback'"
+  - "None"
+correct_answer_index: 2
+explanation: |
+  `or` returns the first truthy operand without further evaluation. ""
+  is falsy, 0 is falsy, "fallback" is truthy — so the expression
+  short-circuits there and result is "fallback".

@@ -1,0 +1,30 @@
+slug: trace-object-shorthand
+name: Trace — object property shorthand
+language: typescript
+difficulty: 1
+track: typescript-fundamentals
+kind: comprehension
+comprehension_format: trace_execution
+concept_tags:
+  - objects
+  - shorthand
+expected_median_time_to_solve_ms: 25000
+statement: |
+  Trace the assignment. The shorthand `{ name }` is equivalent to
+  `{ name: name }`.
+starter_code: |
+  const name = "Aria";
+  const o = { name };
+  console.log(o.name);
+question: What does the program log?
+answer_format: multiple_choice
+multiple_choice_options:
+  - "'name'"
+  - "'Aria'"
+  - "undefined"
+  - "ReferenceError"
+correct_answer_index: 1
+explanation: |
+  `{ name }` is shorthand for `{ name: name }` — the property key is
+  "name", and the value is the binding from the enclosing scope ("Aria").
+  o.name is "Aria".

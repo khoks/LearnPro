@@ -1,0 +1,38 @@
+slug: reason-immutable-update
+name: Reason — immutable updates with spread
+language: typescript
+difficulty: 3
+track: typescript-fundamentals
+kind: comprehension
+comprehension_format: reason_property
+concept_tags:
+  - immutability
+  - state
+  - functional
+expected_median_time_to_solve_ms: 45000
+statement: |
+  Why do React-style state managers prefer the second pattern over the
+  first?
+starter_code: |
+  function updateA(state: { count: number }) {
+    state.count += 1;
+    return state;
+  }
+
+  function updateB(state: { count: number }) {
+    return { ...state, count: state.count + 1 };
+  }
+question: Why is updateB (immutable update) preferred over updateA (in-place mutation)?
+answer_format: free_text
+expected_answer: |
+  updateA mutates the passed-in object — every consumer sharing that
+  reference sees the change instantly. updateB returns a new object,
+  leaving the prior reference unchanged. That makes equality checks like
+  prev !== next a reliable signal of "did this change?", which React /
+  Redux / similar use to avoid unnecessary work.
+explanation: |
+  updateA mutates state in place. Any code holding the prior reference
+  observes the change immediately, which breaks identity-based change
+  detection (`prev === next` is no longer "did anything change?"). updateB
+  returns a new object, so prev !== next — letting React's reconciler,
+  Redux's selector cache, or a useMemo skip work safely.

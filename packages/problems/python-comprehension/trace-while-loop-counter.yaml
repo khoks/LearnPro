@@ -1,0 +1,32 @@
+slug: trace-while-loop-counter
+name: Trace — while loop counter
+language: python
+difficulty: 2
+track: python-fundamentals
+kind: comprehension
+comprehension_format: trace_execution
+concept_tags:
+  - control-flow
+  - loops
+expected_median_time_to_solve_ms: 40000
+statement: |
+  Trace the while loop and report the value of `count` when the loop exits.
+starter_code: |
+  count = 0
+  n = 10
+  while n > 1:
+      n = n // 2
+      count += 1
+  # what is count here?
+question: What is the final value of `count` after the loop exits?
+answer_format: multiple_choice
+multiple_choice_options:
+  - "2"
+  - "3"
+  - "4"
+  - "5"
+correct_answer_index: 1
+explanation: |
+  n halves each iteration: 10 -> 5 -> 2 -> 1. The loop body runs three times
+  before n drops to 1 and the condition n > 1 fails. count ends at 3 — this
+  is essentially log2(n).

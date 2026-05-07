@@ -1,0 +1,37 @@
+slug: reason-for-of-vs-for-in
+name: Reason — for...of vs. for...in
+language: typescript
+difficulty: 3
+track: typescript-fundamentals
+kind: comprehension
+comprehension_format: reason_property
+concept_tags:
+  - iteration
+  - arrays
+expected_median_time_to_solve_ms: 50000
+statement: |
+  When iterating an array, why is for...of usually preferred over for...in?
+starter_code: |
+  const arr = [10, 20, 30];
+
+  for (const x of arr) {
+    console.log(x);
+  }
+
+  for (const i in arr) {
+    console.log(i, arr[i]);
+  }
+question: Why is for...of typically preferred over for...in for arrays?
+answer_format: multiple_choice
+multiple_choice_options:
+  - "for...in is slower in V8."
+  - "for...of yields values directly; for...in yields property keys (as strings) and walks the prototype chain."
+  - "for...of works only on Set and Map, never on arrays."
+  - "for...in stops at the first sparse hole."
+correct_answer_index: 1
+explanation: |
+  for...of iterates the values produced by an iterable's [Symbol.iterator]
+  — for arrays that's the elements directly. for...in iterates the
+  enumerable string keys of the object, including any added to its
+  prototype, and the keys are strings (not numbers). For arrays, for...of
+  is the right default.

@@ -1,0 +1,30 @@
+slug: reason-readonly-vs-const
+name: Reason — `const` does not freeze
+language: typescript
+difficulty: 2
+track: typescript-fundamentals
+kind: comprehension
+comprehension_format: reason_property
+concept_tags:
+  - const
+  - immutability
+expected_median_time_to_solve_ms: 35000
+statement: |
+  Why does the second line still succeed despite `const`?
+starter_code: |
+  const obj = { count: 0 };
+  obj.count = 5;
+  // obj = {} would fail — but the line above works. Why?
+question: Why is `obj.count = 5` allowed despite `const obj`?
+answer_format: multiple_choice
+multiple_choice_options:
+  - "TypeScript erases `const` at runtime, so it's not enforced."
+  - "`const` prevents rebinding the identifier, but does not freeze the underlying object."
+  - "Object properties are always writable in strict mode."
+  - "`const` only freezes primitives."
+correct_answer_index: 1
+explanation: |
+  `const` prevents rebinding the variable to a different value, but the
+  object it points to is still mutable. To make the contents read-only,
+  use Object.freeze(obj), or — for compile-time enforcement — type
+  annotations like Readonly<T> / `as const`.

@@ -50,9 +50,77 @@ describe("loadProblems", () => {
     }
   });
 
-  it("every problem references at least one hidden test", () => {
+  it("every coding problem references at least one hidden test", () => {
     for (const p of all) {
+      // STORY-038 — comprehension problems carry no hidden_tests by design.
+      if (p.kind === "comprehension") continue;
       expect(p.hidden_tests.length, `${p.slug} has no hidden tests`).toBeGreaterThanOrEqual(1);
+    }
+  });
+});
+
+// STORY-038 — comprehension bank shape contract: ≥30 problems per language and all three
+// sub-formats (predict_output / trace_execution / reason_property) covered.
+describe("loadProblems — comprehension bank distribution (STORY-038)", () => {
+  const all = loadProblems();
+  const pythonComp = all.filter((p) => p.language === "python" && p.kind === "comprehension");
+  const tsComp = all.filter((p) => p.language === "typescript" && p.kind === "comprehension");
+
+  it("has at least 30 Python comprehension problems", () => {
+    expect(pythonComp.length).toBeGreaterThanOrEqual(30);
+  });
+
+  it("has at least 30 TypeScript comprehension problems", () => {
+    expect(tsComp.length).toBeGreaterThanOrEqual(30);
+  });
+
+  it("Python comprehension bank covers all three sub-formats", () => {
+    const formats = new Set<string>();
+    for (const p of pythonComp) {
+      if (p.kind === "comprehension") formats.add(p.comprehension_format);
+    }
+    expect(formats.has("predict_output"), "no predict_output problems").toBe(true);
+    expect(formats.has("trace_execution"), "no trace_execution problems").toBe(true);
+    expect(formats.has("reason_property"), "no reason_property problems").toBe(true);
+  });
+
+  it("TypeScript comprehension bank covers all three sub-formats", () => {
+    const formats = new Set<string>();
+    for (const p of tsComp) {
+      if (p.kind === "comprehension") formats.add(p.comprehension_format);
+    }
+    expect(formats.has("predict_output"), "no predict_output problems").toBe(true);
+    expect(formats.has("trace_execution"), "no trace_execution problems").toBe(true);
+    expect(formats.has("reason_property"), "no reason_property problems").toBe(true);
+  });
+
+  it("every comprehension problem carries a non-empty explanation", () => {
+    for (const p of [...pythonComp, ...tsComp]) {
+      if (p.kind === "comprehension") {
+        expect(p.explanation.trim().length, `${p.slug} explanation empty`).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it("multiple-choice comprehension problems have a valid correct_answer_index", () => {
+    for (const p of [...pythonComp, ...tsComp]) {
+      if (p.kind !== "comprehension" || p.answer_format !== "multiple_choice") continue;
+      expect(p.multiple_choice_options).toBeDefined();
+      expect(p.correct_answer_index).toBeDefined();
+      if (p.multiple_choice_options !== undefined && p.correct_answer_index !== undefined) {
+        expect(p.correct_answer_index).toBeLessThan(p.multiple_choice_options.length);
+        expect(p.correct_answer_index).toBeGreaterThanOrEqual(0);
+      }
+    }
+  });
+
+  it("free-text comprehension problems carry a non-empty expected_answer", () => {
+    for (const p of [...pythonComp, ...tsComp]) {
+      if (p.kind !== "comprehension" || p.answer_format !== "free_text") continue;
+      expect(p.expected_answer).toBeDefined();
+      if (p.expected_answer !== undefined) {
+        expect(p.expected_answer.trim().length).toBeGreaterThan(0);
+      }
     }
   });
 });

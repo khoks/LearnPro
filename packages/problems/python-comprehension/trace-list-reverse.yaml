@@ -1,0 +1,30 @@
+slug: trace-list-reverse
+name: Trace — in-place list reversal
+language: python
+difficulty: 2
+track: python-fundamentals
+kind: comprehension
+comprehension_format: trace_execution
+concept_tags:
+  - lists
+  - in-place-mutation
+expected_median_time_to_solve_ms: 35000
+statement: |
+  Trace the loop carefully. Note `.reverse()` mutates in place and returns
+  None.
+starter_code: |
+  items = [1, 2, 3]
+  result = items.reverse()
+  # what is result here?
+question: What is the value of `result`?
+answer_format: multiple_choice
+multiple_choice_options:
+  - "[3, 2, 1]"
+  - "[1, 2, 3]"
+  - "None"
+  - "[]"
+correct_answer_index: 2
+explanation: |
+  list.reverse() reverses in place and returns None — the convention for
+  most mutating methods on built-in containers. To get a reversed copy,
+  use reversed(items) or items[::-1].

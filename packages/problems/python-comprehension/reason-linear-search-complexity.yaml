@@ -1,0 +1,31 @@
+slug: reason-linear-search-complexity
+name: Reason — linear search time complexity
+language: python
+difficulty: 2
+track: python-fundamentals
+kind: comprehension
+comprehension_format: reason_property
+concept_tags:
+  - complexity
+  - big-o
+expected_median_time_to_solve_ms: 45000
+statement: |
+  What is the worst-case time complexity of this function as a function of
+  the length of `items`?
+starter_code: |
+  def contains(items, target):
+      for x in items:
+          if x == target:
+              return True
+      return False
+question: What is the worst-case time complexity of `contains` in terms of n = len(items)?
+answer_format: multiple_choice
+multiple_choice_options:
+  - "O(1)"
+  - "O(log n)"
+  - "O(n)"
+  - "O(n^2)"
+correct_answer_index: 2
+explanation: |
+  In the worst case (target not present), every element is examined exactly
+  once. That is O(n) — linear in the length of items.

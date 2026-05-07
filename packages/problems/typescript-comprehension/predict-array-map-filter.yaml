@@ -1,0 +1,30 @@
+slug: predict-array-map-filter
+name: Predict — chained map and filter
+language: typescript
+difficulty: 2
+track: typescript-fundamentals
+kind: comprehension
+comprehension_format: predict_output
+concept_tags:
+  - arrays
+  - functional
+expected_median_time_to_solve_ms: 35000
+statement: |
+  Predict what the program logs. Pay attention to the chain order: filter
+  runs before the second map.
+starter_code: |
+  const out = [1, 2, 3, 4, 5]
+    .map((x) => x * 2)
+    .filter((x) => x > 4);
+  console.log(out);
+question: What does the program log?
+answer_format: multiple_choice
+multiple_choice_options:
+  - "[2, 4, 6, 8, 10]"
+  - "[6, 8, 10]"
+  - "[3, 4, 5]"
+  - "[]"
+correct_answer_index: 1
+explanation: |
+  map first doubles each element to [2, 4, 6, 8, 10], then filter keeps
+  those greater than 4 — so 6, 8, 10. The result is [6, 8, 10].

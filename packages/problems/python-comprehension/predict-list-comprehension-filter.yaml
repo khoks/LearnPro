@@ -1,0 +1,28 @@
+slug: predict-list-comprehension-filter
+name: Predict — list comprehension with filter
+language: python
+difficulty: 2
+track: python-fundamentals
+kind: comprehension
+comprehension_format: predict_output
+concept_tags:
+  - list-comprehension
+  - control-flow
+expected_median_time_to_solve_ms: 30000
+statement: |
+  Predict what the program prints. Read the list comprehension carefully; pay
+  attention to the filter clause.
+starter_code: |
+  result = [x * 2 for x in [1, 2, 3, 4] if x > 2]
+  print(result)
+question: What does the program print?
+answer_format: multiple_choice
+multiple_choice_options:
+  - "[2, 4, 6, 8]"
+  - "[6, 8]"
+  - "[3, 4]"
+  - "[8]"
+correct_answer_index: 1
+explanation: |
+  The comprehension iterates [1,2,3,4], filters values where x > 2 (so 3 and 4),
+  then doubles them — yielding [6, 8].

@@ -1,0 +1,28 @@
+slug: predict-dict-get-default
+name: Predict — dict.get with default
+language: python
+difficulty: 1
+track: python-fundamentals
+kind: comprehension
+comprehension_format: predict_output
+concept_tags:
+  - dict
+  - default-values
+expected_median_time_to_solve_ms: 25000
+statement: |
+  Predict what the program prints. Recall that dict.get(key, default) returns
+  the default when the key is absent — without raising KeyError.
+starter_code: |
+  d = {"a": 1, "b": 2}
+  print(d.get("c", 99))
+question: What does the program print?
+answer_format: multiple_choice
+multiple_choice_options:
+  - "1"
+  - "2"
+  - "99"
+  - "KeyError"
+correct_answer_index: 2
+explanation: |
+  "c" is not a key in d, so dict.get returns the default 99 rather than raising
+  KeyError. dict[k] would raise; dict.get(k, default) does not.
