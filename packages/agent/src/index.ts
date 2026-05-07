@@ -170,6 +170,7 @@ export {
 export {
   buildWeeklyPlan,
   computeWeeklyDampeningReason,
+  MIN_CONCEPTS_FOR_LLM_THEME,
   reasoningForDailyConcept,
   SUPPRESSED_REPLAN_ONE_DAY_WEEKLY,
   SUPPRESSED_REPLAN_WEEKEND_WEEKLY,
@@ -183,7 +184,21 @@ export {
   type WeeklyPlanDayConcept,
   type WeeklyPlanDueReview,
   type WeeklyPlanRecentEpisode,
+  type WeeklyPlanThemeGenerator,
+  type WeeklyPlanThemeGeneratorInput,
+  type WeeklyPlanThemeGeneratorOutput,
 } from "./weekly-plan.js";
+
+export {
+  generateWeeklyTheme,
+  parseWeeklyThemeResponse,
+  WEEKLY_THEME_FORBIDDEN_OUTPUT_SUBSTRINGS,
+  WEEKLY_THEME_MAX_CHARS,
+  WEEKLY_THEME_MAX_WORDS,
+  type ConceptInfo as WeeklyThemeConceptInfo,
+  type GenerateWeeklyThemeInput,
+  type GenerateWeeklyThemeOutput,
+} from "./weekly-theme.js";
 
 export {
   AUTONOMY_ACTION_CONSEQUENCE,

@@ -79,3 +79,10 @@ export {
   type ProblemVariantsPromptOptions,
   type ProblemVariantsPromptSourceShape,
 } from "./problem-variants-prompt.js";
+export {
+  WEEKLY_THEME_PROMPT_VERSION,
+  buildWeeklyThemeSystemPrompt,
+  buildWeeklyThemeUserPrompt,
+  type WeeklyThemePromptConcept,
+  type WeeklyThemePromptOptions,
+} from "./weekly-theme-prompt.js";

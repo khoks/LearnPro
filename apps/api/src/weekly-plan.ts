@@ -2,12 +2,15 @@ import { z } from "zod";
 import type { FastifyInstance } from "fastify";
 import {
   buildWeeklyPlan,
+  generateWeeklyTheme,
   WeeklyPlanSchema,
   type WeeklyPlan,
   type WeeklyPlanConceptGraph,
   type WeeklyPlanDueReview,
   type WeeklyPlanRecentEpisode,
+  type WeeklyPlanThemeGenerator,
 } from "@learnpro/agent";
+import type { LLMProvider } from "@learnpro/llm";
 import type { SessionResolver } from "./session.js";
 
 // STORY-046b — weekly themed plan routes:
@@ -20,12 +23,20 @@ import type { SessionResolver } from "./session.js";
 // "previous plan created at" marker so dampening can compare against it. The marker lives in
 // `weekly_plan_marker_at` query / response field — there's no new DB schema; we re-use the
 // active session_plan's created_at the same way STORY-046's today-plan route does.
+//
+// STORY-046c — optional `themeGenerator` (LLM-backed) is wired only on the replan path. The
+// GET path leaves it undefined so a normal render never fires an LLM call. Operators can
+// disable the feature via `LEARNPRO_WEEKLY_THEME_LLM=0`.
 
 export interface WeeklyPlanRouteOptions {
   weeklyPlanDeps: WeeklyPlanDeps;
   sessionResolver: SessionResolver;
   // ISO weekday number 1..7 where 1=Monday, 7=Sunday. Defaults to 1 (Monday).
   weekStartsOn?: 1 | 2 | 3 | 4 | 5 | 6 | 7;
+  // STORY-046c — optional LLM-backed theme generator. When supplied, the replan path fires
+  // it once per call. The GET path NEVER fires it (cost gate). Defaults to no-LLM (the
+  // STORY-046b deterministic theme behavior).
+  themeGenerator?: WeeklyPlanThemeGenerator;
 }
 
 // Read-side deps surface. apps/api wires these to @learnpro/db helpers; tests pass fakes.
@@ -68,6 +79,7 @@ const TrackSlugQuerySchema = z.object({
 
 export function registerWeeklyPlanRoutes(app: FastifyInstance, opts: WeeklyPlanRouteOptions): void {
   const weekStartsOn = opts.weekStartsOn ?? 1;
+  const themeGenerator = opts.themeGenerator;
 
   app.get("/v1/weekly-plan", async (req, reply) => {
     const session = await opts.sessionResolver(req);
@@ -89,6 +101,7 @@ export function registerWeeklyPlanRoutes(app: FastifyInstance, opts: WeeklyPlanR
       });
     }
 
+    // Cost gate: GETs never fire the LLM theme generator. Only the replan path does.
     const plan = await composeWeekly({
       user_id: session.user_id,
       trackSlug,
@@ -127,6 +140,9 @@ export function registerWeeklyPlanRoutes(app: FastifyInstance, opts: WeeklyPlanR
       });
     }
 
+    // STORY-046c — fire the LLM theme generator on replan only. Cost: ~1 Haiku call per
+    // replan request. When `themeGenerator` is undefined (env-disabled or feature-off),
+    // the composer falls back to STORY-046b's deterministic theme behavior.
     const plan = await composeWeekly({
       user_id: session.user_id,
       trackSlug,
@@ -134,6 +150,7 @@ export function registerWeeklyPlanRoutes(app: FastifyInstance, opts: WeeklyPlanR
       weekStartsOn,
       deps: opts.weeklyPlanDeps,
       regenerate: true,
+      ...(themeGenerator !== undefined ? { themeGenerator } : {}),
     });
     if (plan === null) {
       return reply.code(503).send({
@@ -167,10 +184,11 @@ interface ComposeInput {
   weekStartsOn: 1 | 2 | 3 | 4 | 5 | 6 | 7;
   deps: WeeklyPlanDeps;
   regenerate: boolean;
+  themeGenerator?: WeeklyPlanThemeGenerator;
 }
 
 async function composeWeekly(input: ComposeInput): Promise<WeeklyPlan | null> {
-  const { user_id, trackSlug, now, weekStartsOn, deps, regenerate } = input;
+  const { user_id, trackSlug, now, weekStartsOn, deps, regenerate, themeGenerator } = input;
   const [graph, recentEpisodes, dueReviews, targetRole, previousMarkerAt, episodesToday] =
     await Promise.all([
       deps.getConceptGraph({ track_slug: trackSlug }),
@@ -186,6 +204,8 @@ async function composeWeekly(input: ComposeInput): Promise<WeeklyPlan | null> {
   if (previousMarkerAt !== null) optionalPrev.previousPlanCreatedAt = previousMarkerAt;
   const optionalRole: { targetRole?: string | null } = {};
   if (targetRole !== null) optionalRole.targetRole = targetRole;
+  const optionalThemeGen: { themeGenerator?: WeeklyPlanThemeGenerator } = {};
+  if (themeGenerator !== undefined) optionalThemeGen.themeGenerator = themeGenerator;
 
   return buildWeeklyPlan({
     user_id,
@@ -199,11 +219,56 @@ async function composeWeekly(input: ComposeInput): Promise<WeeklyPlan | null> {
     episodesTodayCount: episodesToday,
     ...optionalPrev,
     ...optionalRole,
+    ...optionalThemeGen,
   });
 }
 
 function serialize(plan: WeeklyPlan): WeeklyPlan {
   return WeeklyPlanSchema.parse(plan);
+}
+
+// === STORY-046c — LLM theme generator wiring ===
+
+export interface BuildLLMThemeGeneratorOptions {
+  llm: LLMProvider;
+}
+
+// Builds a `WeeklyPlanThemeGenerator` from an LLMProvider. The function adapts the
+// agent's `generateWeeklyTheme` to the buildWeeklyPlan dep contract — concept shape
+// passes through unchanged. Errors / null returns from the agent surface as null so
+// `buildWeeklyPlan` falls back to STORY-046b's deterministic theme.
+export function buildLLMThemeGenerator(
+  opts: BuildLLMThemeGeneratorOptions,
+): WeeklyPlanThemeGenerator {
+  const { llm } = opts;
+  return async (input) => {
+    const result = await generateWeeklyTheme({
+      llm,
+      concepts: input.concepts.map((c) => {
+        const tags = c.tags;
+        return tags !== undefined
+          ? { slug: c.slug, name: c.name, tags }
+          : { slug: c.slug, name: c.name };
+      }),
+      target_role: input.target_role ?? null,
+    });
+    if (result === null) return null;
+    return { theme: result.theme };
+  };
+}
+
+// Reads `LEARNPRO_WEEKLY_THEME_LLM` and returns a WeeklyPlanThemeGenerator only when the
+// flag is enabled (default on; set to "0" / "false" / "off" to disable). Defense in depth:
+// when no LLM is wired (no API key), the env flag effectively no-ops because the caller
+// won't supply this generator.
+export function buildWeeklyThemeGeneratorFromEnv(opts: {
+  llm: LLMProvider;
+  env: NodeJS.ProcessEnv;
+}): WeeklyPlanThemeGenerator | undefined {
+  const raw = (opts.env["LEARNPRO_WEEKLY_THEME_LLM"] ?? "1").toLowerCase().trim();
+  const disabled = raw === "0" || raw === "false" || raw === "off" || raw === "no";
+  if (disabled) return undefined;
+  return buildLLMThemeGenerator({ llm: opts.llm });
 }
 
 // === DB-backed deps adapter (production wiring) ===
