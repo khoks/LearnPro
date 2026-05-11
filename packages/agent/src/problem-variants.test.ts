@@ -464,11 +464,18 @@ function recordingTelemetry(): {
   return { events, cb };
 }
 
-// STORY-039d — stub judges for testing.
-function passingJudge(): SpecClarityJudge & { calls: number } {
-  const judge = (async () => {
-    judge.calls += 1;
-    return {
+// STORY-039d — stub judges for testing. We expose `calls` on a stable closure so each
+// test can assert how many times the judge was invoked.
+interface TestJudge {
+  judge: SpecClarityJudge;
+  calls: () => number;
+}
+
+function passingJudge(): TestJudge {
+  let calls = 0;
+  const judge: SpecClarityJudge = async () => {
+    calls += 1;
+    const result: VariantSpecClarityResult = {
       instruction_clarity: 5,
       example_quality: 4,
       concept_match: 5,
@@ -478,17 +485,18 @@ function passingJudge(): SpecClarityJudge & { calls: number } {
         concept_match: "tags match",
       },
       pass: true,
-    } satisfies VariantSpecClarityResult;
-  }) as SpecClarityJudge & { calls: number };
-  judge.calls = 0;
-  return judge;
+    };
+    return result;
+  };
+  return { judge, calls: () => calls };
 }
 
-function failingJudge(scoreOverride = 2): SpecClarityJudge & { calls: number } {
-  const judge = (async () => {
-    judge.calls += 1;
-    return {
-      instruction_clarity: scoreOverride,
+function failingJudge(): TestJudge {
+  let calls = 0;
+  const judge: SpecClarityJudge = async () => {
+    calls += 1;
+    const result: VariantSpecClarityResult = {
+      instruction_clarity: 2,
       example_quality: 4,
       concept_match: 5,
       reasoning: {
@@ -497,19 +505,19 @@ function failingJudge(scoreOverride = 2): SpecClarityJudge & { calls: number } {
         concept_match: "fine",
       },
       pass: false,
-    } satisfies VariantSpecClarityResult;
-  }) as SpecClarityJudge & { calls: number };
-  judge.calls = 0;
-  return judge;
+    };
+    return result;
+  };
+  return { judge, calls: () => calls };
 }
 
-function throwingJudge(): SpecClarityJudge & { calls: number } {
-  const judge = (async () => {
-    judge.calls += 1;
+function throwingJudge(): TestJudge {
+  let calls = 0;
+  const judge: SpecClarityJudge = async () => {
+    calls += 1;
     throw new Error("judge boom");
-  }) as SpecClarityJudge & { calls: number };
-  judge.calls = 0;
-  return judge;
+  };
+  return { judge, calls: () => calls };
 }
 
 describe("generateProblemVariant — STORY-039a self-validation gate", () => {
@@ -707,18 +715,18 @@ describe("generateProblemVariant — STORY-039a self-validation gate", () => {
 describe("generateProblemVariant — STORY-039d spec-clarity judge gate", () => {
   it("happy path: passing judge → returns variant + emits validated_pass (no dropped_spec_clarity)", async () => {
     const llm = fakeLLM([JSON.stringify(validVariantPayload())]);
-    const judge = passingJudge();
+    const stub = passingJudge();
     const { events, cb } = recordingTelemetry();
     const out = await generateProblemVariant({
       llm,
       user_id: "u",
       source: SOURCE_PROBLEM,
-      judge,
+      judge: stub.judge,
       onTelemetry: cb,
     });
     expect(out.variants).toHaveLength(1);
     expect(out.fallback_used).toBe(false);
-    expect(judge.calls).toBe(1);
+    expect(stub.calls()).toBe(1);
     expect(events).toEqual([
       { kind: "generated", slug: "sum-even-numbers-variant-1", attempt: 1 },
       { kind: "validated_pass", slug: "sum-even-numbers-variant-1", attempt: 1 },
@@ -730,18 +738,18 @@ describe("generateProblemVariant — STORY-039d spec-clarity judge gate", () => 
       JSON.stringify(validVariantPayload({ slug: "sum-even-numbers-variant-1" })),
       JSON.stringify(validVariantPayload({ slug: "sum-even-numbers-variant-2" })),
     ]);
-    const judge = failingJudge();
+    const stub = failingJudge();
     const { events, cb } = recordingTelemetry();
     const out = await generateProblemVariant({
       llm,
       user_id: "u",
       source: SOURCE_PROBLEM,
-      judge,
+      judge: stub.judge,
       onTelemetry: cb,
     });
     expect(out.variants).toEqual([]);
     expect(out.fallback_used).toBe(true);
-    expect(judge.calls).toBe(2);
+    expect(stub.calls()).toBe(2);
     expect(events.filter((e) => e.kind === "dropped_spec_clarity")).toHaveLength(2);
     expect(events.filter((e) => e.kind === "validated_pass")).toHaveLength(0);
   });
@@ -755,7 +763,7 @@ describe("generateProblemVariant — STORY-039d spec-clarity judge gate", () => 
       llm,
       user_id: "u",
       source: SOURCE_PROBLEM,
-      judge: failingJudge(),
+      judge: failingJudge().judge,
     });
     expect(llm.calls).toHaveLength(2);
     const secondMessage = llm.calls[1]?.messages[0]?.content ?? "";
@@ -821,13 +829,13 @@ describe("generateProblemVariant — STORY-039d spec-clarity judge gate", () => 
       JSON.stringify(validVariantPayload({ slug: "sum-even-numbers-variant-1" })),
       JSON.stringify(validVariantPayload({ slug: "sum-even-numbers-variant-2" })),
     ]);
-    const judge = throwingJudge();
+    const stub = throwingJudge();
     const { events, cb } = recordingTelemetry();
     const out = await generateProblemVariant({
       llm,
       user_id: "u",
       source: SOURCE_PROBLEM,
-      judge,
+      judge: stub.judge,
       onTelemetry: cb,
     });
     expect(out.variants).toEqual([]);
@@ -841,32 +849,32 @@ describe("generateProblemVariant — STORY-039d spec-clarity judge gate", () => 
       JSON.stringify(validVariantPayload({ slug: "sum-even-numbers-variant-2" })),
     ]);
     const sandbox = new StubFailingSandbox();
-    const judge = passingJudge();
+    const stub = passingJudge();
     await generateProblemVariant({
       llm,
       user_id: "u",
       source: SOURCE_PROBLEM,
       sandbox,
-      judge,
+      judge: stub.judge,
     });
     // Sandbox failed → judge should never run.
-    expect(judge.calls).toBe(0);
+    expect(stub.calls()).toBe(0);
   });
 
   it("judge AND sandbox both wired: sandbox pass + judge pass → returns variant", async () => {
     const llm = fakeLLM([JSON.stringify(validVariantPayload())]);
     const sandbox = new StubPassingSandbox();
-    const judge = passingJudge();
+    const stub = passingJudge();
     const out = await generateProblemVariant({
       llm,
       user_id: "u",
       source: SOURCE_PROBLEM,
       sandbox,
-      judge,
+      judge: stub.judge,
     });
     expect(out.variants).toHaveLength(1);
     expect(sandbox.calls.length).toBeGreaterThan(0);
-    expect(judge.calls).toBe(1);
+    expect(stub.calls()).toBe(1);
   });
 
   it("no judge wired: validated_pass still fires (behaves as STORY-039a)", async () => {
@@ -889,7 +897,7 @@ describe("generateProblemVariant — STORY-039d spec-clarity judge gate", () => 
       llm,
       user_id: "u",
       source: SOURCE_PROBLEM,
-      judge: failingJudge(),
+      judge: failingJudge().judge,
       onTelemetry: {
         variants_dropped_spec_clarity: () => {
           throw new Error("sink boom");
