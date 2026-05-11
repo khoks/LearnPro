@@ -12,7 +12,8 @@
     "build": "tsc -p tsconfig.json",
     "lint": "eslint src",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run --passWithNoTests"
+    "test": "vitest run --passWithNoTests",
+    "seed:variants": "tsx ./src/seed-variants-cli.ts"
   },
   "dependencies": {
     "@learnpro/db": "workspace:*",
@@ -22,8 +23,11 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@learnpro/agent": "workspace:*",
+    "@learnpro/llm": "workspace:*",
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^22.10.2",
+    "tsx": "^4.19.2",
     "typescript": "^5.7.2",
     "vitest": "^2.1.8"
   }
