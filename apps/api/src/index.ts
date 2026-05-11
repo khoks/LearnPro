@@ -53,12 +53,8 @@ import {
   WebPushChannel,
   type NotificationChannel,
 } from "@learnpro/notifications";
-import {
-  EmailChannel,
-  NoopEmailTransport,
-  ResendTransport,
-  type EmailTransport,
-} from "@learnpro/notifications/email";
+import { EmailChannel } from "@learnpro/notifications/email";
+import { buildEmailTransportFromEnv } from "./email-transport-env.js";
 import { registerEmailDigestRoutes } from "./email-digest.js";
 import { registerLlmModeRoutes } from "./llm-mode.js";
 import {
@@ -817,23 +813,6 @@ export function buildExportRateLimiterFromEnv(env: NodeJS.ProcessEnv): RateLimit
     client: redisClientAdapter(client),
     windowMs: loadExportWindowMs(env),
   });
-}
-
-// STORY-045 — picks the email transport based on LEARNPRO_EMAIL_PROVIDER. `resend` requires
-// RESEND_API_KEY + LEARNPRO_EMAIL_FROM; missing config falls back to `NoopEmailTransport` so
-// the dispatcher chain is stable across "email not configured" deploys (e.g. self-hosters who
-// haven't set up SMTP yet).
-function buildEmailTransportFromEnv(): EmailTransport {
-  const provider = (process.env["LEARNPRO_EMAIL_PROVIDER"] ?? "noop").toLowerCase();
-  if (provider === "resend") {
-    const apiKey = process.env["RESEND_API_KEY"];
-    const defaultFrom = process.env["LEARNPRO_EMAIL_FROM"];
-    if (!apiKey || !defaultFrom) {
-      return new NoopEmailTransport();
-    }
-    return new ResendTransport({ apiKey, defaultFrom });
-  }
-  return new NoopEmailTransport();
 }
 
 // Builds the production session-plan factory: planSession agent tool wired to Haiku +

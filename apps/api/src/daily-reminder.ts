@@ -15,12 +15,8 @@ import {
   WebPushChannel,
   type NotificationChannel,
 } from "@learnpro/notifications";
-import {
-  EmailChannel,
-  NoopEmailTransport,
-  ResendTransport,
-  type EmailTransport,
-} from "@learnpro/notifications/email";
+import { EmailChannel } from "@learnpro/notifications/email";
+import { buildEmailTransportFromEnv } from "./email-transport-env.js";
 import { profiles, users } from "@learnpro/db";
 import { and, eq, isNotNull } from "drizzle-orm";
 import { buildWebPushSender, configureVapid, type WebPushConfig } from "./notifications-vapid.js";
@@ -99,10 +95,14 @@ async function main(): Promise<void> {
       configureVapid(vapid);
       channels.push(new WebPushChannel({ db, sender: buildWebPushSender() }));
     }
-    // STORY-045 — EmailChannel always sits in the dispatcher chain. Production wires Resend
-    // when LEARNPRO_EMAIL_PROVIDER=resend + RESEND_API_KEY are set; otherwise the noop transport
-    // makes every send a non-fatal no-op.
-    channels.push(new EmailChannel({ transport: pickEmailTransport() }));
+    // STORY-045 / STORY-045a — EmailChannel always sits in the dispatcher chain. Production
+    // wires Resend (RESEND_API_KEY) or Postmark (POSTMARK_SERVER_TOKEN); otherwise the noop
+    // transport makes every send a non-fatal no-op.
+    channels.push(
+      new EmailChannel({
+        transport: buildEmailTransportFromEnv({ log: (msg) => console.warn(msg) }),
+      }),
+    );
     // STORY-024 — wrap with quiet-hours filtering. Dispatches inside the user's window get
     // serialized into deferred_notifications and a separate cron drains the table.
     const { dispatcher } = dispatcherWithQuietHours({
@@ -138,19 +138,6 @@ async function main(): Promise<void> {
   } finally {
     await pool.end();
   }
-}
-
-function pickEmailTransport(): EmailTransport {
-  const provider = (process.env["LEARNPRO_EMAIL_PROVIDER"] ?? "noop").toLowerCase();
-  if (provider === "resend") {
-    const apiKey = process.env["RESEND_API_KEY"];
-    const defaultFrom = process.env["LEARNPRO_EMAIL_FROM"];
-    if (!apiKey || !defaultFrom) {
-      return new NoopEmailTransport();
-    }
-    return new ResendTransport({ apiKey, defaultFrom });
-  }
-  return new NoopEmailTransport();
 }
 
 const argv1 = process.argv[1] ?? "";

@@ -9,12 +9,8 @@ import {
   InAppChannel,
   type NotificationChannel,
 } from "@learnpro/notifications";
-import {
-  EmailChannel,
-  NoopEmailTransport,
-  ResendTransport,
-  type EmailTransport,
-} from "@learnpro/notifications/email";
+import { EmailChannel } from "@learnpro/notifications/email";
+import { buildEmailTransportFromEnv } from "./email-transport-env.js";
 import { runWeeklyEmailDigest } from "./email-digest-cron.js";
 
 // STORY-045 — Weekly digest cron. Mirrors the shape of `daily-reminder.ts`: this script is
@@ -33,7 +29,11 @@ async function main(): Promise<void> {
       // The InAppChannel still sits in the dispatcher chain for parity with production wiring,
       // but the channel filter on the dispatch call excludes it from being touched.
       new InAppChannel({ db }),
-      new EmailChannel({ transport: pickTransport() }),
+      new EmailChannel({
+        transport: buildEmailTransportFromEnv({
+          log: (msg) => console.warn(msg.replace("[email]", "[weekly-digest]")),
+        }),
+      }),
     ];
     const { dispatcher } = dispatcherWithQuietHours({
       channels,
@@ -59,22 +59,6 @@ async function main(): Promise<void> {
   } finally {
     await pool.end();
   }
-}
-
-function pickTransport(): EmailTransport {
-  const provider = (process.env["LEARNPRO_EMAIL_PROVIDER"] ?? "noop").toLowerCase();
-  if (provider === "resend") {
-    const apiKey = process.env["RESEND_API_KEY"];
-    const defaultFrom = process.env["LEARNPRO_EMAIL_FROM"];
-    if (!apiKey || !defaultFrom) {
-      console.warn(
-        "[weekly-digest] LEARNPRO_EMAIL_PROVIDER=resend set but RESEND_API_KEY or LEARNPRO_EMAIL_FROM missing — falling back to noop",
-      );
-      return new NoopEmailTransport();
-    }
-    return new ResendTransport({ apiKey, defaultFrom });
-  }
-  return new NoopEmailTransport();
 }
 
 const argv1 = process.argv[1] ?? "";
