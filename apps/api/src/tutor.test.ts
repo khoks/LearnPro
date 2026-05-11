@@ -578,6 +578,93 @@ describe("POST /v1/tutor/episodes/:id/finish (STORY-011)", () => {
     expect(res.statusCode).toBe(200);
     await app.close();
   });
+
+  // STORY-041a — the cheatsheet-enqueue hook is independent from onEpisodeFinish. Both fire on a
+  // successful close; both have their errors swallowed so a misbehaving queue can't block the
+  // user's close response.
+  it("calls the onCheatsheetEnqueue hook with the (user_id, episode_id) shape", async () => {
+    const calls: Array<{ user_id: string; org_id: string; episode_id: string }> = [];
+    const app = buildServer({
+      tutorAgentFactory: makeFactory(),
+      sessionResolver: userSession(USER_ID),
+      onCheatsheetEnqueue: async (input) => {
+        calls.push(input);
+      },
+    });
+    const res = await app.inject({
+      method: "POST",
+      url: `/v1/tutor/episodes/${EPISODE_ID}/finish`,
+      payload: { outcome: "abandoned" },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(calls).toHaveLength(1);
+    expect(calls[0]?.user_id).toBe(USER_ID);
+    expect(calls[0]?.episode_id).toBe(EPISODE_ID);
+    await app.close();
+  });
+
+  it("fires both onEpisodeFinish AND onCheatsheetEnqueue when both are wired", async () => {
+    const insightsCalls: string[] = [];
+    const cheatsheetCalls: string[] = [];
+    const app = buildServer({
+      tutorAgentFactory: makeFactory(),
+      sessionResolver: userSession(USER_ID),
+      onEpisodeFinish: async (input) => {
+        insightsCalls.push(input.episode_id);
+      },
+      onCheatsheetEnqueue: async (input) => {
+        cheatsheetCalls.push(input.episode_id);
+      },
+    });
+    const res = await app.inject({
+      method: "POST",
+      url: `/v1/tutor/episodes/${EPISODE_ID}/finish`,
+      payload: { outcome: "abandoned" },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(insightsCalls).toEqual([EPISODE_ID]);
+    expect(cheatsheetCalls).toEqual([EPISODE_ID]);
+    await app.close();
+  });
+
+  it("a failing onCheatsheetEnqueue does not block onEpisodeFinish (or the response)", async () => {
+    const insightsCalls: string[] = [];
+    const app = buildServer({
+      tutorAgentFactory: makeFactory(),
+      sessionResolver: userSession(USER_ID),
+      onCheatsheetEnqueue: async () => {
+        throw new Error("cheatsheet queue exploded");
+      },
+      onEpisodeFinish: async (input) => {
+        insightsCalls.push(input.episode_id);
+      },
+    });
+    const res = await app.inject({
+      method: "POST",
+      url: `/v1/tutor/episodes/${EPISODE_ID}/finish`,
+      payload: { outcome: "abandoned" },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(insightsCalls).toEqual([EPISODE_ID]);
+    await app.close();
+  });
+
+  it("swallows onCheatsheetEnqueue errors (route stays 200)", async () => {
+    const app = buildServer({
+      tutorAgentFactory: makeFactory(),
+      sessionResolver: userSession(USER_ID),
+      onCheatsheetEnqueue: async () => {
+        throw new Error("cheatsheet queue exploded");
+      },
+    });
+    const res = await app.inject({
+      method: "POST",
+      url: `/v1/tutor/episodes/${EPISODE_ID}/finish`,
+      payload: { outcome: "abandoned" },
+    });
+    expect(res.statusCode).toBe(200);
+    await app.close();
+  });
 });
 
 // Sanity check that IllegalTransitionError is wired through the global handler when thrown from

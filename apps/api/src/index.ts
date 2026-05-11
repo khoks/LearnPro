@@ -232,6 +232,10 @@ export interface BuildServerOptions {
   // the BullMQ enqueue helper (`enqueueProfileInsightsJob`); tests inject a fake to assert the
   // call shape. When undefined, the tutor route's hook is also undefined and no enqueue runs.
   onEpisodeFinish?: import("./tutor.js").RegisterTutorRoutesOptions["onEpisodeFinish"];
+  // STORY-041a — optional cheatsheet-enqueue hook, independent from `onEpisodeFinish`. Production
+  // wires `enqueueCheatsheetJob`; tests inject a fake. Independently injectable so a misbehaving
+  // cheatsheet queue can never block the profile-insights enqueue (and vice-versa).
+  onCheatsheetEnqueue?: import("./tutor.js").RegisterTutorRoutesOptions["onCheatsheetEnqueue"];
   // STORY-033 — optional DB handle for the `GET /v1/profile-insights` route. Same wiring
   // pattern as the others; production shares the single `db` instance via defaultsFromEnv.
   profileInsightsDb?: import("@learnpro/db").LearnProDb;
@@ -446,6 +450,7 @@ export function buildServer(opts: BuildServerOptions = {}) {
       redactor,
       ...(opts.gotHelpStore ? { gotHelpStore: opts.gotHelpStore } : {}),
       ...(opts.onEpisodeFinish ? { onEpisodeFinish: opts.onEpisodeFinish } : {}),
+      ...(opts.onCheatsheetEnqueue ? { onCheatsheetEnqueue: opts.onCheatsheetEnqueue } : {}),
     });
   }
 
