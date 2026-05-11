@@ -141,11 +141,30 @@ export function createAssignProblemTool(opts: CreateAssignProblemToolOptions): A
       const due = opts.deps.loadDueConceptSlugs
         ? await opts.deps.loadDueConceptSlugs({ user_id: input.user_id })
         : null;
+
+      // STORY-039c — load the user's already-seen seed slugs + the per-source unattempted
+      // variants cache. Both are optional; when either is unwired the assigner skips the
+      // variant-swap step entirely.
+      const seenSlugs = opts.deps.loadSeenSourceSlugs
+        ? await opts.deps.loadSeenSourceSlugs({
+            user_id: input.user_id,
+            org_id: input.org_id,
+          })
+        : [];
+      const unattemptedVariantsBySource = opts.deps.loadUnattemptedVariantsBySource
+        ? await opts.deps.loadUnattemptedVariantsBySource({
+            user_id: input.user_id,
+            org_id: input.org_id,
+          })
+        : new Map<string, ProblemCatalogEntry>();
+
       const candidate = pickCandidate({
         tier,
         recent,
         catalog,
         due_concept_slugs: due ?? [],
+        seen_slugs: seenSlugs,
+        unattempted_variants_by_source: unattemptedVariantsBySource,
       });
       if (!candidate) {
         throw new NoEligibleProblemError(tier, input.track_id);
@@ -155,6 +174,7 @@ export function createAssignProblemTool(opts: CreateAssignProblemToolOptions): A
         user_id: input.user_id,
         org_id: input.org_id,
         problem_id: candidate.problem_id,
+        is_variant_of_problem_id: candidate.source_problem_id ?? null,
       });
 
       const dueCount = due === null ? null : due.length;
@@ -239,14 +259,24 @@ export function pickDifficultyTier(opts: {
 // broken in favor of problems whose `concept_tags` overlap with the user's due concept slugs.
 // Spaced-repetition is *secondary* — it never overrides difficulty or recency, only re-orders
 // the equally-eligible final-stage candidates.
+//
+// STORY-039c: AFTER the primary candidate is selected, if its slug is in the seen-set AND the
+// `unattempted_variants_by_source` map has an unattempted variant for that source problem, the
+// final pick is swapped to the variant. Variant difficulty must match the chosen tier (caller
+// guarantees by construction — variants inherit the seed's difficulty). The swap is the LAST
+// step so it never overrides the difficulty heuristic or recency filter.
 export function pickCandidate(opts: {
   tier: DifficultyTier;
   recent: RecentEpisode[];
   catalog: ProblemCatalogEntry[];
   due_concept_slugs?: ReadonlyArray<string>;
+  seen_slugs?: ReadonlyArray<string>;
+  unattempted_variants_by_source?: ReadonlyMap<string, ProblemCatalogEntry>;
 }): ProblemCatalogEntry | null {
   const due = new Set(opts.due_concept_slugs ?? []);
   const inTier = opts.catalog.filter((c) => difficultyToTier(c.def.difficulty) === opts.tier);
+  const seen = new Set(opts.seen_slugs ?? []);
+  const variants = opts.unattempted_variants_by_source ?? new Map<string, ProblemCatalogEntry>();
   if (inTier.length === 0) {
     // Tier empty — try adjacent tiers within the same difficulty ladder before giving up.
     const order = TIER_ORDER;
@@ -256,12 +286,29 @@ export function pickCandidate(opts: {
       if (!probe) continue;
       const fallback = opts.catalog.filter((c) => difficultyToTier(c.def.difficulty) === probe);
       if (fallback.length > 0) {
-        return chooseOldest(fallback, opts.recent, due);
+        const chosen = chooseOldest(fallback, opts.recent, due);
+        return maybeSwapToVariant(chosen, seen, variants);
       }
     }
     return null;
   }
-  return chooseOldest(inTier, opts.recent, due);
+  const chosen = chooseOldest(inTier, opts.recent, due);
+  return maybeSwapToVariant(chosen, seen, variants);
+}
+
+// STORY-039c — when the chosen seed has been "seen" by the user and a cached variant exists,
+// swap. The variant entry carries `source_problem_id` so the assigner can stamp the resulting
+// episode's `is_variant_of_problem_id` column. No-op when the seed is unseen or no variant is
+// available.
+function maybeSwapToVariant(
+  chosen: ProblemCatalogEntry,
+  seen: ReadonlySet<string>,
+  variants: ReadonlyMap<string, ProblemCatalogEntry>,
+): ProblemCatalogEntry {
+  if (!seen.has(chosen.problem_slug)) return chosen;
+  const variant = variants.get(chosen.problem_id);
+  if (!variant) return chosen;
+  return variant;
 }
 
 // "Oldest" = the candidate the user has not seen in their recent window, or — if all candidates

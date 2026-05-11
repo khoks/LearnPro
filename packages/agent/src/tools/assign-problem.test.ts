@@ -711,3 +711,177 @@ describe("createAssignProblemTool: STORY-033 insight context", () => {
     expect(lastLimit).toBe(5);
   });
 });
+
+function variantPdef(opts: { slug: string; difficulty: number; variant_of: string }): ProblemDef {
+  return {
+    kind: "implement",
+    slug: opts.slug,
+    name: `Variant ${opts.slug}`,
+    language: "python",
+    difficulty: opts.difficulty as ProblemDef["difficulty"],
+    track: "python-fundamentals",
+    concept_tags: ["fundamentals"],
+    statement: "do the thing (variant)",
+    starter_code: "def solve(x):\n    pass\n",
+    reference_solution: "def solve(x):\n    return x\n",
+    public_examples: [{ input: 1, expected: 1 }],
+    hidden_tests: [{ input: 2, expected: 2 }],
+    expected_median_time_to_solve_ms: 60_000,
+    variant_of: opts.variant_of,
+  };
+}
+
+// STORY-039c — per-user "already seen the seed" tracking. When the user has closed an episode
+// on the chosen seed AND a cached LLM-generated variant exists for that seed, the assigner
+// swaps to the variant. Cold-start (no seen seed) or seen-but-no-variant fall back to the seed.
+describe("pickCandidate: STORY-039c variant-preference for seen seeds", () => {
+  it("cold-start (no seen slugs) returns the original seed", () => {
+    const catalog = [entry("alpha", 1)];
+    const picked = pickCandidate({
+      tier: "easy",
+      recent: [],
+      catalog,
+      seen_slugs: [],
+      unattempted_variants_by_source: new Map(),
+    });
+    expect(picked?.problem_slug).toBe("alpha");
+  });
+
+  it("seen seed + unattempted variant in map → returns the variant", () => {
+    const seed = entry("alpha", 1);
+    const variantEntry: ProblemCatalogEntry = {
+      problem_id: "ffffffff-ffff-4fff-8fff-000000000001",
+      problem_slug: "alpha-variant-1",
+      def: variantPdef({ slug: "alpha-variant-1", difficulty: 1, variant_of: "alpha" }),
+      source_problem_id: seed.problem_id,
+    };
+    const variants = new Map<string, ProblemCatalogEntry>();
+    variants.set(seed.problem_id, variantEntry);
+    const picked = pickCandidate({
+      tier: "easy",
+      recent: [],
+      catalog: [seed],
+      seen_slugs: ["alpha"],
+      unattempted_variants_by_source: variants,
+    });
+    expect(picked?.problem_slug).toBe("alpha-variant-1");
+    expect(picked?.source_problem_id).toBe(seed.problem_id);
+  });
+
+  it("seen seed but no variant in map → falls back to the original seed", () => {
+    const seed = entry("alpha", 1);
+    const picked = pickCandidate({
+      tier: "easy",
+      recent: [],
+      catalog: [seed],
+      seen_slugs: ["alpha"],
+      unattempted_variants_by_source: new Map(),
+    });
+    expect(picked?.problem_slug).toBe("alpha");
+    expect(picked?.source_problem_id).toBeUndefined();
+  });
+
+  it("unseen seed even with a variant available → returns the seed (variant cache untouched)", () => {
+    const seed = entry("alpha", 1);
+    const variantEntry: ProblemCatalogEntry = {
+      problem_id: "ffffffff-ffff-4fff-8fff-000000000002",
+      problem_slug: "alpha-variant-2",
+      def: variantPdef({ slug: "alpha-variant-2", difficulty: 1, variant_of: "alpha" }),
+      source_problem_id: seed.problem_id,
+    };
+    const variants = new Map<string, ProblemCatalogEntry>();
+    variants.set(seed.problem_id, variantEntry);
+    const picked = pickCandidate({
+      tier: "easy",
+      recent: [],
+      catalog: [seed],
+      seen_slugs: [],
+      unattempted_variants_by_source: variants,
+    });
+    expect(picked?.problem_slug).toBe("alpha");
+  });
+});
+
+// STORY-039c — full tool path: when the deps adapter wires the variant ports, the assigner
+// stamps the resulting episode's `is_variant_of_problem_id` and surfaces the variant's payload.
+describe("createAssignProblemTool: STORY-039c variant swap end-to-end", () => {
+  const SEED_ID = "11111111-1111-4111-8111-aaaaaaaaaaaa";
+  const VARIANT_ID = "22222222-2222-4222-8222-bbbbbbbbbbbb";
+
+  it("seen seed → assigns the variant problem + stamps episode lineage", async () => {
+    const seed: ProblemCatalogEntry = {
+      problem_id: SEED_ID,
+      problem_slug: "alpha",
+      def: pdef({ slug: "alpha", difficulty: 1 }),
+    };
+    const variantEntry: ProblemCatalogEntry = {
+      problem_id: VARIANT_ID,
+      problem_slug: "alpha-variant-1",
+      def: variantPdef({ slug: "alpha-variant-1", difficulty: 1, variant_of: "alpha" }),
+      source_problem_id: SEED_ID,
+    };
+    let stampedSeedId: string | null | undefined = undefined;
+    const deps: AssignProblemDeps = {
+      async loadRecentEpisodes() {
+        return [];
+      },
+      async loadProblemCatalog() {
+        return [seed];
+      },
+      async createEpisode(input) {
+        stampedSeedId = input.is_variant_of_problem_id;
+        return {
+          episode_id: "99999999-9999-4999-8999-000000000030",
+          started_at: 1700000000000,
+        };
+      },
+      async loadSeenSourceSlugs() {
+        return ["alpha"];
+      },
+      async loadUnattemptedVariantsBySource() {
+        const m = new Map<string, ProblemCatalogEntry>();
+        m.set(SEED_ID, variantEntry);
+        return m;
+      },
+    };
+    const tool = createAssignProblemTool({ deps });
+    const out = await tool.run({ user_id: USER_ID, org_id: ORG_ID, track_id: TRACK_ID });
+    expect(out.problem_id).toBe(VARIANT_ID);
+    expect(out.problem_slug).toBe("alpha-variant-1");
+    expect(stampedSeedId).toBe(SEED_ID);
+  });
+
+  it("unseen seed → assigns the seed and leaves is_variant_of_problem_id null", async () => {
+    const seed: ProblemCatalogEntry = {
+      problem_id: SEED_ID,
+      problem_slug: "alpha",
+      def: pdef({ slug: "alpha", difficulty: 1 }),
+    };
+    let stampedSeedId: string | null | undefined = undefined;
+    const deps: AssignProblemDeps = {
+      async loadRecentEpisodes() {
+        return [];
+      },
+      async loadProblemCatalog() {
+        return [seed];
+      },
+      async createEpisode(input) {
+        stampedSeedId = input.is_variant_of_problem_id;
+        return {
+          episode_id: "99999999-9999-4999-8999-000000000031",
+          started_at: 1700000000000,
+        };
+      },
+      async loadSeenSourceSlugs() {
+        return [];
+      },
+      async loadUnattemptedVariantsBySource() {
+        return new Map();
+      },
+    };
+    const tool = createAssignProblemTool({ deps });
+    const out = await tool.run({ user_id: USER_ID, org_id: ORG_ID, track_id: TRACK_ID });
+    expect(out.problem_id).toBe(SEED_ID);
+    expect(stampedSeedId).toBeNull();
+  });
+});
