@@ -1,0 +1,101 @@
+{
+  "id": "grade-split-vs-unified-live",
+  "story": "STORY-034a",
+  "description": "Live-LLM A/B comparison driving each transcript through BOTH the unified-tutor grade prompt AND the split gradeAgent prompt. Consumed by packages/agent/evals/grader-ab.ts behind LEARNPRO_RUN_LIVE_LLM_EVAL=1. NOT consumed by the canned-prompt-eval pipeline.",
+  "transcripts": [
+    {
+      "label": "py-two-sum-hash-map-clean",
+      "problem_name": "Two sum",
+      "problem_language": "python",
+      "problem_statement": "Return the indices of the two numbers in `nums` that sum to `target`. Each input has exactly one solution; do not use the same element twice.",
+      "user_code": "def solve(nums, target):\n    seen = {}\n    for i, v in enumerate(nums):\n        if target - v in seen:\n            return [seen[target - v], i]\n        seen[v] = i\n    return []\n",
+      "total_tests": 5,
+      "passed_tests": 5,
+      "failing_test_summaries": [],
+      "notes": "Idiomatic single-pass dict lookup. Expect both rubrics to score idiomatic high."
+    },
+    {
+      "label": "py-two-sum-nested-loop-brute",
+      "problem_name": "Two sum",
+      "problem_language": "python",
+      "problem_statement": "Return the indices of the two numbers in `nums` that sum to `target`. Each input has exactly one solution; do not use the same element twice.",
+      "user_code": "def solve(nums, target):\n    for i in range(len(nums)):\n        for j in range(i + 1, len(nums)):\n            if nums[i] + nums[j] == target:\n                return [i, j]\n    return []\n",
+      "total_tests": 5,
+      "passed_tests": 5,
+      "failing_test_summaries": [],
+      "notes": "Brute-force O(n^2) passes tests. Headline split-vs-unified test: split grader should drop idiomatic + efficiency, unified rubric tends to anchor near 0.7-0.9."
+    },
+    {
+      "label": "py-filter-evens-list-comp",
+      "problem_name": "Filter even numbers",
+      "problem_language": "python",
+      "problem_statement": "Return a new list containing only the even integers from the input, preserving order.",
+      "user_code": "def solve(nums):\n    return [n for n in nums if n % 2 == 0]\n",
+      "total_tests": 4,
+      "passed_tests": 4,
+      "failing_test_summaries": [],
+      "notes": "Clean Python comprehension; expect high idiomatic on both rubrics."
+    },
+    {
+      "label": "py-filter-evens-imperative-loop",
+      "problem_name": "Filter even numbers",
+      "problem_language": "python",
+      "problem_statement": "Return a new list containing only the even integers from the input, preserving order.",
+      "user_code": "def solve(nums):\n    result = []\n    for n in nums:\n        if n % 2 == 0:\n            result.append(n)\n    return result\n",
+      "total_tests": 4,
+      "passed_tests": 4,
+      "failing_test_summaries": [],
+      "notes": "Imperative append-loop where a comprehension is idiomatic. Split grader should score idiomatic lower than unified would."
+    },
+    {
+      "label": "py-range-sum-off-by-one-fail",
+      "problem_name": "Range sum (inclusive)",
+      "problem_language": "python",
+      "problem_statement": "Given two integers `start` and `end`, return the sum of every integer from `start` to `end` inclusive.",
+      "user_code": "def solve(start, end):\n    total = 0\n    for i in range(start, end):\n        total += i\n    return total\n",
+      "total_tests": 5,
+      "passed_tests": 3,
+      "failing_test_summaries": [
+        "mismatch; expected=15 got=10 (start=1, end=5 should include 5)",
+        "mismatch; expected=10 got=6 (start=1, end=4 should include 4)"
+      ],
+      "notes": "Off-by-one in range bounds. Expect test_coverage_thinking=1 on split; correctness 0.6 on unified."
+    },
+    {
+      "label": "ts-camelcase-deep-clean",
+      "problem_name": "camelCase keys deeply",
+      "problem_language": "typescript",
+      "problem_statement": "Given an object with snake_case keys (including nested objects and arrays), return a new object where every key is camelCased recursively.",
+      "user_code": "function toCamel(s: string): string {\n  return s.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase());\n}\n\nexport function solve(input: unknown): unknown {\n  if (Array.isArray(input)) return input.map(solve);\n  if (input && typeof input === \"object\") {\n    const out: Record<string, unknown> = {};\n    for (const [k, v] of Object.entries(input as Record<string, unknown>)) {\n      out[toCamel(k)] = solve(v);\n    }\n    return out;\n  }\n  return input;\n}\n",
+      "total_tests": 6,
+      "passed_tests": 6,
+      "failing_test_summaries": [],
+      "notes": "Clean idiomatic TS with recursion + narrowing. Expect both rubrics to score idiomatic high."
+    },
+    {
+      "label": "ts-equality-coercion-bug",
+      "problem_name": "Parse and sum numbers",
+      "problem_language": "typescript",
+      "problem_statement": "Given an array of strings that may contain numeric strings, return the sum of items strictly equal to the integer 42.",
+      "user_code": "export function solve(values: string[]): number {\n  let count = 0;\n  for (const v of values) {\n    if (v == 42) count += 1;\n  }\n  return count;\n}\n",
+      "total_tests": 4,
+      "passed_tests": 2,
+      "failing_test_summaries": [
+        "mismatch; expected=0 got=2 ([\"42\", \"42\"] should sum to 0 under strict equality)",
+        "mismatch; expected=0 got=1 ([\"42\"] should sum to 0 under strict equality)"
+      ],
+      "notes": "Loose equality bug; idiomatic TS uses === plus explicit Number(). Expect split idiomatic=1 / test_coverage_thinking=1."
+    },
+    {
+      "label": "py-memoized-fib-clean",
+      "problem_name": "Fibonacci with memoization",
+      "problem_language": "python",
+      "problem_statement": "Return the nth Fibonacci number. n can be as large as 10000.",
+      "user_code": "from functools import lru_cache\n\n@lru_cache(maxsize=None)\ndef solve(n):\n    if n < 2:\n        return n\n    return solve(n - 1) + solve(n - 2)\n",
+      "total_tests": 6,
+      "passed_tests": 6,
+      "failing_test_summaries": [],
+      "notes": "lru_cache memoization is the canonical Python idiom for this problem. Expect both rubrics to score idiomatic high; split efficiency=5."
+    }
+  ]
+}
