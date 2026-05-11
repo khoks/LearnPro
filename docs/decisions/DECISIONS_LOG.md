@@ -8,6 +8,60 @@
 
 ---
 
+## 2026-05-11 — Squash-rebase as a fallback when iterative rebase hits too many conflicts; STORY-NNNg follow-up convention for "defer the wiring, ship the structure"
+
+**Context:** STORY-039e (admin failed-gate surface for LLM-generated variants) was authored against an older `main` and accumulated 12 commits before the orchestrator started merging follow-ups in parallel. By the time PR #76 was ready, `main` had moved through six merges (STORY-038b, 039a, 039c, 039d, 039f, 034a, 045a) — five of which collided with STORY-039e on the same files (`packages/agent/src/{index.ts, problem-variants.ts, problem-variants.test.ts}` and `apps/api/src/problem-variants{.ts, .test.ts}`). The standard rebase loop produced cascade conflicts: every one of the 12 commits re-introduced a conflict on the same chunk, and resolving them one by one was producing inconsistent intermediate states that the next commit's rebase then re-conflicted against. After ~15 minutes the orchestrator gave up on the iterative rebase and switched strategy.
+
+**Decision:**
+1. **When iterative rebase produces a cascade (every commit reconflicts on the same files), switch to squash-rebase.** Procedure:
+   1. `git rebase --abort` to bail out.
+   2. `git reset --hard origin/main` on the branch worktree.
+   3. `git checkout origin/<branch> -- .` to overlay the branch's tip files onto main.
+   4. For any file the branch's tip OVERWROTE that main's newer commits had also modified (i.e., files involved in the cascade), `git checkout origin/main -- <file>` to restore main's version, then re-apply the branch's additive parts via targeted Edit. This concentrates the conflict resolution into ONE pass, not 12.
+   5. Stage everything, `pnpm format`, write a single squash commit explaining what was preserved vs. deferred, force-push.
+2. **`STORY-NNNg` is reserved for "ship the structure now, wire the cross-cutting glue next."** When a follow-up's runtime integration (the wiring that crosses three packages) collides irreconcilably with a sibling follow-up that landed first, ship the new STRUCTURE (DB tables, migrations, routes, types, UI surfaces) under the original `STORY-NNN<letter>` and file the WIRING as `STORY-NNNg` (always the 'g' letter for "glue / generic-followup"). The follow-up commit message must call out exactly what's left unwired, with a concrete one-line description per missing edge. For STORY-039e, that was: "agent-side `failureLogger` wiring (passing failureLogger to `generateProblemVariant` + `safeLogFailure` calls in `tryGenerateOne`) is NOT included in this commit because it conflicted non-trivially with STORY-039d's spec-clarity judge runtime integration that landed on main first. The variant_gate_failures table is set up to receive failure entries; wiring the agent to write to it is filed as a STORY-039g follow-up."
+
+**Alternatives considered:**
+- **Power through the cascade rebase no matter the cost** — would have eaten another 30+ minutes of orchestrator time and produced merge commits with ambiguous resolutions (the same conflict resolved differently across 12 commits). Rejected.
+- **Squash the branch's 12 commits into 1 BEFORE rebasing** (`git rebase -i origin/main --autosquash` with `s` markers, or `git reset --soft $(git merge-base origin/main HEAD) && git commit`) — equivalent to the squash-rebase strategy but doesn't help if the squashed diff still conflicts on the same chunks; the file-by-file restoration step in the squash-rebase strategy IS the part that breaks the cascade. Squash-only without file restoration was tried first and didn't help.
+- **Drop the conflicting commits from the rebase (`git rebase --skip`)** — would lose the actual work. Rejected.
+
+**Consequences:**
+- (+) Cascade conflicts now have a documented escape hatch.
+- (+) The 'g' suffix gives a clean signal in `STORY-NNN[a-z]*.md` globs: anything ending in `g` is a known wiring gap, not just another follow-up.
+- (–) Squash-rebase loses per-commit attribution in `git log`. The squash commit's body must summarize what each squashed commit contributed. This session's STORY-039e squash commit follows that pattern.
+- (–) Future follow-ups need to know: when picking up STORY-039g, the test file at `apps/api/src/problem-variants.test.ts` won't have the failureLogger expectations the original STORY-039e branch added. STORY-039g picks those up from the structural state, not by cherry-picking.
+
+**Owner:** user (via standing "merge all and proceed" directive that prompted the strategy switch).
+**Related:** STORY-039e (squash-rebased into PR #76 commit `4edd8f1`), STORY-039g (to be filed by work-tracking), the 2026-05-11 cycle-break entry above for the parent agent-dispatch playbook.
+
+---
+
+## 2026-05-11 — Cycle-break for the variant seeding CLI; NOT-NULL column ripple cost; agent TaskStop as a fight-the-edit-loop tool
+
+**Context:** STORY-039f shipped an operator CLI (`pnpm --filter @learnpro/problems seed:variants`) to top up the `problem_variants` cache. The agent placed the CLI in `packages/problems/src/seed-variants-cli.ts` and added `@learnpro/agent` to `packages/problems`'s `devDependencies` because the CLI imports `seedVariantsForProblem` from `@learnpro/agent`. `@learnpro/agent` already depends on `@learnpro/problems` for the seed bank — so the dev-only back-edge creates a workspace cycle. The agent's `NOTE on the workspace dep cycle:` claimed pnpm only warns and that it's harmless for tooling-only entry points. **Turborepo disagrees:** `turbo run typecheck` errored with `Cyclic dependency detected: @learnpro/problems#build, @learnpro/agent#build` and refused to run any task. Separately, STORY-039e added `users.is_admin boolean NOT NULL default false` and `SessionUser` (the apps/api type) gained `is_admin: boolean` as required — every test factory across `apps/api/src/*.test.ts` (~8 files) and `packages/db/src/data-export.test.ts` then failed typecheck because they constructed a user-shaped object without `is_admin`. CI caught both classes of breakage; neither was visible in the agent's local typecheck which ran scoped to its own package.
+
+**Decision:**
+1. **Workspace cycles, even dev-only, are forbidden in this monorepo.** If package A's CLI consumes a helper that lives in package B, and B already depends on A, the CLI moves to B. Concretely: the variant seeding CLI now lives in `packages/agent/src/seed-variants-cli.ts` next to `seed-variants.ts` (the helper it wraps); operator runs `pnpm --filter @learnpro/agent seed:variants` instead of `--filter @learnpro/problems`. `@learnpro/problems`'s `package.json` is clean of the back-edge dev-dep + the script. Agent prompts that introduce new CLIs now include "if you reach for `@learnpro/X` from `@learnpro/Y` and Y is already in X's deps tree, put the CLI in X."
+2. **Adding a NOT-NULL column without a Zod-derived default in the shared user shape ripples to every test factory.** The cheap fix is to add `is_admin: false` (or whatever the new column default is) to every fixture; the structural fix is to derive the test factory type from `typeof users.$inferInsert` (which respects the column default) instead of from `User` (the select-shape). For STORY-039e the cheap fix was the right call (8 occurrences, mechanical). The structural fix is filed mentally but not yet a Story — promote to one only if a third NOT-NULL ripple lands.
+3. **`TaskStop` is the right tool when an agent and the orchestrator are editing the same file in opposite directions.** During this run, two agents (STORY-039f's running agent and the orchestrator) were ping-ponging `packages/problems/package.json` — the agent kept re-adding the dev-dep, the orchestrator kept removing it. `TaskStop <agent-id>` (then orchestrator finishes the resolution + commits + pushes) is faster than waiting for the agent to finish and rebasing afterward. Use it when the agent's last `<result>` snippet shows it's mid-fix on the same file you're editing.
+4. **Migration-number contention now has a concrete failure mode.** STORY-039c (per-user seen-seed, merged via PR #77) took migration `0024_episode_variant_of`. STORY-039e (admin failed-gate, in flight as PR #76) also claimed 0024 and 0025. Resolution: renumbered STORY-039e to 0025 and 0026, updated `_journal.json` accordingly, updated the story-file activity log to reference the new numbers, updated the BOARD.md "Last updated" header body text. Total cost ~5 min of careful editing. The discipline from the 2026-05-06 entry (claim numbers up front in the brief) wasn't applied for this batch — re-apply it for the next batch.
+
+**Alternatives considered:**
+- **Suppress the Turborepo cycle check via `turbo.json` config** instead of moving the CLI — would let the dev-only cycle live but defeats the safety property the check provides (real runtime cycles would also slip through). Rejected.
+- **Derive `SessionUser` from a Zod schema with `is_admin` defaulting to `false`** — would let test factories omit `is_admin` and still typecheck. Strictly better. Not done in this session because the cheap fix unblocked CI and the structural change touches the auth boundary. Filed as a mental followup; promote to a Story if a third NOT-NULL column ripples through the same test factories.
+
+**Consequences:**
+- (+) Future CLIs in this monorepo follow the "place at the deepest consumer" rule by default.
+- (+) Adding NOT-NULL columns is now a known-cost operation: budget ~10 min of test-factory updates per new required column.
+- (+) The `TaskStop` reflex shortens the orchestrator-vs-agent edit-loop from "wait + rebase" to "stop + finish."
+- (–) `pnpm-lock.yaml` rebuild was required for the cycle-break (the dev-dep removal changed the manifest); CI failed once with `ERR_PNPM_OUTDATED_LOCKFILE` before the orchestrator ran `pnpm install` and committed the lockfile sync.
+
+**Owner:** user (via standing "keep building, fix as you go" directive).
+**Related:** STORY-039f (`story/039f-variant-seeding-cli`), STORY-039e (`story/039e-admin-failed-gate-surface`), STORY-039c (PR #77 merged at `96baa54`), the 2026-05-06 DECISIONS_LOG entry above for the parent agent-dispatch playbook.
+
+---
+
 ## 2026-05-06 — STORY-NNNa convention for in-Story deferred follow-ups; agent-dispatch operational lessons from the v1-finishing run
 
 **Context:** The session that closed v1 (19 P0/P1/P2 stories merged in one push) routinely landed a primary STORY with one or more deferred ACs — too costly to ship in scope, too small to file as a fresh STORY-NNN. STORY-037 deferred the runtime persistence wiring; STORY-039 deferred 4 ACs around novelty / admin / seeding / Piston-validation; STORY-041 deferred the BullMQ trigger; STORY-043 deferred the multi-file grade-tool harness; STORY-046 deferred the entire weekly view; STORY-038 deferred the tutor route fan-out for the comprehension `kind`; STORY-036 deferred live-model validation; etc. Eight deferred follow-ups landed in this session alone (037a, 037b, 038a, 039a, 041a, 043a, 046b, 046c). The convention crystallized as it was used.

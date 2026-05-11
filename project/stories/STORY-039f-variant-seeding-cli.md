@@ -2,7 +2,7 @@
 id: STORY-039f
 title: 100-variant seeding CLI infrastructure (STORY-039 follow-up)
 type: story
-status: in-progress
+status: done
 priority: P2
 estimate: S
 parent: EPIC-007
@@ -82,3 +82,4 @@ ships the *infrastructure* only.
 ## Activity log
 
 - 2026-05-11 — created, picked up
+- 2026-05-11 — done. Merged via PR #78 at commit `3e2ded8`. Shipped the operator CLI in `packages/agent/src/seed-variants-cli.ts` (moved from `packages/problems` mid-PR to break a Turborepo workspace cycle; see DECISIONS_LOG 2026-05-11 entry). `pnpm --filter @learnpro/agent seed:variants -- --dry-run --count 3 --all-implement` previews; with `ANTHROPIC_API_KEY` set the real run tops up the `problem_variants` cache. Flags: `--source-slug`, `--all-implement`, `--count` (1-20), `--language`. Tests stub LLM + in-memory DB so CI never spends real money. New `docs/operations/SEED_VARIANTS.md` operator guide.
