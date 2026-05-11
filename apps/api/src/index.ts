@@ -62,7 +62,10 @@ import {
   registerCheatsheetRoutes,
   type CheatsheetEpisodeFetcher,
 } from "./cheatsheet.js";
-import { registerProblemVariantsRoutes } from "./problem-variants.js";
+import {
+  buildVariantSpecClarityJudgeFromEnv,
+  registerProblemVariantsRoutes,
+} from "./problem-variants.js";
 import {
   loadExportWindowMs,
   noDbExporter,
@@ -245,6 +248,12 @@ export interface BuildServerOptions {
   // registers `POST /v1/problem-variants`. Tests inject a fake DB; production wires the
   // same `db` instance via `defaultsFromEnv()`.
   problemVariantsDb?: import("@learnpro/db").LearnProDb;
+  // STORY-039d — optional LLM-judge spec-clarity rubric for the problem-variants route.
+  // When supplied, every generated variant is scored 1-5 on instruction_clarity /
+  // example_quality / concept_match before being persisted. `defaultsFromEnv` wires
+  // `buildVariantSpecClarityJudgeFromEnv` (default ON when ANTHROPIC_API_KEY is set;
+  // operator-disable via `LEARNPRO_VARIANT_SPEC_CLARITY_JUDGE=0`).
+  variantSpecClarityJudge?: import("@learnpro/agent").SpecClarityJudge;
 }
 
 // Default impl when no store is provided — drops events on the floor. Useful for tests and
@@ -585,11 +594,15 @@ export function buildServer(opts: BuildServerOptions = {}) {
 
   // STORY-039 — LLM-generated problem-variants route. Wired only when a DB is supplied;
   // defaultsFromEnv forwards the same `db` instance the rest of the API uses.
+  // STORY-039d — optional spec-clarity judge from `defaultsFromEnv` is passed through here.
   if (opts.problemVariantsDb) {
     registerProblemVariantsRoutes(app, {
       db: opts.problemVariantsDb,
       llm,
       sessionResolver,
+      ...(opts.variantSpecClarityJudge !== undefined
+        ? { judge: opts.variantSpecClarityJudge }
+        : {}),
     });
   }
 
@@ -653,6 +666,7 @@ function defaultsFromEnv(): {
   cheatsheetDb?: import("@learnpro/db").LearnProDb;
   cheatsheetEpisodeFetcher?: CheatsheetEpisodeFetcher;
   problemVariantsDb?: import("@learnpro/db").LearnProDb;
+  variantSpecClarityJudge?: import("@learnpro/agent").SpecClarityJudge;
 } {
   const exportRateLimiter = buildExportRateLimiterFromEnv(process.env);
   const url = process.env["DATABASE_URL"];
@@ -758,6 +772,12 @@ function defaultsFromEnv(): {
     cheatsheetDb: db,
     cheatsheetEpisodeFetcher: buildDbCheatsheetEpisodeFetcher(db),
     problemVariantsDb: db,
+    // STORY-039d — wire the spec-clarity judge only when enabled (default on with API key).
+    // The judge adds ~$0.01 per generated variant; the env flag lets operators turn it off.
+    ...(() => {
+      const judge = buildVariantSpecClarityJudgeFromEnv({ llm, env: process.env });
+      return judge ? { variantSpecClarityJudge: judge } : {};
+    })(),
     ...(exportRateLimiter ? { exportRateLimiter } : {}),
     // STORY-033 — async profile-update agent. Build the BullMQ cron from REDIS_URL (returns null
     // when unset, in which case the enqueue helper is a soft no-op). Wire the session-end hook

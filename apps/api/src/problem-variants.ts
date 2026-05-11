@@ -1,7 +1,11 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { generateProblemVariant } from "@learnpro/agent";
+import {
+  generateProblemVariant,
+  runVariantSpecClarityJudge,
+  type SpecClarityJudge,
+} from "@learnpro/agent";
 import {
   insertProblemVariant,
   listProblemVariants,
@@ -46,6 +50,12 @@ export interface ProblemVariantsRouteOptions {
   sessionResolver: SessionResolver;
   // Override the agent's model — production defaults to Haiku via the agent itself.
   model?: string;
+  // STORY-039d — optional LLM-judge spec-clarity rubric. When supplied, every generated
+  // variant is scored 1-5 on instruction_clarity / example_quality / concept_match before
+  // being persisted; `min(scores) < 3` drops the variant. Production wiring goes through
+  // `buildVariantSpecClarityJudgeFromEnv` so the `LEARNPRO_VARIANT_SPEC_CLARITY_JUDGE` env
+  // flag can disable the round-trip.
+  judge?: SpecClarityJudge;
 }
 
 export function registerProblemVariantsRoutes(
@@ -106,6 +116,7 @@ export function registerProblemVariantsRoutes(
         source: sourceImplement,
         count: need,
         ...(opts.model !== undefined ? { model: opts.model } : {}),
+        ...(opts.judge !== undefined ? { judge: opts.judge } : {}),
       });
     } catch (err) {
       req.log.warn({ err }, "problem-variant agent failed — surfacing 503");
@@ -226,4 +237,34 @@ function difficultyTextToInt(text: string): number {
     default:
       return 3;
   }
+}
+
+// STORY-039d — env-flag builder for the spec-clarity judge. Mirrors `buildWeeklyThemeGenerator
+// FromEnv` (STORY-046c). Reads `LEARNPRO_VARIANT_SPEC_CLARITY_JUDGE` and returns a
+// `SpecClarityJudge` only when the flag is enabled. Default is ON when `ANTHROPIC_API_KEY`
+// is set, OFF otherwise (so dev / self-host without an API key never accidentally fires the
+// judge — the judge costs ~$0.01 per variant).
+//
+// Disable values (case-insensitive): "0", "false", "off", "no". Anything else (including
+// unset when `ANTHROPIC_API_KEY` is present) enables the judge.
+export function buildVariantSpecClarityJudgeFromEnv(opts: {
+  llm: LLMProvider;
+  env: NodeJS.ProcessEnv;
+}): SpecClarityJudge | undefined {
+  const raw = opts.env["LEARNPRO_VARIANT_SPEC_CLARITY_JUDGE"];
+  if (raw !== undefined) {
+    const normalized = raw.toLowerCase().trim();
+    const disabled =
+      normalized === "0" || normalized === "false" || normalized === "off" || normalized === "no";
+    if (disabled) return undefined;
+    return buildJudgeFn(opts.llm);
+  }
+  // Default: enable only when an API key is wired. Self-host without a key never fires the
+  // judge.
+  if (!opts.env["ANTHROPIC_API_KEY"]) return undefined;
+  return buildJudgeFn(opts.llm);
+}
+
+function buildJudgeFn(llm: LLMProvider): SpecClarityJudge {
+  return async (variant) => runVariantSpecClarityJudge({ llm, variant });
 }
