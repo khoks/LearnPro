@@ -311,10 +311,7 @@ describe("enqueueCheatsheetJob", () => {
 
   it("rejects an empty episode_ids array (Zod throws)", async () => {
     await expect(
-      enqueueCheatsheetJob(
-        { user_id: USER_ID, episode_ids: [] } as never,
-        { cron: null },
-      ),
+      enqueueCheatsheetJob({ user_id: USER_ID, episode_ids: [] } as never, { cron: null }),
     ).rejects.toThrow();
   });
 });

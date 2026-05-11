@@ -101,6 +101,16 @@ export interface RegisterTutorRoutesOptions {
   // Errors thrown by the hook are swallowed (logged via req.log) so a misbehaving side-channel
   // never blocks the user-facing close response.
   onEpisodeFinish?(input: { user_id: string; org_id: string; episode_id: string }): Promise<void>;
+  // STORY-041a — optional cheatsheet-enqueue hook. Independent from `onEpisodeFinish` so a
+  // misbehaving cheatsheet queue can't block the profile-insights enqueue (and vice-versa).
+  // Both hooks fire after a successful `finish()` close; their errors are swallowed the same
+  // way. Production wires the BullMQ enqueue helper (`enqueueCheatsheetJob`) for an episode
+  // set of `[episode_id]`; tests inject a fake to assert the call shape.
+  onCheatsheetEnqueue?(input: {
+    user_id: string;
+    org_id: string;
+    episode_id: string;
+  }): Promise<void>;
 }
 
 export function registerTutorRoutes(app: FastifyInstance, opts: RegisterTutorRoutesOptions): void {
@@ -252,9 +262,11 @@ export function registerTutorRoutes(app: FastifyInstance, opts: RegisterTutorRou
         finishArgs.reveal_clicked = parsed.data.reveal_clicked;
       }
       const out = await factoryResult.session.finish(finishArgs);
-      // STORY-033 — fire the session-end hook (best-effort). Production wires this to the
-      // profile-insights enqueue path; tests inject a fake. Hook errors are swallowed so a
-      // misbehaving queue can never block the user's close response.
+      // STORY-033 / STORY-041a — fire the session-end side-channel hooks (best-effort).
+      // Production wires the profile-insights enqueue here AND the cheatsheet enqueue. The two
+      // are independently injectable so a misbehaving cheatsheet queue can't block the
+      // profile-insights enqueue (and vice-versa). Hook errors are swallowed so a misbehaving
+      // queue can never block the user's close response.
       if (opts.onEpisodeFinish) {
         try {
           await opts.onEpisodeFinish({
@@ -264,6 +276,17 @@ export function registerTutorRoutes(app: FastifyInstance, opts: RegisterTutorRou
           });
         } catch (err) {
           req.log.warn({ err }, "onEpisodeFinish hook failed (non-fatal)");
+        }
+      }
+      if (opts.onCheatsheetEnqueue) {
+        try {
+          await opts.onCheatsheetEnqueue({
+            user_id: session.user_id,
+            org_id: session.org_id,
+            episode_id: req.params.id,
+          });
+        } catch (err) {
+          req.log.warn({ err }, "onCheatsheetEnqueue hook failed (non-fatal)");
         }
       }
       return reply.code(200).send(out);
