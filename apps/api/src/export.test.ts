@@ -10,6 +10,7 @@ const userSession =
     user_id,
     org_id: "self",
     email: `${user_id}@learnpro.local`,
+    is_admin: false,
   });
 
 // Always-allow / always-deny limiters for the test cases that don't care about windowing.

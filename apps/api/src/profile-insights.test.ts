@@ -47,6 +47,7 @@ async function buildApp(opts: { authed: boolean }) {
           user_id: "11111111-1111-4111-8111-111111111111",
           org_id: "self",
           email: "x@y",
+          is_admin: false,
         })
       : async () => null,
   });

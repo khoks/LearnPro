@@ -30,6 +30,7 @@ import {
   submissions,
   tracks,
   users,
+  variant_gate_failures,
   verificationTokens,
   web_push_subscriptions,
   xp_awards,
@@ -558,6 +559,36 @@ describe("schema: concept_reviews (STORY-031)", () => {
   it("concept_reviews is included in both ALL_TABLES and ORG_SCOPED_TABLES", () => {
     expect(ALL_TABLES).toContain(concept_reviews);
     expect(ORG_SCOPED_TABLES as readonly unknown[]).toContain(concept_reviews);
+  });
+});
+
+describe("schema: variant_gate_failures (STORY-039e)", () => {
+  it("has id / org_id / source_problem_id / attempted_at / failure_reason / failure_detail / model_id / attempt_number", () => {
+    const cols = getTableColumns(variant_gate_failures);
+    expect(cols.id?.primary).toBe(true);
+    expect(cols.org_id?.notNull).toBe(true);
+    expect(cols.source_problem_id?.notNull).toBe(true);
+    expect(cols.attempted_at?.notNull).toBe(true);
+    expect(cols.failure_reason?.notNull).toBe(true);
+    expect(cols.failure_detail?.notNull).toBe(true);
+    expect(cols.model_id?.notNull).toBe(true);
+    expect(cols.attempt_number?.notNull).toBe(true);
+  });
+
+  it("failure_detail uses jsonb", () => {
+    const cols = getTableColumns(variant_gate_failures);
+    expect(cols.failure_detail?.getSQLType()).toBe("jsonb");
+  });
+
+  it("declares a (source_problem_id, attempted_at) index for the admin scan", () => {
+    const config = getTableConfig(variant_gate_failures);
+    const names = config.indexes.map((i) => i.config.name);
+    expect(names).toContain("variant_gate_failures_source_idx");
+  });
+
+  it("is included in both ALL_TABLES and ORG_SCOPED_TABLES", () => {
+    expect(ALL_TABLES).toContain(variant_gate_failures);
+    expect(ORG_SCOPED_TABLES as readonly unknown[]).toContain(variant_gate_failures);
   });
 });
 

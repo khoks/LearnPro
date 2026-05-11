@@ -96,6 +96,10 @@ export const users = pgTable(
     streak_grace_last_replenished_at: timestamp("streak_grace_last_replenished_at", {
       withTimezone: true,
     }),
+    // STORY-039e — operator-only flag for admin-route access (e.g. /v1/admin/variant-failures).
+    // No UI to flip this — operator promotes via `UPDATE users SET is_admin = true WHERE ...`.
+    // Defaults to false; the admin Fastify routes return 403 when a session's user has it unset.
+    is_admin: boolean("is_admin").notNull().default(false),
     created_at: createdAt(),
   },
   (t) => ({
@@ -740,6 +744,31 @@ export const problem_variants = pgTable(
   }),
 );
 
+// STORY-039e — Persistent failure log for variant-generation gate failures. Companion to
+// `problem_variants` (which only stores successes). One row per failed attempt; CHECK
+// constraint on `failure_reason` (mirrored in the migration) keeps the discriminator honest.
+// The admin surface in apps/api + apps/web reads from here.
+export const variant_gate_failures = pgTable(
+  "variant_gate_failures",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    org_id: orgId(),
+    source_problem_id: uuid("source_problem_id")
+      .notNull()
+      .references(() => problems.id, { onDelete: "cascade" }),
+    attempted_at: timestamp("attempted_at", { withTimezone: true }).notNull().defaultNow(),
+    failure_reason: text("failure_reason").notNull(),
+    failure_detail: jsonb("failure_detail")
+      .notNull()
+      .default(sql`'{}'::jsonb`),
+    model_id: text("model_id").notNull(),
+    attempt_number: integer("attempt_number").notNull(),
+  },
+  (t) => ({
+    source_idx: index("variant_gate_failures_source_idx").on(t.source_problem_id, t.attempted_at),
+  }),
+);
+
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type Account = typeof accounts.$inferSelect;
@@ -788,6 +817,8 @@ export type Cheatsheet = typeof cheatsheets.$inferSelect;
 export type NewCheatsheet = typeof cheatsheets.$inferInsert;
 export type ProblemVariant = typeof problem_variants.$inferSelect;
 export type NewProblemVariant = typeof problem_variants.$inferInsert;
+export type VariantGateFailure = typeof variant_gate_failures.$inferSelect;
+export type NewVariantGateFailure = typeof variant_gate_failures.$inferInsert;
 export type BugFindingScoreRow = typeof bug_finding_scores.$inferSelect;
 export type NewBugFindingScoreRow = typeof bug_finding_scores.$inferInsert;
 
@@ -817,6 +848,7 @@ export const ALL_TABLES = [
   profile_insights,
   cheatsheets,
   problem_variants,
+  variant_gate_failures,
   bug_finding_scores,
 ] as const;
 
@@ -845,6 +877,7 @@ export const ORG_SCOPED_TABLES = [
   profile_insights,
   cheatsheets,
   problem_variants,
+  variant_gate_failures,
   bug_finding_scores,
 ] as const;
 

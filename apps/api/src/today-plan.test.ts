@@ -14,6 +14,7 @@ const userSession =
     user_id,
     org_id: "self",
     email: `${user_id}@learnpro.local`,
+    is_admin: false,
   });
 
 interface FakeDepsState {
