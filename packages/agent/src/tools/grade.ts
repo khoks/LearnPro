@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { SandboxWorkspaceFileSchema, type SandboxWorkspaceFile } from "@learnpro/sandbox";
 import type {
   ComprehensionGradeDeps,
   GradeDeps,
@@ -9,14 +10,19 @@ import type {
 import { ComprehensionAnswerSchema } from "../comprehension-grade.js";
 import { EpisodeNotFoundError } from "./give-hint.js";
 
-// STORY-038a - submit body union. Implement/debug episodes pass `code`; comprehension episodes
-// pass `comprehension_answer`. Either-or - the grade tool dispatches on `episode.problem.kind` to
-// decide which is required. Z.union accepts both shapes; the tool's runtime check rejects the
-// wrong shape with a friendly error before reaching the LLM.
+// STORY-038a / STORY-043a — submit body union. Implement/debug episodes ship code: either
+// the legacy `{ code: string }` (single-file) OR the multi-file `{ files: [{path,content},...] }`
+// (STORY-043a). Comprehension episodes ship `{ comprehension_answer }`. The grade tool
+// dispatches on `episode.problem.kind`; mismatched shape throws GradeInputShapeMismatchError
+// before reaching the sandbox / LLM.
 export const GradeInputSchema = z.union([
   z.object({
     episode_id: z.string().uuid(),
     code: z.string().min(1),
+  }),
+  z.object({
+    episode_id: z.string().uuid(),
+    files: z.array(SandboxWorkspaceFileSchema).min(1).max(64),
   }),
   z.object({
     episode_id: z.string().uuid(),
@@ -161,7 +167,7 @@ export function createGradeTool(opts: CreateGradeToolOptions): GradeTool {
         if (!opts.comprehensionDeps) throw new ComprehensionDepsNotWiredError();
         if (!("comprehension_answer" in input)) {
           throw new GradeInputShapeMismatchError(
-            "comprehension episode requires `comprehension_answer`, not `code`",
+            "comprehension episode requires `comprehension_answer`, not `code` or `files`",
           );
         }
         const startC = Date.now();
@@ -212,16 +218,40 @@ export function createGradeTool(opts: CreateGradeToolOptions): GradeTool {
         };
       }
 
-      if (!("code" in input)) {
+      if (!("code" in input) && !("files" in input)) {
         throw new GradeInputShapeMismatchError(
-          "implement/debug episode requires `code`, not `comprehension_answer`",
+          "implement/debug episode requires `code` or `files`, not `comprehension_answer`",
         );
       }
+
+      // STORY-043a — resolve the entry-file content + the optional auxiliary files. For the
+      // legacy single-file shape we only have `code`. For the multi-file shape we have `files`
+      // and pick the entry file by:
+      //   1. The problem's authored `entry_file` when present.
+      //   2. Otherwise the per-language convention (main.py / index.ts).
+      // The grader rubric + the persisted submission row receive the entry file's content as
+      // the canonical "user code" — the rubric LLM doesn't need to see the auxiliary files;
+      // the audit trail records exactly what was submitted as the solver-under-test.
+      const multiFileSubmission = "files" in input ? input.files : null;
+      const entryPath = resolveEntryPath(ctx.problem, multiFileSubmission);
+      const entryContent = resolveEntryContent(input, multiFileSubmission, entryPath);
+      if (entryContent === null) {
+        throw new GradeInputShapeMismatchError(
+          `multi-file submission missing entry file '${entryPath}'`,
+        );
+      }
+
       const start = Date.now();
-      const test_results = await opts.deps.runHiddenTests({
+      const runHiddenTestsArgs: {
+        problem: typeof ctx.problem;
+        user_code: string;
+        user_files?: ReadonlyArray<SandboxWorkspaceFile>;
+      } = {
         problem: ctx.problem,
-        user_code: input.code,
-      });
+        user_code: entryContent,
+      };
+      if (multiFileSubmission) runHiddenTestsArgs.user_files = multiFileSubmission;
+      const test_results = await opts.deps.runHiddenTests(runHiddenTestsArgs);
       const runtime_ms = Math.max(0, Date.now() - start);
       const agg = aggregatePassed(test_results);
 
@@ -231,7 +261,7 @@ export function createGradeTool(opts: CreateGradeToolOptions): GradeTool {
       const { rubric, prose_explanation } = await opts.deps.generateRubric({
         user_id: ctx.user_id,
         problem: ctx.problem,
-        user_code: input.code,
+        user_code: entryContent,
         test_results,
       });
 
@@ -247,7 +277,7 @@ export function createGradeTool(opts: CreateGradeToolOptions): GradeTool {
             user_id: ctx.user_id,
             org_id: ctx.org_id,
             problem: ctx.problem,
-            user_code: input.code,
+            user_code: entryContent,
             test_results,
           });
         } catch {
@@ -265,11 +295,21 @@ export function createGradeTool(opts: CreateGradeToolOptions): GradeTool {
         }
       }
 
+      // STORY-043a — for multi-file submissions, persist the full workspace as a JSON blob
+      // so the audit trail / data export round-trip the user's exact submission. Single-file
+      // submissions persist the raw source string unchanged (no behavioural change).
+      const persistedCode = multiFileSubmission
+        ? JSON.stringify({
+            kind: "multi_file_submission",
+            entry_file: entryPath,
+            files: multiFileSubmission.map((f) => ({ path: f.path, content: f.content })),
+          })
+        : entryContent;
       const submission = await opts.deps.recordSubmission({
         episode_id: input.episode_id,
         user_id: ctx.user_id,
         org_id: ctx.org_id,
-        code: input.code,
+        code: persistedCode,
         passed: agg.passed,
         runtime_ms,
       });
@@ -286,6 +326,30 @@ export function createGradeTool(opts: CreateGradeToolOptions): GradeTool {
       };
     },
   };
+}
+
+// STORY-043a — pick the entry-file path for a submission. Multi-file submissions honor the
+// problem's authored `entry_file` when present; otherwise fall back to the per-language
+// convention. Single-file submissions never read this helper.
+function resolveEntryPath(
+  problem: { language: "python" | "typescript"; entry_file?: string | null | undefined },
+  _files: ReadonlyArray<SandboxWorkspaceFile> | null,
+): string {
+  const authored = problem.entry_file;
+  if (authored) return authored;
+  if (problem.language === "python") return "main.py";
+  return "index.ts";
+}
+
+function resolveEntryContent(
+  input: { code?: string; files?: ReadonlyArray<SandboxWorkspaceFile> },
+  files: ReadonlyArray<SandboxWorkspaceFile> | null,
+  entryPath: string,
+): string | null {
+  if (typeof input.code === "string") return input.code;
+  if (!files) return null;
+  const entry = files.find((f) => f.path === entryPath);
+  return entry ? entry.content : null;
 }
 
 function toOutput(r: HiddenTestResult): GradeOutput["hidden_test_results"][number] {

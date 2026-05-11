@@ -27,6 +27,7 @@ export type {
   GiveHintDeps,
   GradeDeps,
   GradeRubric,
+  GradeRunHiddenTestsInput,
   GraderAgentRubric,
   HiddenTestResult,
   HintEpisodeContext,
