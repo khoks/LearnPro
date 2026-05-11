@@ -258,4 +258,5 @@ export {
   parseProblemVariantResponse,
   type GenerateProblemVariantInput,
   type GenerateProblemVariantOutput,
+  type ProblemVariantsTelemetry,
 } from "./problem-variants.js";
