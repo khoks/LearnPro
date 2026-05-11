@@ -19,7 +19,19 @@ import {
   buildProblemVariantsSystemPrompt,
   buildProblemVariantsUserPrompt,
 } from "@learnpro/prompts";
-import { generateProblemVariant, parseProblemVariantResponse } from "./problem-variants.js";
+import {
+  streamChunksFromRun,
+  type SandboxProvider,
+  type SandboxRunChunk,
+  type SandboxRunRequest,
+  type SandboxRunRequestInput,
+  type SandboxRunResponse,
+} from "@learnpro/sandbox";
+import {
+  generateProblemVariant,
+  parseProblemVariantResponse,
+  type ProblemVariantsTelemetry,
+} from "./problem-variants.js";
 
 // STORY-039 — tests cover:
 //   - The `variant_of` field validates correctly through ProblemDefSchema
@@ -339,6 +351,300 @@ describe("generateProblemVariant — STORY-039", () => {
   });
 });
 
+// ============================================================================
+// STORY-039a — Piston self-validation gate. The agent now optionally accepts a
+// SandboxProvider; when wired, every parsed variant must pass `validateProblem`
+// against its own hidden_tests before being returned. Failure → augmented retry
+// → on second failure, drop. Telemetry counters fire for each phase.
+// ============================================================================
+
+class StubPassingSandbox implements SandboxProvider {
+  readonly name = "stub-pass";
+  readonly calls: SandboxRunRequestInput[] = [];
+
+  async run(req: SandboxRunRequestInput): Promise<SandboxRunResponse> {
+    this.calls.push(req);
+    return Promise.resolve({
+      stdout: "__LEARNPRO_PASS__\n",
+      stderr: "",
+      exit_code: 0,
+      duration_ms: 5,
+      killed_by: null,
+      language: req.language,
+    });
+  }
+
+  runStream(req: SandboxRunRequest, signal?: AbortSignal): AsyncIterable<SandboxRunChunk> {
+    return streamChunksFromRun(() => this.run(req), signal);
+  }
+}
+
+class StubFailingSandbox implements SandboxProvider {
+  readonly name = "stub-fail";
+  readonly calls: SandboxRunRequestInput[] = [];
+
+  async run(req: SandboxRunRequestInput): Promise<SandboxRunResponse> {
+    this.calls.push(req);
+    return Promise.resolve({
+      stdout: "__LEARNPRO_FAIL__" + JSON.stringify({ detail: "expected 1, got 0", got: 0 }) + "\n",
+      stderr: "",
+      exit_code: 0,
+      duration_ms: 5,
+      killed_by: null,
+      language: req.language,
+    });
+  }
+
+  runStream(req: SandboxRunRequest, signal?: AbortSignal): AsyncIterable<SandboxRunChunk> {
+    return streamChunksFromRun(() => this.run(req), signal);
+  }
+}
+
+class StubFailThenPassSandbox implements SandboxProvider {
+  readonly name = "stub-fail-then-pass";
+  // The first variant's set of hidden-test runs all fail; subsequent variant runs all pass.
+  readonly calls: SandboxRunRequestInput[] = [];
+  private firstSlug: string | null = null;
+
+  async run(req: SandboxRunRequestInput): Promise<SandboxRunResponse> {
+    this.calls.push(req);
+    // Use the harness `code` (or first multi-file content) as the failure-mode anchor — the
+    // first slug seen always fails; later slugs pass.
+    const code =
+      "code" in req && typeof req.code === "string"
+        ? req.code
+        : "files" in req && req.files && req.files[0]
+          ? req.files[0].content
+          : "";
+    if (this.firstSlug === null) this.firstSlug = code;
+    const stdout =
+      code === this.firstSlug
+        ? "__LEARNPRO_FAIL__" + JSON.stringify({ detail: "wrong answer", got: 0 }) + "\n"
+        : "__LEARNPRO_PASS__\n";
+    return Promise.resolve({
+      stdout,
+      stderr: "",
+      exit_code: 0,
+      duration_ms: 5,
+      killed_by: null,
+      language: req.language,
+    });
+  }
+
+  runStream(req: SandboxRunRequest, signal?: AbortSignal): AsyncIterable<SandboxRunChunk> {
+    return streamChunksFromRun(() => this.run(req), signal);
+  }
+}
+
+class ThrowingSandbox implements SandboxProvider {
+  readonly name = "throwing";
+  async run(): Promise<SandboxRunResponse> {
+    throw new Error("simulated sandbox outage");
+  }
+  runStream(req: SandboxRunRequest, signal?: AbortSignal): AsyncIterable<SandboxRunChunk> {
+    return streamChunksFromRun(() => this.run(), signal);
+  }
+}
+
+function recordingTelemetry(): {
+  events: Array<{ kind: string; slug: string; attempt: number }>;
+  cb: ProblemVariantsTelemetry;
+} {
+  const events: Array<{ kind: string; slug: string; attempt: number }> = [];
+  const cb: ProblemVariantsTelemetry = {
+    variants_generated: (e) => events.push({ kind: "generated", slug: e.slug, attempt: e.attempt }),
+    variants_validated_pass: (e) =>
+      events.push({ kind: "validated_pass", slug: e.slug, attempt: e.attempt }),
+    variants_dropped_fail: (e) =>
+      events.push({ kind: "dropped_fail", slug: e.slug, attempt: e.attempt }),
+  };
+  return { events, cb };
+}
+
+describe("generateProblemVariant — STORY-039a self-validation gate", () => {
+  it("happy path: passing sandbox + valid variant → returns variant + emits validated_pass", async () => {
+    const llm = fakeLLM([JSON.stringify(validVariantPayload())]);
+    const sandbox = new StubPassingSandbox();
+    const { events, cb } = recordingTelemetry();
+    const out = await generateProblemVariant({
+      llm,
+      user_id: "u",
+      source: SOURCE_PROBLEM,
+      sandbox,
+      onTelemetry: cb,
+    });
+    expect(out.variants).toHaveLength(1);
+    expect(out.fallback_used).toBe(false);
+    // 3 hidden_tests in the valid variant payload → 3 sandbox calls.
+    expect(sandbox.calls.length).toBe(3);
+    expect(events).toEqual([
+      { kind: "generated", slug: "sum-even-numbers-variant-1", attempt: 1 },
+      { kind: "validated_pass", slug: "sum-even-numbers-variant-1", attempt: 1 },
+    ]);
+  });
+
+  it("validator fails on attempt #1, passes on #2 → returns the second variant + retry telemetry", async () => {
+    const llm = fakeLLM([
+      JSON.stringify(validVariantPayload({ slug: "sum-even-numbers-variant-1" })),
+      JSON.stringify(
+        validVariantPayload({
+          slug: "sum-even-numbers-variant-2",
+          // Different reference_solution so the harness output differs from variant-1; the stub
+          // sandbox keys "firstSlug" off the rendered code, so variant-2's code must not match.
+          reference_solution:
+            "def solve(nums):\n    out = 1\n    for n in nums:\n        if n & 1:\n            out *= n\n    return out\n",
+        }),
+      ),
+    ]);
+    const sandbox = new StubFailThenPassSandbox();
+    const { events, cb } = recordingTelemetry();
+    const out = await generateProblemVariant({
+      llm,
+      user_id: "u",
+      source: SOURCE_PROBLEM,
+      sandbox,
+      onTelemetry: cb,
+    });
+    expect(llm.calls).toHaveLength(2);
+    expect(out.variants).toHaveLength(1);
+    expect(out.variants[0]?.slug).toBe("sum-even-numbers-variant-2");
+    expect(out.fallback_used).toBe(false);
+    expect(events.map((e) => e.kind)).toEqual([
+      "generated",
+      "dropped_fail",
+      "generated",
+      "validated_pass",
+    ]);
+  });
+
+  it("retry call carries an augmented prompt referencing the previous failure", async () => {
+    const llm = fakeLLM([
+      JSON.stringify(validVariantPayload({ slug: "sum-even-numbers-variant-1" })),
+      JSON.stringify(validVariantPayload({ slug: "sum-even-numbers-variant-2" })),
+    ]);
+    const sandbox = new StubFailThenPassSandbox();
+    await generateProblemVariant({
+      llm,
+      user_id: "u",
+      source: SOURCE_PROBLEM,
+      sandbox,
+    });
+    expect(llm.calls).toHaveLength(2);
+    const secondMessage = llm.calls[1]?.messages[0]?.content ?? "";
+    expect(secondMessage).toContain("did not pass its own hidden_tests");
+    expect(secondMessage).toContain("sum-even-numbers-variant-1");
+    expect(secondMessage).toContain("Previous reference_solution");
+  });
+
+  it("validator fails on both attempts → returns empty + emits two dropped_fail counters", async () => {
+    const llm = fakeLLM([
+      JSON.stringify(validVariantPayload({ slug: "sum-even-numbers-variant-1" })),
+      JSON.stringify(validVariantPayload({ slug: "sum-even-numbers-variant-2" })),
+    ]);
+    const sandbox = new StubFailingSandbox();
+    const { events, cb } = recordingTelemetry();
+    const out = await generateProblemVariant({
+      llm,
+      user_id: "u",
+      source: SOURCE_PROBLEM,
+      sandbox,
+      onTelemetry: cb,
+    });
+    expect(out.variants).toEqual([]);
+    expect(out.fallback_used).toBe(true);
+    expect(events.filter((e) => e.kind === "dropped_fail")).toHaveLength(2);
+    expect(events.filter((e) => e.kind === "validated_pass")).toHaveLength(0);
+  });
+
+  it("sandbox throws → treated as validation failure (does not crash the agent)", async () => {
+    const llm = fakeLLM([
+      JSON.stringify(validVariantPayload({ slug: "sum-even-numbers-variant-1" })),
+      JSON.stringify(validVariantPayload({ slug: "sum-even-numbers-variant-2" })),
+    ]);
+    const { events, cb } = recordingTelemetry();
+    const out = await generateProblemVariant({
+      llm,
+      user_id: "u",
+      source: SOURCE_PROBLEM,
+      sandbox: new ThrowingSandbox(),
+      onTelemetry: cb,
+    });
+    expect(out.variants).toEqual([]);
+    expect(out.fallback_used).toBe(true);
+    expect(events.filter((e) => e.kind === "dropped_fail").length).toBeGreaterThan(0);
+  });
+
+  it("no sandbox wired → behaves as STORY-039 (no validation, validated_pass still emits)", async () => {
+    const llm = fakeLLM([JSON.stringify(validVariantPayload())]);
+    const { events, cb } = recordingTelemetry();
+    const out = await generateProblemVariant({
+      llm,
+      user_id: "u",
+      source: SOURCE_PROBLEM,
+      onTelemetry: cb,
+    });
+    expect(out.variants).toHaveLength(1);
+    expect(out.fallback_used).toBe(false);
+    expect(events).toEqual([
+      { kind: "generated", slug: "sum-even-numbers-variant-1", attempt: 1 },
+      { kind: "validated_pass", slug: "sum-even-numbers-variant-1", attempt: 1 },
+    ]);
+  });
+
+  it("a throwing telemetry sink does not block variant generation", async () => {
+    const llm = fakeLLM([JSON.stringify(validVariantPayload())]);
+    const out = await generateProblemVariant({
+      llm,
+      user_id: "u",
+      source: SOURCE_PROBLEM,
+      sandbox: new StubPassingSandbox(),
+      onTelemetry: {
+        variants_generated: () => {
+          throw new Error("sink boom");
+        },
+        variants_validated_pass: () => {
+          throw new Error("sink boom");
+        },
+      },
+    });
+    expect(out.variants).toHaveLength(1);
+  });
+
+  it("propagates an explicit validation_time_limit_ms through to validateProblem", async () => {
+    const llm = fakeLLM([JSON.stringify(validVariantPayload())]);
+    const sandbox = new StubPassingSandbox();
+    await generateProblemVariant({
+      llm,
+      user_id: "u",
+      source: SOURCE_PROBLEM,
+      sandbox,
+      validation_time_limit_ms: 1234,
+    });
+    // validateProblem reads `time_limit_ms` straight off the request envelope.
+    for (const call of sandbox.calls) {
+      expect(call.time_limit_ms).toBe(1234);
+    }
+  });
+
+  it("retry skips when the source isn't an implement problem (defensive guard)", async () => {
+    const llm = fakeLLM([JSON.stringify(validVariantPayload())]);
+    const sandbox = new StubFailingSandbox();
+    const fakeSource = {
+      ...SOURCE_PROBLEM,
+      kind: "comprehension" as const,
+    } as unknown as ImplementProblemDef;
+    const out = await generateProblemVariant({
+      llm,
+      user_id: "u",
+      source: fakeSource,
+      sandbox,
+    });
+    expect(llm.calls).toHaveLength(0);
+    expect(sandbox.calls).toHaveLength(0);
+    expect(out.variants).toEqual([]);
+  });
+});
+
 describe("problem-variants prompt — STORY-039 forbidden-phrase test", () => {
   // Coach-voice rules: no FOMO / loss-aversion / streak-shaming / coercive copy in the
   // user-facing variant statement. The system prompt sets the register; the test guards
@@ -389,3 +695,36 @@ describe("problem-variants prompt — STORY-039 forbidden-phrase test", () => {
     expect(userPrompt).toContain("variant-1");
   });
 });
+
+// ============================================================================
+// STORY-039a integration test — gated by `LEARNPRO_REQUIRE_PISTON=1`. Drives the
+// real Piston-on-Docker sandbox to confirm the self-validation path works end-
+// to-end against the same hardened sandbox the rest of the platform uses.
+// ============================================================================
+
+const REQUIRE_PISTON = process.env["LEARNPRO_REQUIRE_PISTON"] === "1";
+const PISTON_URL = process.env["PISTON_URL"] ?? "http://localhost:2000";
+
+describe.skipIf(!REQUIRE_PISTON)(
+  "generateProblemVariant — STORY-039a Piston integration (LEARNPRO_REQUIRE_PISTON=1)",
+  () => {
+    it("a structurally valid variant whose reference_solution actually solves its hidden_tests passes self-validation", async () => {
+      // Lazy-require so the import path doesn't load when the integration suite is skipped.
+      const { PistonHttpTransport, PistonSandboxProvider } = await import("@learnpro/sandbox");
+      const provider = new PistonSandboxProvider({
+        transport: new PistonHttpTransport({ baseUrl: PISTON_URL }),
+      });
+      const correctVariant = JSON.stringify(validVariantPayload());
+      const llm = fakeLLM([correctVariant]);
+      const out = await generateProblemVariant({
+        llm,
+        user_id: "u",
+        source: SOURCE_PROBLEM,
+        sandbox: provider,
+        validation_time_limit_ms: 8_000,
+      });
+      expect(out.variants).toHaveLength(1);
+      expect(out.fallback_used).toBe(false);
+    }, 60_000);
+  },
+);
