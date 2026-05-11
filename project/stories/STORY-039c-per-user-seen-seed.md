@@ -2,7 +2,7 @@
 id: STORY-039c
 title: Per-user "already seen the seed" tracking for problem variants
 type: story
-status: in-progress
+status: done
 priority: P2
 estimate: M
 parent: EPIC-007
@@ -70,3 +70,8 @@ back-compat for tests / call sites that don't wire them.
 
 - 2026-05-11 — created + picked up (re-dispatch — previous agent stalled).
 - 2026-05-11 — Step 1: STORY file + migration 0024 + `episodes.is_variant_of_problem_id` column.
+- 2026-05-11 — Step 2: `loadSeenSourceSlugs` + `loadUnattemptedVariantsBySource` ports on `AssignProblemDeps`; `createEpisode` gains optional `is_variant_of_problem_id`; `ProblemCatalogEntry` gains optional `source_problem_id`.
+- 2026-05-11 — Step 3: `pickCandidate` extended with `seen_slugs` + `unattempted_variants_by_source`; `maybeSwapToVariant` runs AFTER the existing difficulty + recency + due-concept selection. 7 new tests (4 pickCandidate + 2 createAssignProblemTool e2e + 1 helper). All 419 agent tests pass.
+- 2026-05-11 — Step 4: drizzle adapter wires both ports. `loadSeenSourceSlugs` is a distinct-slug join on `episodes` × `problems` where `final_outcome IS NOT NULL`. `loadUnattemptedVariantsBySource` reads `problem_variants`, promotes each variant atomically into `problems` (idempotent via the unique `(org_id, track_id, slug)` index), excludes already-attempted entries, and returns the Map keyed by source uuid. `createEpisode` writes the new `episodes.is_variant_of_problem_id`. All packages typecheck; 419 pure agent tests + 359 apps/api tests still pass.
+- 2026-05-11 — done.
+
