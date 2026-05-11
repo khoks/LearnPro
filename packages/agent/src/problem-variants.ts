@@ -2,26 +2,38 @@
 // STORY-039a — wires `validateProblem` from `@learnpro/problems` into the pipeline so a
 // variant whose `reference_solution` doesn't pass its own `hidden_tests` is dropped before
 // it can be cached or surfaced to a user.
+// STORY-039d — wires an optional LLM-judge spec-clarity rubric: after the structural Zod
+// gate (STORY-039) and (when wired) Piston self-validation (STORY-039a), the judge scores
+// the variant 1-5 on instruction_clarity / example_quality / concept_match. Variants with
+// `min(scores) < 3` are dropped via a new `variants_dropped_spec_clarity` telemetry
+// counter.
 //
 // `generateProblemVariant` is a pure function: given an LLMProvider (and optionally a
-// SandboxProvider), it asks Haiku for a variant, parses the JSON output, validates against
-// `ProblemDefSchema`, optionally runs the variant's reference solution against its own
-// hidden_tests through the sandbox, and returns the parsed list. Failed parses (invalid JSON,
+// SandboxProvider + spec-clarity judge), it asks Haiku for a variant, parses the JSON
+// output, validates against `ProblemDefSchema`, optionally runs the variant's reference
+// solution against its own hidden_tests through the sandbox, optionally runs a second LLM
+// judge for spec clarity, and returns the parsed list. Failed parses (invalid JSON,
 // schema-failing variants) are dropped — the agent retries once with an augmented "fix the
 // previous variant" prompt and then returns whatever passed validation, which may be empty.
 //
-// Design intent (STORY-039 + STORY-039a):
-//   - Cheap: Haiku, capped output tokens, single retry per source.
+// Design intent (STORY-039 + STORY-039a + STORY-039d):
+//   - Cheap: Haiku, capped output tokens, single retry per source. The spec-clarity judge
+//     adds at most one extra Haiku call per variant (~$0.01) when wired.
 //   - Pure: doesn't talk to the DB. The route handler owns persistence and decides whether
-//     to wire the sandbox (the env flag `LEARNPRO_VARIANT_SELF_VALIDATE` lives in the route).
+//     to wire the sandbox (the env flag `LEARNPRO_VARIANT_SELF_VALIDATE` lives in the route)
+//     or the judge (`LEARNPRO_VARIANT_SPEC_CLARITY_JUDGE`).
 //   - Strict at the boundary: the LLM output is run through `ProblemDefSchema.parse` so a
 //     row that lands in the `problem_variants` cache is interchangeable with a YAML.
 //   - Self-validating: when a sandbox is wired, the variant's reference_solution must pass
 //     all of its own hidden_tests before being returned. This is AC #3 of STORY-039 and the
 //     reason malformed variants no longer ship.
+//   - Spec-clarity-judged: when a judge is wired, the variant's statement + examples +
+//     concept_tags must score >= 3 on each rubric criterion. Closes AC #3's spec-clarity
+//     gap (the part the Zod + Piston gates don't cover).
 //   - Best-effort: the function never throws. On every failure mode (LLM blank, JSON fail,
-//     Zod fail, validator fail twice) the result is `{ variants: [], fallback_used: true }`
-//     and the route returns 200 with an empty list so the UI can show an empty state.
+//     Zod fail, validator fail twice, judge drop twice) the result is
+//     `{ variants: [], fallback_used: true }` and the route returns 200 with an empty list
+//     so the UI can show an empty state.
 
 import type { LLMProvider } from "@learnpro/llm";
 import { ANTHROPIC_HAIKU } from "@learnpro/llm";
@@ -40,16 +52,24 @@ import {
   type ProblemVariantsPromptSourceShape,
 } from "@learnpro/prompts";
 import type { SandboxProvider } from "@learnpro/sandbox";
+import type {
+  SpecClarityJudge,
+  VariantSpecClarityResult,
+} from "./variant-spec-clarity-judge.js";
 
 // STORY-039a — telemetry callback. The route surfaces these counts to logs / metrics; the
-// agent stays pure (no global state). All three counters are per-source (one call to
+// agent stays pure (no global state). All counters are per-source (one call to
 // `generateProblemVariant`); the route may aggregate over a session if it wishes.
+//
+// STORY-039d adds `variants_dropped_spec_clarity` — emitted when the LLM-judge spec-clarity
+// rubric drops the variant. Separate from `variants_dropped_fail` (which is for sandbox
+// self-validation failures) so operators can attribute drops to the right gate.
 export interface ProblemVariantsTelemetry {
   // Emitted once per source-problem call when the LLM produced a structurally valid variant
   // (passed `parseProblemVariantResponse`). Counts both attempts that reached this point.
   variants_generated: (event: { slug: string; source_slug: string; attempt: number }) => void;
   // Emitted when a structurally valid variant also passed self-validation (reference_solution
-  // ran against hidden_tests in the sandbox).
+  // ran against hidden_tests in the sandbox) AND (when wired) the spec-clarity judge.
   variants_validated_pass: (event: { slug: string; source_slug: string; attempt: number }) => void;
   // Emitted when self-validation failed. The dropped variant + first failure detail are
   // surfaced so an operator can inspect later (no DB persistence in v1 — log-only).
@@ -58,6 +78,14 @@ export interface ProblemVariantsTelemetry {
     source_slug: string;
     attempt: number;
     failures: ProblemValidationResult["failures"];
+  }) => void;
+  // STORY-039d — emitted when the LLM-judge spec-clarity rubric drops the variant. The
+  // judge's per-criterion scores + reasoning are surfaced so an operator can inspect later.
+  variants_dropped_spec_clarity: (event: {
+    slug: string;
+    source_slug: string;
+    attempt: number;
+    judge: VariantSpecClarityResult;
   }) => void;
 }
 
@@ -77,6 +105,12 @@ export interface GenerateProblemVariantInput {
   // STORY-039a — optional time budget per hidden-test execution (passed straight through to
   // `validateProblem`). Defaults to the validate.ts default (5_000 ms) when omitted.
   validation_time_limit_ms?: number;
+  // STORY-039d — optional LLM-judge spec-clarity rubric. When wired, every parsed variant
+  // is scored 1-5 on instruction_clarity / example_quality / concept_match. Variants where
+  // `min(scores) < 3` are dropped and a `variants_dropped_spec_clarity` counter fires.
+  // Caller-controlled (route reads `LEARNPRO_VARIANT_SPEC_CLARITY_JUDGE`). Omit to skip the
+  // judge entirely and behave as STORY-039a.
+  judge?: SpecClarityJudge;
   // STORY-039a — optional structured telemetry callbacks. Each is called best-effort; throws
   // are swallowed so a sink hiccup never blocks variant generation.
   onTelemetry?: Partial<ProblemVariantsTelemetry>;
@@ -115,6 +149,7 @@ export async function generateProblemVariant(
       already_used_slugs: usedSlugs,
       sandbox: input.sandbox,
       validation_time_limit_ms: input.validation_time_limit_ms,
+      judge: input.judge,
       onTelemetry: input.onTelemetry,
     });
     if (variant) {
@@ -138,11 +173,15 @@ interface TryGenerateOneInput {
   already_used_slugs: Set<string>;
   sandbox?: SandboxProvider;
   validation_time_limit_ms?: number;
+  judge?: SpecClarityJudge;
   onTelemetry?: Partial<ProblemVariantsTelemetry>;
 }
 
 // STORY-039a — the retry loop carries the previous attempt's failing variant + reason so the
 // second LLM call can be steered with a "fix the bug in your previous variant" prompt.
+// STORY-039d — adds a second gate (the spec-clarity judge) that runs after sandbox
+// self-validation. A judge drop counts toward the same retry budget; persistent failure
+// drops the variant entirely.
 async function tryGenerateOne(input: TryGenerateOneInput): Promise<ProblemDef | null> {
   let previousFailure: PreviousFailure | null = null;
 
@@ -165,52 +204,72 @@ async function tryGenerateOne(input: TryGenerateOneInput): Promise<ProblemDef | 
       attempt: attempt + 1,
     });
 
-    if (input.sandbox === undefined) {
-      // STORY-039a — no sandbox wired → behave as STORY-039 (structural Zod gate only).
-      // We still emit `variants_validated_pass` so dashboards counting "shipped variants"
-      // get a consistent signal regardless of self-validation being on or off.
-      safeFire(input.onTelemetry?.variants_validated_pass, {
-        slug: variant.slug,
-        source_slug: input.source.slug,
-        attempt: attempt + 1,
+    if (input.sandbox !== undefined) {
+      const validation = await runSelfValidation({
+        variant,
+        sandbox: input.sandbox,
+        ...(input.validation_time_limit_ms !== undefined
+          ? { time_limit_ms: input.validation_time_limit_ms }
+          : {}),
       });
-      return variant;
+      if (!validation.passed) {
+        safeFire(input.onTelemetry?.variants_dropped_fail, {
+          slug: variant.slug,
+          source_slug: input.source.slug,
+          attempt: attempt + 1,
+          failures: validation.failures,
+        });
+        previousFailure = {
+          kind: "self_validation",
+          variant,
+          failures: validation.failures,
+        };
+        continue;
+      }
     }
 
-    const validation = await runSelfValidation({
-      variant,
-      sandbox: input.sandbox,
-      ...(input.validation_time_limit_ms !== undefined
-        ? { time_limit_ms: input.validation_time_limit_ms }
-        : {}),
-    });
-    if (validation.passed) {
-      safeFire(input.onTelemetry?.variants_validated_pass, {
-        slug: variant.slug,
-        source_slug: input.source.slug,
-        attempt: attempt + 1,
-      });
-      return variant;
+    if (input.judge !== undefined) {
+      const judgeResult = await runJudgeSafely(input.judge, variant);
+      if (!judgeResult.pass) {
+        safeFire(input.onTelemetry?.variants_dropped_spec_clarity, {
+          slug: variant.slug,
+          source_slug: input.source.slug,
+          attempt: attempt + 1,
+          judge: judgeResult,
+        });
+        previousFailure = {
+          kind: "spec_clarity",
+          variant,
+          judge: judgeResult,
+        };
+        continue;
+      }
     }
 
-    safeFire(input.onTelemetry?.variants_dropped_fail, {
+    safeFire(input.onTelemetry?.variants_validated_pass, {
       slug: variant.slug,
       source_slug: input.source.slug,
       attempt: attempt + 1,
-      failures: validation.failures,
     });
-    previousFailure = {
-      variant,
-      failures: validation.failures,
-    };
+    return variant;
   }
   return null;
 }
 
-interface PreviousFailure {
-  variant: ProblemDef;
-  failures: ProblemValidationResult["failures"];
-}
+// STORY-039a / STORY-039d — a previous-attempt failure carries the variant that failed
+// plus a discriminated payload describing WHY (sandbox self-validation or spec-clarity
+// judge). The retry-prompt addendum picks a corrective phrasing per kind.
+type PreviousFailure =
+  | {
+      kind: "self_validation";
+      variant: ProblemDef;
+      failures: ProblemValidationResult["failures"];
+    }
+  | {
+      kind: "spec_clarity";
+      variant: ProblemDef;
+      judge: VariantSpecClarityResult;
+    };
 
 interface CallOnceInput {
   llm: LLMProvider;
@@ -296,27 +355,94 @@ async function runSelfValidation(input: RunSelfValidationInput): Promise<Problem
 }
 
 function buildPreviousFailureAddendum(prev: PreviousFailure): string {
-  const first = prev.failures[0];
-  const detail = first ? `${first.reason}: ${first.detail}` : "unknown failure";
-  // We surface the failing reference_solution + the first hidden-test failure so the model
-  // can reason about the bug without us re-shipping every test case verbatim. Keep this
-  // section short — Haiku output budget is 2400 tokens and we want most of it for the new
-  // variant.
+  if (prev.kind === "self_validation") {
+    const first = prev.failures[0];
+    const detail = first ? `${first.reason}: ${first.detail}` : "unknown failure";
+    // We surface the failing reference_solution + the first hidden-test failure so the model
+    // can reason about the bug without us re-shipping every test case verbatim. Keep this
+    // section short — Haiku output budget is 2400 tokens and we want most of it for the new
+    // variant.
+    return [
+      "Your previous variant attempt did not pass its own hidden_tests. Fix the bug in the",
+      "reference_solution OR adjust the hidden_tests so they match the corrected solution.",
+      "Then emit a fresh variant JSON object using the same schema.",
+      "",
+      "Previous variant slug:",
+      prev.variant.slug,
+      "",
+      "Previous reference_solution:",
+      "```",
+      "reference_solution" in prev.variant ? prev.variant.reference_solution : "",
+      "```",
+      "",
+      `First failure (test index ${first?.test_index ?? 0}): ${detail}`,
+    ].join("\n");
+  }
+
+  // STORY-039d — spec-clarity judge drop. Steer the retry toward whichever criterion
+  // scored lowest so the model focuses its rewrite there.
+  const judge = prev.judge;
+  const lowest = lowestCriterion(judge);
   return [
-    "Your previous variant attempt did not pass its own hidden_tests. Fix the bug in the",
-    "reference_solution OR adjust the hidden_tests so they match the corrected solution.",
-    "Then emit a fresh variant JSON object using the same schema.",
+    "Your previous variant attempt passed structural validation but failed the spec-clarity",
+    "review. Rewrite the statement and examples so the spec is unambiguous and every declared",
+    "concept_tag is genuinely exercised. Then emit a fresh variant JSON object using the same",
+    "schema.",
     "",
     "Previous variant slug:",
     prev.variant.slug,
     "",
-    "Previous reference_solution:",
-    "```",
-    "reference_solution" in prev.variant ? prev.variant.reference_solution : "",
-    "```",
-    "",
-    `First failure (test index ${first?.test_index ?? 0}): ${detail}`,
+    `Lowest-scoring criterion (${lowest.name}): ${lowest.score}/5 — ${lowest.reasoning}`,
+    `instruction_clarity: ${judge.instruction_clarity}/5 — ${judge.reasoning.instruction_clarity}`,
+    `example_quality: ${judge.example_quality}/5 — ${judge.reasoning.example_quality}`,
+    `concept_match: ${judge.concept_match}/5 — ${judge.reasoning.concept_match}`,
   ].join("\n");
+}
+
+// STORY-039d — best-effort judge wrapper. The pure judge already swallows LLM errors and
+// returns a synthetic `{ pass: false }`; this wrapper adds a belt-and-braces try/catch in
+// case a custom judge implementation throws unexpectedly. Mirrors `runSelfValidation`'s
+// pattern for sandbox outages.
+async function runJudgeSafely(
+  judge: SpecClarityJudge,
+  variant: ProblemDef,
+): Promise<VariantSpecClarityResult> {
+  try {
+    return await judge(variant);
+  } catch {
+    return {
+      instruction_clarity: 1,
+      example_quality: 1,
+      concept_match: 1,
+      reasoning: {
+        instruction_clarity: "spec-clarity judge threw",
+        example_quality: "spec-clarity judge threw",
+        concept_match: "spec-clarity judge threw",
+      },
+      pass: false,
+    };
+  }
+}
+
+function lowestCriterion(j: VariantSpecClarityResult): {
+  name: "instruction_clarity" | "example_quality" | "concept_match";
+  score: number;
+  reasoning: string;
+} {
+  const items: Array<{
+    name: "instruction_clarity" | "example_quality" | "concept_match";
+    score: number;
+    reasoning: string;
+  }> = [
+    {
+      name: "instruction_clarity",
+      score: j.instruction_clarity,
+      reasoning: j.reasoning.instruction_clarity,
+    },
+    { name: "example_quality", score: j.example_quality, reasoning: j.reasoning.example_quality },
+    { name: "concept_match", score: j.concept_match, reasoning: j.reasoning.concept_match },
+  ];
+  return items.reduce((lo, cur) => (cur.score < lo.score ? cur : lo));
 }
 
 // Parses the LLM output and runs it through `ProblemDefSchema.parse`. Returns null on any

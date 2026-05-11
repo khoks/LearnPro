@@ -32,6 +32,7 @@ import {
   parseProblemVariantResponse,
   type ProblemVariantsTelemetry,
 } from "./problem-variants.js";
+import type { SpecClarityJudge, VariantSpecClarityResult } from "./variant-spec-clarity-judge.js";
 
 // STORY-039 — tests cover:
 //   - The `variant_of` field validates correctly through ProblemDefSchema
@@ -457,8 +458,58 @@ function recordingTelemetry(): {
       events.push({ kind: "validated_pass", slug: e.slug, attempt: e.attempt }),
     variants_dropped_fail: (e) =>
       events.push({ kind: "dropped_fail", slug: e.slug, attempt: e.attempt }),
+    variants_dropped_spec_clarity: (e) =>
+      events.push({ kind: "dropped_spec_clarity", slug: e.slug, attempt: e.attempt }),
   };
   return { events, cb };
+}
+
+// STORY-039d — stub judges for testing.
+function passingJudge(): SpecClarityJudge & { calls: number } {
+  const judge = ((async () => {
+    judge.calls += 1;
+    return {
+      instruction_clarity: 5,
+      example_quality: 4,
+      concept_match: 5,
+      reasoning: {
+        instruction_clarity: "clear",
+        example_quality: "good examples",
+        concept_match: "tags match",
+      },
+      pass: true,
+    } satisfies VariantSpecClarityResult;
+  }) as SpecClarityJudge & { calls: number });
+  judge.calls = 0;
+  return judge;
+}
+
+function failingJudge(scoreOverride = 2): SpecClarityJudge & { calls: number } {
+  const judge = ((async () => {
+    judge.calls += 1;
+    return {
+      instruction_clarity: scoreOverride,
+      example_quality: 4,
+      concept_match: 5,
+      reasoning: {
+        instruction_clarity: "the empty-input behavior is undefined",
+        example_quality: "fine",
+        concept_match: "fine",
+      },
+      pass: false,
+    } satisfies VariantSpecClarityResult;
+  }) as SpecClarityJudge & { calls: number });
+  judge.calls = 0;
+  return judge;
+}
+
+function throwingJudge(): SpecClarityJudge & { calls: number } {
+  const judge = ((async () => {
+    judge.calls += 1;
+    throw new Error("judge boom");
+  }) as SpecClarityJudge & { calls: number });
+  judge.calls = 0;
+  return judge;
 }
 
 describe("generateProblemVariant — STORY-039a self-validation gate", () => {
@@ -642,6 +693,212 @@ describe("generateProblemVariant — STORY-039a self-validation gate", () => {
     expect(llm.calls).toHaveLength(0);
     expect(sandbox.calls).toHaveLength(0);
     expect(out.variants).toEqual([]);
+  });
+});
+
+// ============================================================================
+// STORY-039d — LLM-judge spec-clarity rubric. The agent now optionally accepts a
+// `SpecClarityJudge`; when wired, every parsed variant must score >= 3 on each
+// rubric criterion (instruction_clarity / example_quality / concept_match)
+// before being returned. Failure → augmented retry → on second failure, drop.
+// A new `variants_dropped_spec_clarity` counter fires per drop.
+// ============================================================================
+
+describe("generateProblemVariant — STORY-039d spec-clarity judge gate", () => {
+  it("happy path: passing judge → returns variant + emits validated_pass (no dropped_spec_clarity)", async () => {
+    const llm = fakeLLM([JSON.stringify(validVariantPayload())]);
+    const judge = passingJudge();
+    const { events, cb } = recordingTelemetry();
+    const out = await generateProblemVariant({
+      llm,
+      user_id: "u",
+      source: SOURCE_PROBLEM,
+      judge,
+      onTelemetry: cb,
+    });
+    expect(out.variants).toHaveLength(1);
+    expect(out.fallback_used).toBe(false);
+    expect(judge.calls).toBe(1);
+    expect(events).toEqual([
+      { kind: "generated", slug: "sum-even-numbers-variant-1", attempt: 1 },
+      { kind: "validated_pass", slug: "sum-even-numbers-variant-1", attempt: 1 },
+    ]);
+  });
+
+  it("failing judge: drops the variant, retries once, then returns empty + 2 dropped_spec_clarity events", async () => {
+    const llm = fakeLLM([
+      JSON.stringify(validVariantPayload({ slug: "sum-even-numbers-variant-1" })),
+      JSON.stringify(validVariantPayload({ slug: "sum-even-numbers-variant-2" })),
+    ]);
+    const judge = failingJudge();
+    const { events, cb } = recordingTelemetry();
+    const out = await generateProblemVariant({
+      llm,
+      user_id: "u",
+      source: SOURCE_PROBLEM,
+      judge,
+      onTelemetry: cb,
+    });
+    expect(out.variants).toEqual([]);
+    expect(out.fallback_used).toBe(true);
+    expect(judge.calls).toBe(2);
+    expect(events.filter((e) => e.kind === "dropped_spec_clarity")).toHaveLength(2);
+    expect(events.filter((e) => e.kind === "validated_pass")).toHaveLength(0);
+  });
+
+  it("retry call carries an augmented prompt referencing the lowest-scoring criterion", async () => {
+    const llm = fakeLLM([
+      JSON.stringify(validVariantPayload({ slug: "sum-even-numbers-variant-1" })),
+      JSON.stringify(validVariantPayload({ slug: "sum-even-numbers-variant-2" })),
+    ]);
+    await generateProblemVariant({
+      llm,
+      user_id: "u",
+      source: SOURCE_PROBLEM,
+      judge: failingJudge(),
+    });
+    expect(llm.calls).toHaveLength(2);
+    const secondMessage = llm.calls[1]?.messages[0]?.content ?? "";
+    expect(secondMessage).toContain("failed the spec-clarity");
+    expect(secondMessage).toContain("instruction_clarity");
+    expect(secondMessage).toContain("the empty-input behavior is undefined");
+  });
+
+  it("first attempt fails judge, second attempt passes → returns the second variant", async () => {
+    let judgeCalls = 0;
+    const stubJudge: SpecClarityJudge = async () => {
+      judgeCalls += 1;
+      if (judgeCalls === 1) {
+        return {
+          instruction_clarity: 2,
+          example_quality: 4,
+          concept_match: 5,
+          reasoning: {
+            instruction_clarity: "ambiguous empty case",
+            example_quality: "ok",
+            concept_match: "ok",
+          },
+          pass: false,
+        };
+      }
+      return {
+        instruction_clarity: 5,
+        example_quality: 5,
+        concept_match: 5,
+        reasoning: {
+          instruction_clarity: "clear",
+          example_quality: "good",
+          concept_match: "good",
+        },
+        pass: true,
+      };
+    };
+    const llm = fakeLLM([
+      JSON.stringify(validVariantPayload({ slug: "sum-even-numbers-variant-1" })),
+      JSON.stringify(validVariantPayload({ slug: "sum-even-numbers-variant-2" })),
+    ]);
+    const { events, cb } = recordingTelemetry();
+    const out = await generateProblemVariant({
+      llm,
+      user_id: "u",
+      source: SOURCE_PROBLEM,
+      judge: stubJudge,
+      onTelemetry: cb,
+    });
+    expect(out.variants).toHaveLength(1);
+    expect(out.variants[0]?.slug).toBe("sum-even-numbers-variant-2");
+    expect(out.fallback_used).toBe(false);
+    expect(events.map((e) => e.kind)).toEqual([
+      "generated",
+      "dropped_spec_clarity",
+      "generated",
+      "validated_pass",
+    ]);
+  });
+
+  it("judge throws → treated as a drop (does not crash the agent)", async () => {
+    const llm = fakeLLM([
+      JSON.stringify(validVariantPayload({ slug: "sum-even-numbers-variant-1" })),
+      JSON.stringify(validVariantPayload({ slug: "sum-even-numbers-variant-2" })),
+    ]);
+    const judge = throwingJudge();
+    const { events, cb } = recordingTelemetry();
+    const out = await generateProblemVariant({
+      llm,
+      user_id: "u",
+      source: SOURCE_PROBLEM,
+      judge,
+      onTelemetry: cb,
+    });
+    expect(out.variants).toEqual([]);
+    expect(out.fallback_used).toBe(true);
+    expect(events.filter((e) => e.kind === "dropped_spec_clarity").length).toBeGreaterThan(0);
+  });
+
+  it("judge AND sandbox both wired: sandbox fail short-circuits before judge runs", async () => {
+    const llm = fakeLLM([
+      JSON.stringify(validVariantPayload({ slug: "sum-even-numbers-variant-1" })),
+      JSON.stringify(validVariantPayload({ slug: "sum-even-numbers-variant-2" })),
+    ]);
+    const sandbox = new StubFailingSandbox();
+    const judge = passingJudge();
+    await generateProblemVariant({
+      llm,
+      user_id: "u",
+      source: SOURCE_PROBLEM,
+      sandbox,
+      judge,
+    });
+    // Sandbox failed → judge should never run.
+    expect(judge.calls).toBe(0);
+  });
+
+  it("judge AND sandbox both wired: sandbox pass + judge pass → returns variant", async () => {
+    const llm = fakeLLM([JSON.stringify(validVariantPayload())]);
+    const sandbox = new StubPassingSandbox();
+    const judge = passingJudge();
+    const out = await generateProblemVariant({
+      llm,
+      user_id: "u",
+      source: SOURCE_PROBLEM,
+      sandbox,
+      judge,
+    });
+    expect(out.variants).toHaveLength(1);
+    expect(sandbox.calls.length).toBeGreaterThan(0);
+    expect(judge.calls).toBe(1);
+  });
+
+  it("no judge wired: validated_pass still fires (behaves as STORY-039a)", async () => {
+    const llm = fakeLLM([JSON.stringify(validVariantPayload())]);
+    const { events, cb } = recordingTelemetry();
+    const out = await generateProblemVariant({
+      llm,
+      user_id: "u",
+      source: SOURCE_PROBLEM,
+      onTelemetry: cb,
+    });
+    expect(out.variants).toHaveLength(1);
+    expect(events.filter((e) => e.kind === "dropped_spec_clarity")).toHaveLength(0);
+    expect(events.filter((e) => e.kind === "validated_pass")).toHaveLength(1);
+  });
+
+  it("a throwing dropped_spec_clarity sink does not block variant generation", async () => {
+    const llm = fakeLLM([JSON.stringify(validVariantPayload())]);
+    const out = await generateProblemVariant({
+      llm,
+      user_id: "u",
+      source: SOURCE_PROBLEM,
+      judge: failingJudge(),
+      onTelemetry: {
+        variants_dropped_spec_clarity: () => {
+          throw new Error("sink boom");
+        },
+      },
+    });
+    // failingJudge always returns pass:false → empty variants but no thrown error.
+    expect(out.variants).toEqual([]);
+    expect(out.fallback_used).toBe(true);
   });
 });
 
