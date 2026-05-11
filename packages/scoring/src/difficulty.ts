@@ -147,3 +147,152 @@ function clamp01(n: number): number {
 function round6(n: number): number {
   return Math.round(n * 1_000_000) / 1_000_000;
 }
+
+// STORY-038b — comprehension difficulty calibration. The signals above ("submit_count",
+// "tests_passed/total", "hints_used as fraction of hints_cap=3") are calibrated for
+// `kind: "implement"` / `kind: "debug"` episodes — the learner writes code, runs it against
+// hidden tests, and iterates. For `kind: "comprehension"` episodes those inputs are nonsensical:
+//
+//   - multiple_choice problems are binary correct/incorrect — no partial credit, no hidden tests.
+//   - free_text problems are graded 1-5 by a rubric (Haiku). Partial credit is the rubric_score.
+//   - Code-quality signals (idiomatic, efficiency) don't apply — the user is reading, not writing.
+//
+// The functions below are the comprehension-axis equivalent of `episodeSuccessScore` /
+// `difficultySignal` / `nextDifficulty`. They're a separate code path so the existing
+// implement/debug branch stays byte-for-byte the same. The grade tool dispatches by
+// `episode.problem.kind` (STORY-038a) — the same dispatch threads through here.
+
+// Renamed-for-scoring so this doesn't shadow `ComprehensionFormatSchema` in
+// @learnpro/problems (which describes the predict/trace/reason sub-format on the problem YAML —
+// a different axis from the answer-format we use here for scoring).
+export const ComprehensionAnswerFormatSchema = z.enum(["multiple_choice", "free_text"]);
+export type ComprehensionAnswerFormatForScoring = z.infer<typeof ComprehensionAnswerFormatSchema>;
+
+// Default expected times — comprehension is faster than implement. Multiple-choice has 4 options
+// to read + a click; free-text needs the learner to compose a sentence. Per-problem
+// `expected_time_sec` on the YAML overrides these (see schema's
+// `expected_median_time_to_solve_ms`).
+export const DEFAULT_COMPREHENSION_EXPECTED_TIME_SEC = {
+  multiple_choice: 60,
+  free_text: 180,
+} as const satisfies Record<ComprehensionAnswerFormatForScoring, number>;
+
+// Multiple-choice success ladder. Mirrors how a human teacher would weigh "answered correctly"
+// against "needed help":
+//   - first-try correct (no hints, single attempt) → 1.0
+//   - correct after 1 hint OR exactly 2 attempts → 0.6
+//   - correct after 2+ hints OR 3+ attempts → 0.3
+//   - never correct → 0.0
+// Tunable so future calibration off real telemetry stays mechanical.
+export const ComprehensionMcSuccessConfigSchema = z.object({
+  clean_score: z.number().min(0).max(1).default(1.0),
+  one_hint_or_two_attempts_score: z.number().min(0).max(1).default(0.6),
+  multi_hint_or_attempts_score: z.number().min(0).max(1).default(0.3),
+  incorrect_score: z.number().min(0).max(1).default(0.0),
+});
+export type ComprehensionMcSuccessConfig = z.infer<typeof ComprehensionMcSuccessConfigSchema>;
+
+export const ComprehensionHeuristicConfigSchema = z.object({
+  // Signal weights — mirror the implement/debug shape so a comprehension signal in [-1, +1] reads
+  // the same direction as an implement signal at the tier-ladder call site.
+  weight_overtime: z.number().default(-0.5),
+  weight_hint_usage: z.number().default(-0.3),
+  weight_failed_attempts: z.number().default(-0.2),
+  correctness_bonus: z.number().default(0.3),
+  step_up_threshold: z.number().default(0.3),
+  step_down_threshold: z.number().default(-0.3),
+  overtime_cap_ratio: z.number().min(1).default(2.0),
+  hints_cap: z.number().int().min(1).default(3),
+  failed_attempts_cap: z.number().int().min(1).default(4),
+  mc_success: ComprehensionMcSuccessConfigSchema.default({}),
+});
+export type ComprehensionHeuristicConfig = z.infer<typeof ComprehensionHeuristicConfigSchema>;
+
+export const DEFAULT_COMPREHENSION_HEURISTIC: ComprehensionHeuristicConfig =
+  ComprehensionHeuristicConfigSchema.parse({});
+
+// Per-episode signal carrying everything the comprehension-axis heuristic needs. Discriminated by
+// `comprehension_format` so multiple_choice and free_text can't be mixed at a call site.
+export const ComprehensionEpisodeSignalInputSchema = z.discriminatedUnion("comprehension_format", [
+  z.object({
+    comprehension_format: z.literal("multiple_choice"),
+    correct: z.boolean(),
+    time_to_answer_sec: z.number().min(0),
+    attempt_count: z.number().int().min(1),
+    hint_count: z.number().int().min(0),
+    expected_time_sec: z.number().positive().optional(),
+    // STORY-042 — mirror the implement/debug got_help marker. When true, downstream policy code
+    // no-ops the comprehension-axis EWMA (already implemented in comprehension-policy.ts). The
+    // per-episode signal carries it through so a single deps adapter can wire both.
+    got_help: z.boolean().default(false),
+  }),
+  z.object({
+    comprehension_format: z.literal("free_text"),
+    rubric_score: z.number().int().min(1).max(5),
+    time_to_answer_sec: z.number().min(0),
+    attempt_count: z.number().int().min(1),
+    hint_count: z.number().int().min(0),
+    expected_time_sec: z.number().positive().optional(),
+    got_help: z.boolean().default(false),
+  }),
+]);
+export type ComprehensionEpisodeSignalInput = z.input<
+  typeof ComprehensionEpisodeSignalInputSchema
+>;
+
+// Per-episode contribution to the comprehension-axis skill score, in [0, 1]. The shape matches
+// `episodeSuccessScore` so consumers can substitute one for the other based on
+// `episode.problem.kind`.
+export function comprehensionEpisodeSuccessScore(
+  episode: ComprehensionEpisodeSignalInput,
+  config: ComprehensionHeuristicConfig = DEFAULT_COMPREHENSION_HEURISTIC,
+): number {
+  const parsed = ComprehensionEpisodeSignalInputSchema.parse(episode);
+  if (parsed.comprehension_format === "multiple_choice") {
+    if (!parsed.correct) return clamp01(config.mc_success.incorrect_score);
+    const hints = parsed.hint_count;
+    const attempts = parsed.attempt_count;
+    if (hints === 0 && attempts === 1) return clamp01(config.mc_success.clean_score);
+    if (hints >= 2 || attempts >= 3)
+      return clamp01(config.mc_success.multi_hint_or_attempts_score);
+    return clamp01(config.mc_success.one_hint_or_two_attempts_score);
+  }
+  return clamp01((parsed.rubric_score - 1) / 4);
+}
+
+// Returns the per-episode comprehension difficulty signal `s` in roughly [-1, +1]. Negative =
+// struggled (slow / many hints / multiple attempts); positive = breezed through.
+export function comprehensionDifficultySignal(
+  episode: ComprehensionEpisodeSignalInput,
+  config: ComprehensionHeuristicConfig = DEFAULT_COMPREHENSION_HEURISTIC,
+): number {
+  const parsed = ComprehensionEpisodeSignalInputSchema.parse(episode);
+  const success = comprehensionEpisodeSuccessScore(parsed, config);
+  const expectedTimeSec =
+    parsed.expected_time_sec ??
+    DEFAULT_COMPREHENSION_EXPECTED_TIME_SEC[parsed.comprehension_format];
+  const overtimeRatio = parsed.time_to_answer_sec / expectedTimeSec;
+  const overtime = clamp01((overtimeRatio - 1) / (config.overtime_cap_ratio - 1));
+  const hintUsage = clamp01(parsed.hint_count / config.hints_cap);
+  const failedAttempts = clamp01((parsed.attempt_count - 1) / config.failed_attempts_cap);
+  const correctness = success >= 0.6 && parsed.hint_count === 0 ? config.correctness_bonus : 0;
+  return (
+    config.weight_overtime * overtime +
+    config.weight_hint_usage * hintUsage +
+    config.weight_failed_attempts * failedAttempts +
+    correctness
+  );
+}
+
+// Returns the next tier given the comprehension episode just completed. Same step-direction rules
+// as `nextDifficulty`.
+export function nextComprehensionDifficulty(
+  current: DifficultyTier,
+  episode: ComprehensionEpisodeSignalInput,
+  config: ComprehensionHeuristicConfig = DEFAULT_COMPREHENSION_HEURISTIC,
+): DifficultyTier {
+  const s = comprehensionDifficultySignal(episode, config);
+  if (s >= config.step_up_threshold) return stepTier(current, +1);
+  if (s <= config.step_down_threshold) return stepTier(current, -1);
+  return current;
+}
