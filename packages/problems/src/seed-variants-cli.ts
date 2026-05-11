@@ -120,9 +120,7 @@ export async function runSeedVariantsCli(deps: CliDeps): Promise<CliResult> {
     stderr(
       "  pnpm --filter @learnpro/problems seed:variants -- --dry-run --count 3 --all-implement",
     );
-    stderr(
-      "  pnpm --filter @learnpro/problems seed:variants -- --source-slug <slug> --count 3",
-    );
+    stderr("  pnpm --filter @learnpro/problems seed:variants -- --source-slug <slug> --count 3");
     return zeroResult(2);
   }
 

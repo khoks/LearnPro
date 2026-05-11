@@ -19,11 +19,7 @@ import {
   type ProblemVariantsTelemetry,
 } from "./problem-variants.js";
 import type { LLMProvider } from "@learnpro/llm";
-import {
-  ProblemDefSchema,
-  type ImplementProblemDef,
-  type ProblemDef,
-} from "@learnpro/problems";
+import { ProblemDefSchema, type ImplementProblemDef, type ProblemDef } from "@learnpro/problems";
 import type { SandboxProvider } from "@learnpro/sandbox";
 
 // Minimal contract the batch helper needs from a cache store. Implemented in the CLI by a

@@ -274,9 +274,9 @@ describe("runSeedVariantsCli — STORY-039f", () => {
     const result = await runSeedVariantsCli(rig.deps);
 
     expect(result.exit_code).toBe(2);
-    expect(
-      rig.stderr.some((l) => l.includes("mutually exclusive") || l.includes("usage")),
-    ).toBe(true);
+    expect(rig.stderr.some((l) => l.includes("mutually exclusive") || l.includes("usage"))).toBe(
+      true,
+    );
   });
 
   it("real (non-dry-run) generation persists variants and reports counts", async () => {
