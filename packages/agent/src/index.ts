@@ -268,3 +268,16 @@ export {
   type SeedVariantsTelemetry,
   type VariantCacheStore,
 } from "./seed-variants.js";
+
+export {
+  parseVariantSpecClarityResponse,
+  runVariantSpecClarityJudge,
+  VARIANT_SPEC_CLARITY_MIN_PASSING,
+  VariantSpecClarityReasoningSchema,
+  VariantSpecClarityResultSchema,
+  type RunVariantSpecClarityJudgeInput,
+  type SpecClarityJudge,
+  type VariantSpecClarityReasoning,
+  type VariantSpecClarityResult,
+  type VariantSpecClarityScore,
+} from "./variant-spec-clarity-judge.js";

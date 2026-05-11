@@ -412,3 +412,191 @@ describe("Problem-variants route wiring — STORY-039", () => {
     await app.close();
   });
 });
+
+describe("buildVariantSpecClarityJudgeFromEnv — STORY-039d env flag", () => {
+  const fakeLLM: LLMProvider = {
+    name: "fake",
+    async complete(_req: CompleteRequest): Promise<CompleteResponse> {
+      return {
+        text: "",
+        model: "claude-haiku-4-5-20251001",
+        finish_reason: "end_turn",
+        usage: { input_tokens: 0, output_tokens: 0 },
+      };
+    },
+    async *stream(_req: CompleteRequest): AsyncIterable<StreamChunk> {
+      yield { delta: "", done: true };
+    },
+    async embed(_req: EmbedRequest): Promise<EmbedResponse> {
+      return { vector: [], model: "voyage-3", usage: {} };
+    },
+    async toolCall(_req: ToolCallRequest): Promise<ToolCallResponse> {
+      return {
+        text: "",
+        tool_calls: [],
+        model: "fake",
+        finish_reason: "end_turn",
+        usage: { input_tokens: 0, output_tokens: 0 },
+      };
+    },
+  };
+
+  it("returns a judge when LEARNPRO_VARIANT_SPEC_CLARITY_JUDGE=1", async () => {
+    const { buildVariantSpecClarityJudgeFromEnv } = await import("./problem-variants.js");
+    const judge = buildVariantSpecClarityJudgeFromEnv({
+      llm: fakeLLM,
+      env: { LEARNPRO_VARIANT_SPEC_CLARITY_JUDGE: "1" },
+    });
+    expect(judge).toBeDefined();
+  });
+
+  it("returns a judge by default when ANTHROPIC_API_KEY is set", async () => {
+    const { buildVariantSpecClarityJudgeFromEnv } = await import("./problem-variants.js");
+    const judge = buildVariantSpecClarityJudgeFromEnv({
+      llm: fakeLLM,
+      env: { ANTHROPIC_API_KEY: "sk-test" },
+    });
+    expect(judge).toBeDefined();
+  });
+
+  it("returns undefined when LEARNPRO_VARIANT_SPEC_CLARITY_JUDGE=0", async () => {
+    const { buildVariantSpecClarityJudgeFromEnv } = await import("./problem-variants.js");
+    const judge = buildVariantSpecClarityJudgeFromEnv({
+      llm: fakeLLM,
+      env: { ANTHROPIC_API_KEY: "sk-test", LEARNPRO_VARIANT_SPEC_CLARITY_JUDGE: "0" },
+    });
+    expect(judge).toBeUndefined();
+  });
+
+  it("returns undefined when LEARNPRO_VARIANT_SPEC_CLARITY_JUDGE=false", async () => {
+    const { buildVariantSpecClarityJudgeFromEnv } = await import("./problem-variants.js");
+    const judge = buildVariantSpecClarityJudgeFromEnv({
+      llm: fakeLLM,
+      env: { ANTHROPIC_API_KEY: "sk-test", LEARNPRO_VARIANT_SPEC_CLARITY_JUDGE: "false" },
+    });
+    expect(judge).toBeUndefined();
+  });
+
+  it("returns undefined when LEARNPRO_VARIANT_SPEC_CLARITY_JUDGE=off", async () => {
+    const { buildVariantSpecClarityJudgeFromEnv } = await import("./problem-variants.js");
+    const judge = buildVariantSpecClarityJudgeFromEnv({
+      llm: fakeLLM,
+      env: { ANTHROPIC_API_KEY: "sk-test", LEARNPRO_VARIANT_SPEC_CLARITY_JUDGE: "OFF" },
+    });
+    expect(judge).toBeUndefined();
+  });
+
+  it("returns undefined by default when ANTHROPIC_API_KEY is NOT set (cost-safe default)", async () => {
+    const { buildVariantSpecClarityJudgeFromEnv } = await import("./problem-variants.js");
+    const judge = buildVariantSpecClarityJudgeFromEnv({ llm: fakeLLM, env: {} });
+    expect(judge).toBeUndefined();
+  });
+});
+
+describe("POST /v1/problem-variants — STORY-039d judge wiring", () => {
+  it("passes the judge through to generateProblemVariant when wired (variant returned on judge pass)", async () => {
+    // Use a stub judge that returns pass:true so the variant flows through.
+    const stubJudge = vi.fn(async () => ({
+      instruction_clarity: 5 as const,
+      example_quality: 5 as const,
+      concept_match: 5 as const,
+      reasoning: {
+        instruction_clarity: "clear",
+        example_quality: "good",
+        concept_match: "tags match",
+      },
+      pass: true,
+    }));
+    listProblemVariants.mockResolvedValue([]);
+    insertProblemVariant.mockImplementation(
+      async (_db: LearnProDb, args: { variant_def: unknown }) => ({
+        id: "row-1",
+        org_id: "self",
+        source_problem_id: SOURCE_PROBLEM_ID,
+        variant_def: args.variant_def,
+        created_at: new Date(),
+      }),
+    );
+    const llm = fakeLlm([JSON.stringify(VALID_VARIANT_PAYLOAD)]);
+    const db = fakeDbWithProblem([SOURCE_PROBLEM_ROW]);
+    const app = buildServer({
+      sessionResolver: userSession(USER_ID),
+      llm,
+      problemVariantsDb: db,
+      variantSpecClarityJudge: stubJudge,
+    });
+    const res = await app.inject({
+      method: "POST",
+      url: "/v1/problem-variants",
+      payload: { source_problem_id: SOURCE_PROBLEM_ID, count: 1 },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json().variants).toHaveLength(1);
+    expect(stubJudge).toHaveBeenCalledTimes(1);
+    await app.close();
+  });
+
+  it("drops variants when the judge fails (returns empty variants list on persistent fail)", async () => {
+    const stubJudge = vi.fn(async () => ({
+      instruction_clarity: 1 as const,
+      example_quality: 4 as const,
+      concept_match: 5 as const,
+      reasoning: {
+        instruction_clarity: "the empty case is undefined",
+        example_quality: "fine",
+        concept_match: "fine",
+      },
+      pass: false,
+    }));
+    listProblemVariants.mockResolvedValue([]);
+    const llm = fakeLlm([
+      JSON.stringify({ ...VALID_VARIANT_PAYLOAD, slug: "sum-even-numbers-variant-1" }),
+      JSON.stringify({ ...VALID_VARIANT_PAYLOAD, slug: "sum-even-numbers-variant-2" }),
+    ]);
+    const db = fakeDbWithProblem([SOURCE_PROBLEM_ROW]);
+    const app = buildServer({
+      sessionResolver: userSession(USER_ID),
+      llm,
+      problemVariantsDb: db,
+      variantSpecClarityJudge: stubJudge,
+    });
+    const res = await app.inject({
+      method: "POST",
+      url: "/v1/problem-variants",
+      payload: { source_problem_id: SOURCE_PROBLEM_ID, count: 1 },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json().variants).toEqual([]);
+    expect(insertProblemVariant).not.toHaveBeenCalled();
+    expect(stubJudge).toHaveBeenCalled();
+    await app.close();
+  });
+
+  it("behaves as STORY-039 when no judge is supplied (variant returned without judge call)", async () => {
+    listProblemVariants.mockResolvedValue([]);
+    insertProblemVariant.mockImplementation(
+      async (_db: LearnProDb, args: { variant_def: unknown }) => ({
+        id: "row-1",
+        org_id: "self",
+        source_problem_id: SOURCE_PROBLEM_ID,
+        variant_def: args.variant_def,
+        created_at: new Date(),
+      }),
+    );
+    const llm = fakeLlm([JSON.stringify(VALID_VARIANT_PAYLOAD)]);
+    const db = fakeDbWithProblem([SOURCE_PROBLEM_ROW]);
+    const app = buildServer({
+      sessionResolver: userSession(USER_ID),
+      llm,
+      problemVariantsDb: db,
+    });
+    const res = await app.inject({
+      method: "POST",
+      url: "/v1/problem-variants",
+      payload: { source_problem_id: SOURCE_PROBLEM_ID, count: 1 },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json().variants).toHaveLength(1);
+    await app.close();
+  });
+});

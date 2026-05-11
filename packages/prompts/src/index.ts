@@ -86,3 +86,10 @@ export {
   type WeeklyThemePromptConcept,
   type WeeklyThemePromptOptions,
 } from "./weekly-theme-prompt.js";
+export {
+  VARIANT_SPEC_CLARITY_PROMPT_VERSION,
+  buildVariantSpecClaritySystemPrompt,
+  buildVariantSpecClarityUserPrompt,
+  type VariantSpecClarityPromptOptions,
+  type VariantSpecClarityPromptVariant,
+} from "./variant-spec-clarity-prompt.js";
