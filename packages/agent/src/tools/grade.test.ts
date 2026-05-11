@@ -753,3 +753,142 @@ describe("createGradeTool: STORY-043a multi-file submissions", () => {
     expect(recorded[0]!.code).toBe("def solve(): return [0,1]");
   });
 });
+
+// STORY-038b — calibrated comprehension difficulty signal surfaced on the grade output. The
+// signal is computed only when ctx carries the runtime metadata (started_at_ms, attempt_count,
+// hints_used); legacy fixtures (which omit them) get null. Implement/debug episodes always get
+// null.
+describe("createGradeTool: STORY-038b comprehension difficulty signal", () => {
+  it("multiple_choice correct first-try → success_score=1, positive difficulty_signal", async () => {
+    const startedAt = Date.now() - 30_000; // 30s elapsed → under the 60s default
+    const baseDeps = fakeDeps({
+      ctx: {
+        episode_id: EPISODE_ID,
+        user_id: "user-1",
+        org_id: "self",
+        problem_id: "problem-1",
+        problem: comprehensionMcProblem() as never,
+        episode_started_at_ms: startedAt,
+        episode_hints_used: 0,
+        episode_attempt_count: 1,
+      },
+    });
+    const compDeps: ComprehensionGradeDeps = {
+      gradeComprehensionAnswer: async () => ({
+        correct: true,
+        reasoning: "right answer",
+        explanation: "ok",
+        fallback_used: false,
+      }),
+    };
+    const tool = createGradeTool({ deps: baseDeps, comprehensionDeps: compDeps });
+    const out = await tool.run({
+      episode_id: EPISODE_ID,
+      comprehension_answer: { kind: "multiple_choice", selected_index: 0 },
+    });
+    expect(out.comprehension_signal).toBeDefined();
+    expect(out.comprehension_signal?.comprehension_format).toBe("multiple_choice");
+    expect(out.comprehension_signal?.success_score).toBe(1.0);
+    expect(out.comprehension_signal?.difficulty_signal).toBeGreaterThan(0);
+  });
+
+  it("multiple_choice incorrect after 3 attempts → success_score=0, negative difficulty_signal", async () => {
+    const startedAt = Date.now() - 180_000;
+    const baseDeps = fakeDeps({
+      ctx: {
+        episode_id: EPISODE_ID,
+        user_id: "user-1",
+        org_id: "self",
+        problem_id: "problem-2",
+        problem: comprehensionMcProblem() as never,
+        episode_started_at_ms: startedAt,
+        episode_hints_used: 2,
+        episode_attempt_count: 3,
+      },
+    });
+    const compDeps: ComprehensionGradeDeps = {
+      gradeComprehensionAnswer: async () => ({
+        correct: false,
+        reasoning: "wrong",
+        explanation: "ok",
+        fallback_used: false,
+      }),
+    };
+    const tool = createGradeTool({ deps: baseDeps, comprehensionDeps: compDeps });
+    const out = await tool.run({
+      episode_id: EPISODE_ID,
+      comprehension_answer: { kind: "multiple_choice", selected_index: 1 },
+    });
+    expect(out.comprehension_signal?.success_score).toBe(0);
+    expect(out.comprehension_signal?.difficulty_signal).toBeLessThan(-0.3);
+  });
+
+  it("free_text rubric_score=5 → success_score=1, positive difficulty_signal", async () => {
+    const startedAt = Date.now() - 90_000;
+    const baseDeps = fakeDeps({
+      ctx: {
+        episode_id: EPISODE_ID,
+        user_id: "user-1",
+        org_id: "self",
+        problem_id: "problem-3",
+        problem: comprehensionFreeProblem() as never,
+        episode_started_at_ms: startedAt,
+        episode_hints_used: 0,
+        episode_attempt_count: 1,
+      },
+    });
+    const compDeps: ComprehensionGradeDeps = {
+      gradeComprehensionAnswer: async () => ({
+        correct: true,
+        reasoning: "great",
+        explanation: "ok",
+        fallback_used: false,
+        rubric_score: 5,
+      }),
+    };
+    const tool = createGradeTool({ deps: baseDeps, comprehensionDeps: compDeps });
+    const out = await tool.run({
+      episode_id: EPISODE_ID,
+      comprehension_answer: { kind: "free_text", text: "exponential overlapping subproblems" },
+    });
+    expect(out.comprehension_signal?.comprehension_format).toBe("free_text");
+    expect(out.comprehension_signal?.success_score).toBe(1.0);
+    expect(out.comprehension_signal?.difficulty_signal).toBeGreaterThan(0);
+  });
+
+  it("comprehension_signal is null when ctx omits runtime metadata (legacy fixture)", async () => {
+    const baseDeps = fakeDeps({
+      ctx: {
+        episode_id: EPISODE_ID,
+        user_id: "user-1",
+        org_id: "self",
+        problem_id: "problem-4",
+        problem: comprehensionMcProblem() as never,
+      },
+    });
+    const compDeps: ComprehensionGradeDeps = {
+      gradeComprehensionAnswer: async () => ({
+        correct: true,
+        reasoning: "ok",
+        explanation: "ok",
+        fallback_used: false,
+      }),
+    };
+    const tool = createGradeTool({ deps: baseDeps, comprehensionDeps: compDeps });
+    const out = await tool.run({
+      episode_id: EPISODE_ID,
+      comprehension_answer: { kind: "multiple_choice", selected_index: 0 },
+    });
+    expect(out.comprehension_signal ?? null).toBeNull();
+  });
+
+  it("implement episode: comprehension_signal is always null", async () => {
+    const deps = fakeDeps({});
+    const tool = createGradeTool({ deps });
+    const out = await tool.run({
+      episode_id: EPISODE_ID,
+      code: "def solve(): return [0, 1]",
+    });
+    expect(out.comprehension_signal ?? null).toBeNull();
+  });
+});

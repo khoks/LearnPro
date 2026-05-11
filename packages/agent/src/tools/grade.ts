@@ -1,8 +1,16 @@
 import { z } from "zod";
 import { SandboxWorkspaceFileSchema, type SandboxWorkspaceFile } from "@learnpro/sandbox";
+import {
+  comprehensionDifficultySignal,
+  comprehensionEpisodeSuccessScore,
+  type ComprehensionEpisodeSignalInput,
+} from "@learnpro/scoring";
 import type {
   ComprehensionGradeDeps,
+  ComprehensionGradeDepsResult,
+  ComprehensionProblemDefShape,
   GradeDeps,
+  GradeEpisodeContext,
   GradeRubric,
   GraderAgentRubric,
   HiddenTestResult,
@@ -71,6 +79,17 @@ export const ComprehensionGradeOutputSchema = z.object({
 });
 export type ComprehensionGradeOutput = z.infer<typeof ComprehensionGradeOutputSchema>;
 
+// STORY-038b — calibrated comprehension difficulty signal surfaced when the grade dispatch path
+// has enough runtime context to compute it. Null on implement/debug episodes. Null on
+// comprehension episodes whose `ctx` didn't carry `episode_started_at_ms` /
+// `episode_attempt_count` / `episode_hints_used` (legacy fixtures / partial deployment).
+export const ComprehensionSignalOutputSchema = z.object({
+  comprehension_format: z.enum(["multiple_choice", "free_text"]),
+  success_score: z.number().min(0).max(1),
+  difficulty_signal: z.number(),
+});
+export type ComprehensionSignalOutput = z.infer<typeof ComprehensionSignalOutputSchema>;
+
 export const GradeOutputSchema = z.object({
   passed: z.boolean(),
   hidden_test_results: z.array(
@@ -93,6 +112,10 @@ export const GradeOutputSchema = z.object({
   // STORY-038a — comprehension verdict carried alongside the implement/debug rubric on a
   // comprehension episode. Null on implement/debug episodes (and on legacy fixtures pre-038a).
   comprehension: ComprehensionGradeOutputSchema.nullable().optional(),
+  // STORY-038b — calibrated comprehension difficulty signal. Surfaced only on comprehension
+  // episodes whose `GradeEpisodeContext` carried the runtime metadata (started_at_ms,
+  // attempt_count, hints_used). Null otherwise. Implement/debug episodes always get null.
+  comprehension_signal: ComprehensionSignalOutputSchema.nullable().optional(),
 });
 export type GradeOutput = z.infer<typeof GradeOutputSchema>;
 
@@ -193,6 +216,17 @@ export function createGradeTool(opts: CreateGradeToolOptions): GradeTool {
           passed: comprehensionResult.correct,
           runtime_ms: runtime_ms_c,
         });
+        // STORY-038b — calibrated comprehension difficulty signal. Computed only when the deps
+        // adapter populated the runtime metadata (started_at_ms / attempt_count / hints_used);
+        // otherwise the field stays null and downstream code falls back to the per-concept-tag
+        // EWMA on its own. The signal is shaped like the implement-side `difficultySignal`
+        // (clamped near [-1, +1]) so a tier-ladder consumer can substitute one for the other.
+        const comprehension_signal = computeComprehensionSignal(
+          ctx,
+          ctx.problem,
+          input.comprehension_answer,
+          comprehensionResult,
+        );
         return {
           passed: comprehensionResult.correct,
           // No hidden tests on a comprehension episode.
@@ -215,6 +249,7 @@ export function createGradeTool(opts: CreateGradeToolOptions): GradeTool {
             explanation: comprehensionResult.explanation,
             fallback_used: comprehensionResult.fallback_used,
           },
+          comprehension_signal,
         };
       }
 
@@ -323,9 +358,71 @@ export function createGradeTool(opts: CreateGradeToolOptions): GradeTool {
         runtime_ms,
         grader,
         comprehension: null,
+        comprehension_signal: null,
       };
     },
   };
+}
+
+// STORY-038b — given a comprehension submission context + verdict, produce the calibrated
+// difficulty signal + success score. Returns null when the context lacks runtime metadata
+// (legacy fixtures / partial deployment). The signal mirrors the implement-side
+// `difficultySignal` shape so a tier-ladder consumer can substitute one for the other based on
+// `episode.problem.kind`.
+function computeComprehensionSignal(
+  ctx: GradeEpisodeContext,
+  problem: ComprehensionProblemDefShape,
+  answer: z.infer<typeof ComprehensionAnswerSchema>,
+  verdict: ComprehensionGradeDepsResult,
+): ComprehensionSignalOutput | null {
+  const startedAt = ctx.episode_started_at_ms;
+  const attemptCount = ctx.episode_attempt_count;
+  const hintCount = ctx.episode_hints_used;
+  if (startedAt === undefined || attemptCount === undefined || hintCount === undefined) {
+    return null;
+  }
+  const time_to_answer_sec = Math.max(0, (Date.now() - startedAt) / 1000);
+  const expected_time_sec =
+    typeof problem.expected_median_time_to_solve_ms === "number"
+      ? Math.max(1, problem.expected_median_time_to_solve_ms / 1000)
+      : undefined;
+
+  let signalInput: ComprehensionEpisodeSignalInput;
+  if (answer.kind === "multiple_choice") {
+    signalInput = {
+      comprehension_format: "multiple_choice",
+      correct: verdict.correct,
+      time_to_answer_sec,
+      attempt_count: Math.max(1, attemptCount),
+      hint_count: Math.max(0, hintCount),
+      ...(expected_time_sec !== undefined ? { expected_time_sec } : {}),
+    };
+  } else {
+    // Map verdict to a rubric_score: prefer the grader's surfaced rubric_score when supplied,
+    // otherwise fall back to 5 on correct / 1 on incorrect (the binary case the parent ticket
+    // describes for graders that don't surface a 1-5 rubric yet).
+    const rubric_score = clampRubricScore(verdict.rubric_score ?? (verdict.correct ? 5 : 1));
+    signalInput = {
+      comprehension_format: "free_text",
+      rubric_score,
+      time_to_answer_sec,
+      attempt_count: Math.max(1, attemptCount),
+      hint_count: Math.max(0, hintCount),
+      ...(expected_time_sec !== undefined ? { expected_time_sec } : {}),
+    };
+  }
+  return {
+    comprehension_format: signalInput.comprehension_format,
+    success_score: comprehensionEpisodeSuccessScore(signalInput),
+    difficulty_signal: comprehensionDifficultySignal(signalInput),
+  };
+}
+
+function clampRubricScore(n: number): 1 | 2 | 3 | 4 | 5 {
+  const r = Math.round(n);
+  if (r <= 1) return 1;
+  if (r >= 5) return 5;
+  return r as 2 | 3 | 4;
 }
 
 // STORY-043a — pick the entry-file path for a submission. Multi-file submissions honor the

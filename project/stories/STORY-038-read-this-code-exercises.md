@@ -67,3 +67,9 @@ Three sub-formats:
   blue "Read" KindBadge. Tutor commentary helper builds the warm/coach-voice "Here is why" and
   "What good looks like" prose. End-to-end wiring of the comprehension grader into the API
   tutor route deferred to a follow-up Story (the discriminated assign/grade fan-out needs care).
+- 2026-05-11 — follow-up [STORY-038b](STORY-038b-comprehension-difficulty-calibration.md) shipped
+  the comprehension-axis difficulty calibration deferred above. `packages/scoring/src/difficulty.ts`
+  gains `comprehensionEpisodeSuccessScore` + `comprehensionDifficultySignal` +
+  `nextComprehensionDifficulty` (Zod discriminated union on `comprehension_format`); the grade
+  tool surfaces a calibrated `comprehension_signal` on `GradeOutput`. Implement/debug branch stays
+  unchanged. 27 new tests.

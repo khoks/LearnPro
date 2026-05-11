@@ -183,6 +183,13 @@ export interface GradeEpisodeContext {
   org_id: string;
   problem_id: string;
   problem: ProblemDef;
+  // STORY-038b — optional runtime metadata used by the comprehension dispatch path to compute a
+  // calibrated comprehension difficulty signal. All three fields stay optional so legacy
+  // deps adapters / tests don't need rewriting; when absent the grade tool simply omits the
+  // `comprehension_signal` block from its output (implement/debug episodes always omit it).
+  episode_started_at_ms?: number;
+  episode_hints_used?: number;
+  episode_attempt_count?: number;
 }
 
 export interface HiddenTestResult {
@@ -399,6 +406,10 @@ export interface ComprehensionProblemDefShape {
   starter_code: string;
   concept_tags: ReadonlyArray<string>;
   difficulty: number;
+  // STORY-038b — passed through to the comprehension difficulty signal as the per-problem
+  // `expected_time_sec`. Optional here since the real ComprehensionProblemDef always populates
+  // it; structural shape stays permissive.
+  expected_median_time_to_solve_ms?: number;
 }
 
 // Structural shape of the comprehension answer the user submits. Mirrors
@@ -412,6 +423,12 @@ export interface ComprehensionGradeDepsResult {
   reasoning: string;
   explanation: string;
   fallback_used: boolean;
+  // STORY-038b — the rubric_score from the free-text grader, 1-5. When the grader extends the
+  // verdict with this, the comprehension difficulty signal uses the rubric directly (instead of
+  // mapping `correct` to a binary 1/0). Multiple-choice grading never sets this. Optional so a
+  // grader that doesn't surface the rubric still produces a verdict (the difficulty signal falls
+  // back to the binary `correct` mapping for free-text).
+  rubric_score?: number;
 }
 
 // STORY-015 — session-plan agent. The planner LLM call is a one-shot completion (no tool use).
