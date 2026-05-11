@@ -39,7 +39,7 @@ Always start with `--dry-run` to confirm the source count and cache state before
 Preview what a 3-per-source bulk seed would do, across both Python and TypeScript:
 
 ```bash
-pnpm --filter @learnpro/problems seed:variants -- \
+pnpm --filter @learnpro/agent seed:variants -- \
   --dry-run \
   --count 3 \
   --all-implement
@@ -49,7 +49,7 @@ Seed 5 variants for one specific source:
 
 ```bash
 ANTHROPIC_API_KEY=sk-ant-... \
-  pnpm --filter @learnpro/problems seed:variants -- \
+  pnpm --filter @learnpro/agent seed:variants -- \
     --count 5 \
     --source-slug reverse-string
 ```
@@ -58,7 +58,7 @@ Seed only Python sources, 3 variants each (the realistic v1-launch shape — Pyt
 
 ```bash
 ANTHROPIC_API_KEY=sk-ant-... \
-  pnpm --filter @learnpro/problems seed:variants -- \
+  pnpm --filter @learnpro/agent seed:variants -- \
     --count 3 \
     --all-implement \
     --language python

@@ -16,8 +16,8 @@ import {
   ProblemDefSchema,
   type ImplementProblemDef,
   type ProblemDef,
-} from "./index.js";
-import type { VariantCacheStore } from "@learnpro/agent";
+} from "@learnpro/problems";
+import type { VariantCacheStore } from "./seed-variants.js";
 
 // STORY-039f — CLI tests. The CLI's hard dependencies (DB, real LLM, real YAML loading)
 // are stubbed via the `CliDeps` injectables so we exercise the argv-parse + env-refuse +

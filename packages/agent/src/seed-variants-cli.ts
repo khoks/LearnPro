@@ -1,19 +1,17 @@
 // STORY-039f — operator CLI for seeding the `problem_variants` cache with N variants per
-// curated source problem. Wraps the `@learnpro/agent` `seedVariantsForProblem` batch
-// helper with DB lookup, env validation, and progress reporting.
+// curated source problem. Wraps the `seedVariantsForProblem` batch helper (also in this
+// package) with DB lookup, env validation, and progress reporting.
 //
 // Usage:
-//   pnpm --filter @learnpro/problems seed:variants -- --dry-run --count 3 --all-implement
-//   pnpm --filter @learnpro/problems seed:variants -- --source-slug reverse-string --count 3
+//   pnpm --filter @learnpro/agent seed:variants -- --dry-run --count 3 --all-implement
+//   pnpm --filter @learnpro/agent seed:variants -- --source-slug reverse-string --count 3
 //
 // The actual seeding (running with `ANTHROPIC_API_KEY` set) is an OPERATOR task — it costs
 // ~$0.10-0.40 per variant attempt. Always run with `--dry-run` first to preview the work.
 //
-// NOTE on the workspace dep cycle: `@learnpro/agent` is listed under devDependencies in
-// this package's package.json. It's the CLI's only consumer of agent types, and the agent
-// depends on `@learnpro/problems` at runtime — making the back-edge a runtime cycle would
-// be wrong. Pnpm still warns about the cycle because it walks dev edges; the warning is
-// expected and harmless for tooling-only entry points like this one.
+// Lives in `@learnpro/agent` because it consumes `seedVariantsForProblem` (defined here)
+// and `@learnpro/agent` already depends on `@learnpro/problems` for the seed bank — keeping
+// the CLI here avoids a circular workspace dependency that Turborepo refuses to build.
 
 import { eq, and } from "drizzle-orm";
 import { z } from "zod";
@@ -21,7 +19,7 @@ import {
   seedVariantsForProblem,
   SEED_VARIANTS_MAX_TARGET_COUNT,
   type VariantCacheStore,
-} from "@learnpro/agent";
+} from "./seed-variants.js";
 import {
   AnthropicSdkTransport,
   buildLLMProvider,
@@ -45,7 +43,7 @@ import {
   type ImplementProblemDef,
   type ProblemDef,
   type ProblemLanguage,
-} from "./index.js";
+} from "@learnpro/problems";
 
 // CLI args are parsed with Zod for descriptive errors. The "all" sentinel for language
 // pre-loads in the schema lets `--language all` flow through without coercion.
@@ -117,10 +115,8 @@ export async function runSeedVariantsCli(deps: CliDeps): Promise<CliResult> {
   } catch (err) {
     stderr(`[seed:variants] ${(err as Error).message}`);
     stderr("[seed:variants] usage:");
-    stderr(
-      "  pnpm --filter @learnpro/problems seed:variants -- --dry-run --count 3 --all-implement",
-    );
-    stderr("  pnpm --filter @learnpro/problems seed:variants -- --source-slug <slug> --count 3");
+    stderr("  pnpm --filter @learnpro/agent seed:variants -- --dry-run --count 3 --all-implement");
+    stderr("  pnpm --filter @learnpro/agent seed:variants -- --source-slug <slug> --count 3");
     return zeroResult(2);
   }
 
