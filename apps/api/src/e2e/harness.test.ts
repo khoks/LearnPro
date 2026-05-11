@@ -118,7 +118,12 @@ describe("fixedUserSession", () => {
       email: "u1@example.com",
     });
     const session = await resolver({} as never);
-    expect(session).toEqual({ user_id: "u-1", org_id: "org-1", email: "u1@example.com" });
+    expect(session).toEqual({
+      user_id: "u-1",
+      org_id: "org-1",
+      email: "u1@example.com",
+      is_admin: false,
+    });
   });
 
   it("defaults org_id to 'self' and supplies a stable email when omitted", async () => {

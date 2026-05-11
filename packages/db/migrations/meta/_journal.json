@@ -176,6 +176,20 @@
       "when": 1780100000000,
       "tag": "0024_episode_variant_of",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1780200000000,
+      "tag": "0025_variant_gate_failures",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1780300000000,
+      "tag": "0026_users_is_admin",
+      "breakpoints": true
     }
   ]
 }

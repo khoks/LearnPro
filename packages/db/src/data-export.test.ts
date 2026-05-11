@@ -396,6 +396,7 @@ function makeUser(overrides: Partial<User> = {}): User {
     xp: 0,
     streak_grace_days_remaining: 2,
     streak_grace_last_replenished_at: null,
+    is_admin: false,
     created_at: new Date(0),
     ...overrides,
   };

@@ -78,7 +78,7 @@ function fakeLlm(responseText: string): LLMProvider & { calls: CompleteRequest[]
 
 const userSession =
   (user_id: string): SessionResolver =>
-  async () => ({ user_id, org_id: "self", email: `${user_id}@x.y` });
+  async () => ({ user_id, org_id: "self", email: `${user_id}@x.y`, is_admin: false });
 
 const NULL_SESSION: SessionResolver = async () => null;
 

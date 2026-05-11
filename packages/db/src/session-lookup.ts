@@ -6,6 +6,9 @@ export interface SessionUser {
   user_id: string;
   org_id: string;
   email: string;
+  // STORY-039e — operator-only flag, read by admin-gated Fastify routes
+  // (e.g. GET /v1/admin/variant-failures). Defaults to false; operator promotes via psql.
+  is_admin: boolean;
 }
 
 export interface FindSessionUserOptions {
@@ -24,6 +27,7 @@ export async function findSessionUser(opts: FindSessionUserOptions): Promise<Ses
       user_id: users.id,
       org_id: users.org_id,
       email: users.email,
+      is_admin: users.is_admin,
     })
     .from(sessions)
     .innerJoin(users, eq(sessions.userId, users.id))

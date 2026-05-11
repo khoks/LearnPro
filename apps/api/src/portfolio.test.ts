@@ -53,7 +53,7 @@ const fakeDb = {
 
 const userSession =
   (user_id: string): SessionResolver =>
-  async () => ({ user_id, org_id: "self", email: `${user_id}@x.y` });
+  async () => ({ user_id, org_id: "self", email: `${user_id}@x.y`, is_admin: false });
 
 const NULL_SESSION: SessionResolver = async () => null;
 const USER_ID = "11111111-1111-1111-1111-111111111111";

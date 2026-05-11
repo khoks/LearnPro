@@ -161,7 +161,7 @@ export function fixedUserSession(input: {
 }): SessionResolver {
   const org_id = input.org_id ?? "self";
   const email = input.email ?? "e2e-mvp-loop@learnpro.local";
-  return async () => ({ user_id: input.user_id, org_id, email });
+  return async () => ({ user_id: input.user_id, org_id, email, is_admin: false });
 }
 
 export interface BuildE2eServerOptions {

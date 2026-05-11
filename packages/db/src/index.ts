@@ -230,6 +230,17 @@ export {
   type ProblemVariantRow,
 } from "./problem-variants.js";
 export {
+  VARIANT_FAILURE_REASONS,
+  VariantFailureReasonSchema,
+  insertVariantGateFailure,
+  listVariantGateFailures,
+  type InsertVariantGateFailureInput,
+  type ListVariantGateFailuresOptions,
+  type ListVariantGateFailuresResult,
+  type VariantFailureReason,
+  type VariantGateFailureRow,
+} from "./variant-gate-failures.js";
+export {
   listBugFindingScores,
   upsertBugFindingScore,
   type BugFindingScoreView,

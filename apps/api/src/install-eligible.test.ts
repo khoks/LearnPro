@@ -80,7 +80,12 @@ async function buildServer(opts: {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     db: fake.db as any,
     sessionResolver: opts.authed
-      ? async () => ({ user_id: "user-1", org_id: "self", email: "user-1@learnpro.local" })
+      ? async () => ({
+          user_id: "user-1",
+          org_id: "self",
+          email: "user-1@learnpro.local",
+          is_admin: false,
+        })
       : async () => null,
   });
   return { app };

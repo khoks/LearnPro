@@ -66,6 +66,7 @@ import {
   buildVariantSpecClarityJudgeFromEnv,
   registerProblemVariantsRoutes,
 } from "./problem-variants.js";
+import { registerAdminVariantFailuresRoutes } from "./admin-variant-failures.js";
 import {
   loadExportWindowMs,
   noDbExporter,
@@ -254,6 +255,10 @@ export interface BuildServerOptions {
   // `buildVariantSpecClarityJudgeFromEnv` (default ON when ANTHROPIC_API_KEY is set;
   // operator-disable via `LEARNPRO_VARIANT_SPEC_CLARITY_JUDGE=0`).
   variantSpecClarityJudge?: import("@learnpro/agent").SpecClarityJudge;
+  // STORY-039e — DB handle for the admin failed-gate variant inspection route. When
+  // supplied, registers `GET /v1/admin/variant-failures` behind the `users.is_admin = true`
+  // gate. Mirrors the problemVariantsDb wiring pattern; tests inject a fake DB.
+  adminVariantFailuresDb?: import("@learnpro/db").LearnProDb;
 }
 
 // Default impl when no store is provided — drops events on the floor. Useful for tests and
@@ -606,6 +611,16 @@ export function buildServer(opts: BuildServerOptions = {}) {
     });
   }
 
+  // STORY-039e — admin failed-gate variant inspection. Read-only, gated on
+  // `users.is_admin = true`. Same wiring pattern as the rest — present only when the DB
+  // handle is supplied.
+  if (opts.adminVariantFailuresDb) {
+    registerAdminVariantFailuresRoutes(app, {
+      db: opts.adminVariantFailuresDb,
+      sessionResolver,
+    });
+  }
+
   // STORY-060 deferred AC — friendly 429 mapping for the per-user daily token budget. Any handler
   // that calls into the LLM provider can throw `TokenBudgetExceededError`; this hook catches it
   // before Fastify's default 500 path so the playground can render the friendly message AC from
@@ -667,6 +682,7 @@ function defaultsFromEnv(): {
   cheatsheetEpisodeFetcher?: CheatsheetEpisodeFetcher;
   problemVariantsDb?: import("@learnpro/db").LearnProDb;
   variantSpecClarityJudge?: import("@learnpro/agent").SpecClarityJudge;
+  adminVariantFailuresDb?: import("@learnpro/db").LearnProDb;
 } {
   const exportRateLimiter = buildExportRateLimiterFromEnv(process.env);
   const url = process.env["DATABASE_URL"];
@@ -778,6 +794,8 @@ function defaultsFromEnv(): {
       const judge = buildVariantSpecClarityJudgeFromEnv({ llm, env: process.env });
       return judge ? { variantSpecClarityJudge: judge } : {};
     })(),
+    // STORY-039e — wire the same db handle to the admin failed-gate inspection route.
+    adminVariantFailuresDb: db,
     ...(exportRateLimiter ? { exportRateLimiter } : {}),
     // STORY-033 — async profile-update agent. Build the BullMQ cron from REDIS_URL (returns null
     // when unset, in which case the enqueue helper is a soft no-op). Wire the session-end hook
