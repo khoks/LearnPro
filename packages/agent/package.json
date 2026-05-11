@@ -13,7 +13,8 @@
     "lint": "eslint src",
     "typecheck": "tsc --noEmit -p tsconfig.test.json",
     "test": "vitest run --passWithNoTests",
-    "eval": "tsx evals/cli.ts"
+    "eval": "tsx evals/cli.ts",
+    "seed:variants": "tsx ./src/seed-variants-cli.ts"
   },
   "dependencies": {
     "@learnpro/db": "workspace:*",
