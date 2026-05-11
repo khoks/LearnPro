@@ -260,3 +260,11 @@ export {
   type GenerateProblemVariantOutput,
   type ProblemVariantsTelemetry,
 } from "./problem-variants.js";
+export {
+  SEED_VARIANTS_MAX_TARGET_COUNT,
+  seedVariantsForProblem,
+  type SeedVariantsForProblemInput,
+  type SeedVariantsForProblemOutput,
+  type SeedVariantsTelemetry,
+  type VariantCacheStore,
+} from "./seed-variants.js";
