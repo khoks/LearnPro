@@ -28,7 +28,7 @@ Variants must pass an automated quality gate before being shown to users: spec-c
 - [ ] Self-validation through real Piston sandbox — DEFERRED. The agent's `parseProblemVariantResponse` defends against drift via the schema + identity checks; running the variant's `reference_solution` against its own `hidden_tests` requires a sandbox round-trip and is gated by `LEARNPRO_REQUIRE_PISTON=1` for the integration suite.
 - [ ] Admin tool to inspect failed-gate variants — DEFERRED (failed gates currently return empty; v1 follow-up adds an admin surface).
 - [ ] 100 variants seeded for launch — DEFERRED (the agent + cache are in place; seeding 100 is an operator task once an Anthropic key is wired into CI).
-- [ ] Per-user "already seen the seed" gating — DEFERRED to a future tutor-side change (`assign-problem-v5`); the agent and cache are in place.
+- [x] Per-user "already seen the seed" gating — shipped 2026-05-11 via [STORY-039c](./STORY-039c-per-user-seen-seed.md). The assigner now prefers a cached, unattempted variant when the user has closed an episode on the seed; episode lineage is stamped via the new `episodes.is_variant_of_problem_id` column (migration 0024).
 
 ## Tasks under this Story
 

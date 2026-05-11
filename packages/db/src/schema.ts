@@ -361,6 +361,13 @@ export const episodes = pgTable(
     rubric_efficiency: integer("rubric_efficiency"),
     rubric_test_coverage: integer("rubric_test_coverage"),
     rubric_reasoning: text("rubric_reasoning"),
+    // STORY-039c — when the served problem was an LLM-generated variant, this points at the seed
+    // problem the variant was derived from. NULL when the served problem was the seed itself (or
+    // a stand-alone problem with no variant lineage). FK → problems.id with ON DELETE SET NULL so
+    // a deleted seed doesn't orphan the episode (we still want the user's skill/XP history).
+    is_variant_of_problem_id: uuid("is_variant_of_problem_id").references(() => problems.id, {
+      onDelete: "set null",
+    }),
   },
   (t) => ({
     user_started_idx: index("episodes_user_started_idx").on(t.user_id, t.started_at),
@@ -368,6 +375,7 @@ export const episodes = pgTable(
     embedding_ivfflat_idx: index("episodes_embedding_ivfflat_idx")
       .using("ivfflat", t.embedding.op("vector_cosine_ops"))
       .with({ lists: 100 }),
+    is_variant_of_idx: index("episodes_is_variant_of_idx").on(t.is_variant_of_problem_id),
   }),
 );
 

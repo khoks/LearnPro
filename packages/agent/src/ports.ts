@@ -24,10 +24,15 @@ export interface AssignProblemDeps {
   loadProblemCatalog(input: { track_id: string }): Promise<ProblemCatalogEntry[]>;
 
   // Creates the in-progress episode row and returns its id.
+  // STORY-039c — when the served problem was an LLM-generated variant, the assigner passes
+  // `is_variant_of_problem_id` so the deps adapter can stamp the episode row with the seed
+  // problem id (the variant -> source lineage). Optional; left null when serving the seed
+  // directly or a stand-alone (non-variant) problem.
   createEpisode(input: {
     user_id: string;
     org_id: string;
     problem_id: string;
+    is_variant_of_problem_id?: string | null;
   }): Promise<{ episode_id: string; started_at: number }>;
 
   // STORY-031 — returns the kebab-case concept slugs the user is due to review (FSRS state.due
@@ -46,6 +51,22 @@ export interface AssignProblemDeps {
   // for each insight whose `text` is mentioned in the most-recent tutor opener. When omitted,
   // the bump is silently skipped (the insight row stays at its existing count).
   incrementInsightReferenced?(input: { insight_id: string }): Promise<void>;
+
+  // STORY-039c — returns the distinct slugs of seed problems the user has already closed an
+  // episode on (`episodes.final_outcome IS NOT NULL`). Used by `pickCandidate` to detect when
+  // the user has "already seen the seed" and prefer a cached variant over re-serving the seed.
+  // Optional: when omitted (or returning an empty array), the assigner behaves identically to
+  // its pre-STORY-039c self.
+  loadSeenSourceSlugs?(input: { user_id: string; org_id: string }): Promise<string[]>;
+
+  // STORY-039c — returns the cached LLM-generated variants the user has NOT yet attempted,
+  // keyed by source problem id (uuid). Used by `pickCandidate` to swap a seen seed for a
+  // not-yet-seen variant. Optional: when omitted (or returning an empty map), the assigner
+  // skips the swap step and behaves identically to its pre-STORY-039c self.
+  loadUnattemptedVariantsBySource?(input: {
+    user_id: string;
+    org_id: string;
+  }): Promise<Map<string, ProblemCatalogEntry>>;
 }
 
 // STORY-033 — minimal projection of a `profile_insights` row the assigner cares about.
@@ -69,10 +90,17 @@ export interface RecentEpisode {
 // Normalized catalog entry — we keep a reference to the on-disk ProblemDef so the rest of the
 // agent (statement, reference_solution, hidden tests, expected_median_time) can read it without
 // re-parsing YAML.
+//
+// STORY-039c — the variants-map produced by `loadUnattemptedVariantsBySource` uses the same
+// shape and carries the seed's uuid in `source_problem_id` so the assigner can stamp the new
+// episode's `is_variant_of_problem_id` column when it serves a variant.
 export interface ProblemCatalogEntry {
   problem_id: string;
   problem_slug: string;
   def: ProblemDef;
+  // STORY-039c — set on entries representing cached LLM-generated variants. Points at the
+  // seed problem this variant was derived from. Null/undefined for stand-alone catalog entries.
+  source_problem_id?: string | null;
 }
 
 export interface GiveHintDeps {

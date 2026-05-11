@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNotNull, sql } from "drizzle-orm";
 import {
   agent_calls,
   awardXp,
@@ -12,6 +12,7 @@ import {
   incrementReferenced as incrementInsightReferencedDb,
   listLatestInsights,
   markItemCompleted,
+  problem_variants,
   problems,
   recordReview,
   skill_scores,
@@ -141,6 +142,9 @@ export function buildAssignProblemDrizzleDeps(
           org_id: input.org_id,
           user_id: input.user_id,
           problem_id: input.problem_id,
+          // STORY-039c — stamp the seed lineage when the served problem is a promoted variant.
+          // Null when the served problem is the seed itself (or a stand-alone problem).
+          is_variant_of_problem_id: input.is_variant_of_problem_id ?? null,
         })
         .returning({ id: episodes.id, started_at: episodes.started_at });
       const row = inserted[0];
@@ -169,6 +173,123 @@ export function buildAssignProblemDrizzleDeps(
       // STORY-033 — bump the referenced_count for an insight after the tutor's opener has
       // referenced it. The wrapper `incrementReferenced` short-circuits on a missing id.
       await incrementInsightReferencedDb(opts.db, input.insight_id);
+    },
+    async loadSeenSourceSlugs(input) {
+      // STORY-039c — the set of seed slugs the user has already closed an episode on. Used by
+      // pickCandidate to detect when the user has "seen the seed" and a cached variant should
+      // be preferred. We DELIBERATELY restrict to episodes with a non-null `final_outcome` so
+      // an in-progress episode the user is currently working on doesn't trigger the swap.
+      const rows = await opts.db
+        .selectDistinct({ slug: problems.slug })
+        .from(episodes)
+        .innerJoin(problems, eq(episodes.problem_id, problems.id))
+        .where(and(eq(episodes.user_id, input.user_id), isNotNull(episodes.final_outcome)));
+      return rows.map((r) => r.slug);
+    },
+    async loadUnattemptedVariantsBySource(input) {
+      // STORY-039c — load the cached LLM-generated variants the user has NOT yet attempted,
+      // keyed by source problem id (uuid). The variants live in `problem_variants` (the
+      // STORY-039 cache); to serve one through the assigner we need a real `problems` row so
+      // `episodes.problem_id` (a NOT NULL FK) can reference it. The first time the assigner
+      // surfaces a variant, this method promotes it into `problems` (atomic upsert keyed on
+      // the unique `(org_id, track_id, slug)` index from STORY-016) so subsequent loads find
+      // the promoted row and skip the insert. "Unattempted" then reduces to a simple "no
+      // episode for the promoted problems.id".
+      const variantRows = await opts.db
+        .select({
+          id: problem_variants.id,
+          source_problem_id: problem_variants.source_problem_id,
+          variant_def: problem_variants.variant_def,
+        })
+        .from(problem_variants)
+        .innerJoin(problems, eq(problem_variants.source_problem_id, problems.id))
+        .orderBy(asc(problem_variants.created_at));
+
+      if (variantRows.length === 0) return new Map();
+
+      // Promote each variant into `problems` (idempotent via slug uniqueness), then collect
+      // which promoted rows the user has already started an episode on.
+      const promoted = new Map<string, { problem_id: string; slug: string; def: ProblemDef }>();
+      for (const v of variantRows) {
+        const parsed = ProblemDefSchema.safeParse(v.variant_def);
+        if (!parsed.success) continue;
+        const def = parsed.data;
+        if (def.kind !== "implement" && def.kind !== "debug") continue;
+
+        // Look up the source problem's track to scope the promotion.
+        const sourceRow = await opts.db
+          .select({ track_id: problems.track_id, difficulty: problems.difficulty })
+          .from(problems)
+          .where(eq(problems.id, v.source_problem_id))
+          .limit(1);
+        const source = sourceRow[0];
+        if (!source) continue;
+
+        // Idempotent upsert: if a problems row with the same slug already exists, reuse it.
+        const existing = await opts.db
+          .select({ id: problems.id })
+          .from(problems)
+          .where(and(eq(problems.track_id, source.track_id), eq(problems.slug, def.slug)))
+          .limit(1);
+        let problemId: string;
+        if (existing[0]) {
+          problemId = existing[0].id;
+        } else {
+          const inserted = await opts.db
+            .insert(problems)
+            .values({
+              org_id: opts.org_id,
+              track_id: source.track_id,
+              slug: def.slug,
+              name: def.name,
+              language: def.language,
+              difficulty: source.difficulty,
+              kind: def.kind,
+              statement: def.statement,
+              starter_code: def.starter_code,
+              hidden_tests: {
+                cases: def.hidden_tests,
+                public_examples: def.public_examples,
+                reference_solution: def.reference_solution,
+                concept_tags: def.concept_tags,
+                expected_median_time_to_solve_ms: def.expected_median_time_to_solve_ms,
+              },
+            })
+            .returning({ id: problems.id });
+          const row = inserted[0];
+          if (!row) continue;
+          problemId = row.id;
+        }
+        // Only keep one variant per source — the oldest unattempted (createdAt asc above means
+        // the first hit wins; later iterations for the same source skip).
+        if (!promoted.has(v.source_problem_id)) {
+          promoted.set(v.source_problem_id, { problem_id: problemId, slug: def.slug, def });
+        }
+      }
+
+      if (promoted.size === 0) return new Map();
+
+      // Exclude variants the user has already started/closed an episode on.
+      const candidateIds = Array.from(promoted.values()).map((p) => p.problem_id);
+      const attemptedRows = await opts.db
+        .selectDistinct({ problem_id: episodes.problem_id })
+        .from(episodes)
+        .where(
+          and(eq(episodes.user_id, input.user_id), inArray(episodes.problem_id, candidateIds)),
+        );
+      const attempted = new Set(attemptedRows.map((r) => r.problem_id));
+
+      const out = new Map<string, ProblemCatalogEntry>();
+      for (const [sourceId, p] of promoted.entries()) {
+        if (attempted.has(p.problem_id)) continue;
+        out.set(sourceId, {
+          problem_id: p.problem_id,
+          problem_slug: p.slug,
+          def: p.def,
+          source_problem_id: sourceId,
+        });
+      }
+      return out;
     },
   };
 }
