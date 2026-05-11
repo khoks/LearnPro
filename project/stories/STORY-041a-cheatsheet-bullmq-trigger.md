@@ -2,14 +2,14 @@
 id: STORY-041a
 title: BullMQ trigger for cheatsheet generation (STORY-041 follow-up)
 type: story
-status: in-progress
+status: done
 priority: P2
 estimate: S
 parent: EPIC-002
 phase: v1-followup
 tags: [agent, queue, retention, follow-up]
 created: 2026-05-07
-updated: 2026-05-07
+updated: 2026-05-11
 ---
 
 ## Description
