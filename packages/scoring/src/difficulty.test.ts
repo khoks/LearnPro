@@ -198,7 +198,9 @@ describe("updateSkillScore", () => {
 // helpers below are the comprehension-axis equivalent. The implement/debug branch stays
 // byte-for-byte the same (regression test at the bottom).
 function compMc(
-  overrides: Partial<Extract<ComprehensionEpisodeSignalInput, { comprehension_format: "multiple_choice" }>> = {},
+  overrides: Partial<
+    Extract<ComprehensionEpisodeSignalInput, { comprehension_format: "multiple_choice" }>
+  > = {},
 ): ComprehensionEpisodeSignalInput {
   return {
     comprehension_format: "multiple_choice",
@@ -211,7 +213,9 @@ function compMc(
 }
 
 function compFt(
-  overrides: Partial<Extract<ComprehensionEpisodeSignalInput, { comprehension_format: "free_text" }>> = {},
+  overrides: Partial<
+    Extract<ComprehensionEpisodeSignalInput, { comprehension_format: "free_text" }>
+  > = {},
 ): ComprehensionEpisodeSignalInput {
   return {
     comprehension_format: "free_text",
@@ -318,18 +322,14 @@ describe("comprehension difficulty: comprehensionDifficultySignal", () => {
 
   it("multiple_choice format default expected time = 60s (slow at 120s)", () => {
     // 120s is 2x expected (60s default) → overtime clamps near 1 → -0.5.
-    const s = comprehensionDifficultySignal(
-      compMc({ correct: false, time_to_answer_sec: 120 }),
-    );
+    const s = comprehensionDifficultySignal(compMc({ correct: false, time_to_answer_sec: 120 }));
     // correct=false (no bonus). overtime ratio=2 → (2-1)/(2-1)=1 → -0.5.
     expect(s).toBeCloseTo(-0.5, 6);
   });
 
   it("free_text format default expected time = 180s", () => {
     // 360s is 2x expected (180s default) → overtime clamps near 1.
-    const s = comprehensionDifficultySignal(
-      compFt({ rubric_score: 1, time_to_answer_sec: 360 }),
-    );
+    const s = comprehensionDifficultySignal(compFt({ rubric_score: 1, time_to_answer_sec: 360 }));
     expect(s).toBeCloseTo(-0.5, 6);
   });
 });

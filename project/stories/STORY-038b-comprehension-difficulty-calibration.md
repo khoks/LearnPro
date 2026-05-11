@@ -2,7 +2,7 @@
 id: STORY-038b
 title: Comprehension difficulty calibration (STORY-038 follow-up)
 type: story
-status: in-progress
+status: done
 priority: P2
 estimate: S
 parent: STORY-038
@@ -81,3 +81,19 @@ unchanged. The new branch is purely additive.
 
 - 2026-05-11 — created
 - 2026-05-11 — picked up
+- 2026-05-11 — done. Comprehension-axis difficulty calibration landed end-to-end.
+  `packages/scoring/src/difficulty.ts` gains
+  `ComprehensionEpisodeSignalInputSchema` (Zod discriminated union on
+  `comprehension_format`), `comprehensionEpisodeSuccessScore`,
+  `comprehensionDifficultySignal`, and `nextComprehensionDifficulty` —
+  the existing `kind: "implement"` / `kind: "debug"` branch stays byte-for-byte
+  the same. Multiple-choice success scores 1.0/0.6/0.3/0.0 by attempts+hints
+  ladder; free-text uses `clamp((rubric_score - 1) / 4, 0, 1)`. Time signal uses
+  per-problem `expected_time_sec` with format-specific defaults (60s MC, 180s
+  free-text). The grade tool's comprehension dispatch (STORY-038a) now computes
+  a calibrated `comprehension_signal` on `GradeOutput` when `GradeEpisodeContext`
+  carries runtime metadata (started_at_ms / hints_used / attempt_count). 22 new
+  scoring tests + 5 new grade-tool tests cover MC clean / +1 hint / +2 attempts
+  / ≥2 hints / incorrect, free_text rubric 5/3/2/1, both formats' expected-time
+  defaults, per-problem override, signal sign cases, ctx-without-metadata →
+  null, and the implement-path regression.

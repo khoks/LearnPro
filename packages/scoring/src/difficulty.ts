@@ -236,9 +236,7 @@ export const ComprehensionEpisodeSignalInputSchema = z.discriminatedUnion("compr
     got_help: z.boolean().default(false),
   }),
 ]);
-export type ComprehensionEpisodeSignalInput = z.input<
-  typeof ComprehensionEpisodeSignalInputSchema
->;
+export type ComprehensionEpisodeSignalInput = z.input<typeof ComprehensionEpisodeSignalInputSchema>;
 
 // Per-episode contribution to the comprehension-axis skill score, in [0, 1]. The shape matches
 // `episodeSuccessScore` so consumers can substitute one for the other based on
@@ -253,8 +251,7 @@ export function comprehensionEpisodeSuccessScore(
     const hints = parsed.hint_count;
     const attempts = parsed.attempt_count;
     if (hints === 0 && attempts === 1) return clamp01(config.mc_success.clean_score);
-    if (hints >= 2 || attempts >= 3)
-      return clamp01(config.mc_success.multi_hint_or_attempts_score);
+    if (hints >= 2 || attempts >= 3) return clamp01(config.mc_success.multi_hint_or_attempts_score);
     return clamp01(config.mc_success.one_hint_or_two_attempts_score);
   }
   return clamp01((parsed.rubric_score - 1) / 4);
