@@ -8,6 +8,34 @@
 
 ---
 
+## 2026-05-06 — STORY-NNNa convention for in-Story deferred follow-ups; agent-dispatch operational lessons from the v1-finishing run
+
+**Context:** The session that closed v1 (19 P0/P1/P2 stories merged in one push) routinely landed a primary STORY with one or more deferred ACs — too costly to ship in scope, too small to file as a fresh STORY-NNN. STORY-037 deferred the runtime persistence wiring; STORY-039 deferred 4 ACs around novelty / admin / seeding / Piston-validation; STORY-041 deferred the BullMQ trigger; STORY-043 deferred the multi-file grade-tool harness; STORY-046 deferred the entire weekly view; STORY-038 deferred the tutor route fan-out for the comprehension `kind`; STORY-036 deferred live-model validation; etc. Eight deferred follow-ups landed in this session alone (037a, 037b, 038a, 039a, 041a, 043a, 046b, 046c). The convention crystallized as it was used.
+
+**Decision:**
+1. **In-Story deferred follow-ups are filed as `STORY-NNN<letter>`** — same parent epic, same `phase` (or `phase: v1-followup` when it post-dates the parent's phase close), priority generally one tier lower than the parent unless the parent specifically called the deferral out as P1. The original STORY's activity log gets a "Deferred to STORY-NNN<letter>" line at close.
+2. **The deferred AC list lives in two places** — checkbox-line in the parent STORY's AC section (struck-through with the follow-up reference), and full ACs restated on the STORY-NNN<letter> file. The follow-up file's frontmatter `description` opens with "Deferred follow-up from STORY-NNN."
+3. **Migration-number contention in parallel agent dispatch is solved by claiming a number up front in the brief.** When dispatching N agents that each add a Drizzle migration, give each a specific `0NNN_<slug>.sql` number in the agent prompt; if an agent claims a number then doesn't end up needing the migration, the next dispatch fills the gap. Otherwise concurrent agents collide on the next-free number and merge resolution costs minutes per cascade.
+4. **Format-check is a hard CI gate; every agent dispatch must run `pnpm format` as a final pre-commit step.** This session's PRs failed CI on `prettier --check` ~8 times before the pattern stuck. Brief agents with a checklist that includes `pnpm format && pnpm format:check` after the last commit and before push.
+5. **`apps/api/src/index.ts` `defaultsFromEnv()` and `BuildServerOptions` are the central wiring contention point** — almost every multi-agent batch produced a 3-way conflict here. The mitigation that worked: brief each agent to add new wiring as a small isolated block at the end of `defaultsFromEnv()`, never reorder the existing options; brief them to add new `BuildServerOptions` fields at the end of the interface, never re-grouping. Rebase-with-`--ours`-on-BOARD then manually re-write the BOARD section is the consistent resolution recipe.
+
+**Alternatives considered:**
+- **Promote every deferred AC to a fresh `STORY-NNN`** — clean numbering but loses the parentage signal; future-me reading the BOARD wouldn't see "this is the follow-up to that" without clicking through. Rejected.
+- **Inline `STORY-NNN-followup-<slug>.md` instead of `STORY-NNNa.md`** — verbose; sortable only by clicking through. Rejected.
+- **Auto-rebase before merge instead of asking agents to format** — would shift the burden to the merge step, where it's already been the most expensive operation. Rejected.
+
+**Consequences:**
+- (+) Future sessions can find every deferred follow-up by globbing `STORY-NNN[a-z]*.md`.
+- (+) The parent STORY's activity log shows the full chain: ship → defer → follow-up landed.
+- (+) Migration cascades stop being a per-PR rebase ceremony.
+- (−) STORY ID space gets dense quickly when an Epic spawns multiple follow-ups (037 → 037a → 037b already exists). Acceptable; we still have 26 letters per parent.
+- Operational follow-up: this entry codifies what was already practice; CLAUDE.md may eventually want a one-liner pointing at this convention.
+
+**Owner:** assistant — observed across the v1-finishing run on 2026-05-06.
+**Related:** STORY-037a / STORY-037b / STORY-038a / STORY-039a / STORY-041a / STORY-043a / STORY-046b / STORY-046c (the eight follow-ups filed this session), DECISIONS_LOG entry above on parallel-agent-dispatch cap collapse (this entry extends those operational lessons), CLAUDE.md `## Coding standards` section.
+
+---
+
 ## 2026-04-28 — Parallel agent dispatch via worktrees: brief for cap-driven mid-work termination
 
 **Context:** Tried to pick up STORY-005 (auth), STORY-016 (seed bank), STORY-010 (sandbox hardening) in parallel by launching three `general-purpose` agents in `isolation: "worktree"` mode. All three hit a model-usage cap mid-work (the Anthropic-side daily allotment, not a project-side rate limit) and stopped before committing or pushing. STORY-010 left a fully-formed test suite in its worktree (38 tests, 13 files, hardened docker-compose) that the parent session was able to verify + ship as PR #21. STORY-016 left 33 Python YAMLs + complete Zod schema/loader/validator scaffold (no TS YAMLs, no tests) — preserved as a WIP commit on `origin/story/016-seed-problem-bank`. STORY-005 wrote substantial Auth.js + Drizzle-adapter + profile-bootstrap code into the parent worktree's working dir (worktree creation failed for that one) — preserved as a WIP commit on `origin/story/005-auth-and-profile-shell` with TODOs flagged in its body.
