@@ -10,6 +10,7 @@ export {
   type EmailTransport,
 } from "./transport.js";
 export { ResendTransport, type ResendTransportOptions } from "./resend-transport.js";
+export { PostmarkTransport, type PostmarkTransportOptions } from "./postmark-transport.js";
 export {
   buildDailyDigest,
   type DailyDigestEpisode,
