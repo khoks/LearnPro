@@ -6,7 +6,13 @@ import type {
   GraderAgentRubric,
   HiddenTestResult,
 } from "../ports.js";
-import { aggregatePassed, clampRubric, createGradeTool, summarizeFailingTests } from "./grade.js";
+import {
+  GradeInputSchema,
+  aggregatePassed,
+  clampRubric,
+  createGradeTool,
+  summarizeFailingTests,
+} from "./grade.js";
 import { EpisodeNotFoundError } from "./give-hint.js";
 
 const EPISODE_ID = "11111111-1111-4111-8111-111111111111";
@@ -458,5 +464,292 @@ describe("createGradeTool: STORY-038a comprehension dispatch", () => {
     expect(out.comprehension ?? null).toBeNull();
     // Hidden tests still run.
     expect(out.hidden_test_results.length).toBeGreaterThan(0);
+  });
+});
+
+// STORY-043a — multi-file grade-tool harness. The grade tool accepts a `{ files: [...] }` body
+// for multi-file submissions, picks the entry file by problem.entry_file (or per-language
+// convention), and forwards the auxiliary files to the runHiddenTests adapter via `user_files`.
+// The legacy single-file `{ code }` shape continues to work unchanged.
+function multiFilePdef(): Extract<ProblemDef, { kind: "implement" }> {
+  return {
+    kind: "implement",
+    slug: "workspace-test",
+    name: "Workspace test",
+    language: "python",
+    difficulty: 3,
+    track: "python-fundamentals",
+    concept_tags: ["modules"],
+    statement: "import a helper",
+    starter_code: "from lib.utils import square\n\n\ndef solve(n):\n    pass\n",
+    starter_workspace: [
+      { path: "lib/__init__.py", content: "" },
+      { path: "lib/utils.py", content: "def square(n):\n    return n * n\n" },
+      { path: "main.py", content: "from lib.utils import square\n\n\ndef solve(n):\n    pass\n" },
+    ],
+    entry_file: "main.py",
+    reference_solution:
+      "from lib.utils import square\n\n\ndef solve(n):\n    return square(n) + 1\n",
+    public_examples: [{ input: [3], expected: 10 }],
+    hidden_tests: [{ input: [3], expected: 10 }],
+    expected_median_time_to_solve_ms: 240_000,
+  };
+}
+
+describe("createGradeTool: STORY-043a multi-file submissions", () => {
+  it("accepts a `{ files }` body alongside the legacy `{ code }`", () => {
+    expect(() =>
+      GradeInputSchema.parse({
+        episode_id: EPISODE_ID,
+        files: [{ path: "main.py", content: "print('hi')" }],
+      }),
+    ).not.toThrow();
+    expect(() =>
+      GradeInputSchema.parse({
+        episode_id: EPISODE_ID,
+        code: "print('hi')",
+      }),
+    ).not.toThrow();
+  });
+
+  it("rejects a `{ files: [] }` body (must have at least one file)", () => {
+    expect(() =>
+      GradeInputSchema.parse({
+        episode_id: EPISODE_ID,
+        files: [],
+      }),
+    ).toThrow();
+  });
+
+  it("rejects file paths with .. traversal", () => {
+    expect(() =>
+      GradeInputSchema.parse({
+        episode_id: EPISODE_ID,
+        files: [{ path: "../etc/passwd", content: "x" }],
+      }),
+    ).toThrow();
+  });
+
+  it("forwards `user_files` to runHiddenTests when the problem has starter_workspace", async () => {
+    const userFiles = [
+      { path: "lib/__init__.py", content: "" },
+      { path: "lib/utils.py", content: "def square(n):\n    return n * n + 1\n" },
+      {
+        path: "main.py",
+        content: "from lib.utils import square\n\n\ndef solve(n):\n    return square(n) + 1\n",
+      },
+    ];
+    const runHiddenTestsCalls: Array<{
+      user_code: string;
+      user_files?: ReadonlyArray<{ path: string; content: string }>;
+    }> = [];
+    const baseDeps = fakeDeps({
+      ctx: {
+        episode_id: EPISODE_ID,
+        user_id: "user-1",
+        org_id: "self",
+        problem_id: "problem-1",
+        problem: multiFilePdef(),
+      },
+    });
+    const deps: GradeDeps = {
+      ...baseDeps,
+      async runHiddenTests(input) {
+        runHiddenTestsCalls.push({
+          user_code: input.user_code,
+          user_files: input.user_files,
+        });
+        return [{ index: 0, passed: true }];
+      },
+    };
+    const tool = createGradeTool({ deps });
+    const out = await tool.run({ episode_id: EPISODE_ID, files: userFiles });
+
+    expect(runHiddenTestsCalls).toHaveLength(1);
+    expect(runHiddenTestsCalls[0]?.user_files).toBeDefined();
+    expect(runHiddenTestsCalls[0]?.user_files).toHaveLength(3);
+    // The user_code passed to runHiddenTests is the entry file's content (so the rubric LLM
+    // and the grader agent see it as the canonical solver).
+    expect(runHiddenTestsCalls[0]?.user_code).toContain("return square(n) + 1");
+    expect(out.passed).toBe(true);
+  });
+
+  it("falls back to single-file `user_code` for problems without starter_workspace", async () => {
+    const runHiddenTestsCalls: Array<{
+      user_code: string;
+      user_files?: ReadonlyArray<{ path: string; content: string }>;
+    }> = [];
+    const baseDeps = fakeDeps({});
+    const deps: GradeDeps = {
+      ...baseDeps,
+      async runHiddenTests(input) {
+        runHiddenTestsCalls.push({
+          user_code: input.user_code,
+          user_files: input.user_files,
+        });
+        return [{ index: 0, passed: true }];
+      },
+    };
+    const tool = createGradeTool({ deps });
+    await tool.run({ episode_id: EPISODE_ID, code: "def solve(): return [0,1]" });
+
+    // Legacy single-file path: user_files NOT supplied.
+    expect(runHiddenTestsCalls).toHaveLength(1);
+    expect(runHiddenTestsCalls[0]?.user_files).toBeUndefined();
+    expect(runHiddenTestsCalls[0]?.user_code).toBe("def solve(): return [0,1]");
+  });
+
+  it("honors problem.entry_file when picking the entry-file content", async () => {
+    const baseDeps = fakeDeps({
+      ctx: {
+        episode_id: EPISODE_ID,
+        user_id: "user-1",
+        org_id: "self",
+        problem_id: "problem-1",
+        problem: { ...multiFilePdef(), entry_file: "main.py" },
+      },
+    });
+    let capturedUserCode: string | null = null;
+    const deps: GradeDeps = {
+      ...baseDeps,
+      async runHiddenTests(input) {
+        capturedUserCode = input.user_code;
+        return [{ index: 0, passed: true }];
+      },
+    };
+    const tool = createGradeTool({ deps });
+    await tool.run({
+      episode_id: EPISODE_ID,
+      files: [
+        { path: "lib/utils.py", content: "def square(n):\n    return n * n\n" },
+        {
+          path: "main.py",
+          content: "from lib.utils import square\ndef solve(n):\n    return square(n) + 1",
+        },
+      ],
+    });
+    expect(capturedUserCode).not.toBeNull();
+    expect(capturedUserCode!).toContain("from lib.utils import square");
+    expect(capturedUserCode!).toContain("return square(n) + 1");
+  });
+
+  it("falls back to per-language convention (main.py / index.ts) when entry_file is unset", async () => {
+    const probWithoutEntry = (() => {
+      const p = multiFilePdef();
+      const noEntry: ProblemDef = {
+        ...p,
+        entry_file: undefined,
+      };
+      return noEntry;
+    })();
+    const baseDeps = fakeDeps({
+      ctx: {
+        episode_id: EPISODE_ID,
+        user_id: "user-1",
+        org_id: "self",
+        problem_id: "problem-1",
+        problem: probWithoutEntry,
+      },
+    });
+    let capturedUserCode: string | null = null;
+    const deps: GradeDeps = {
+      ...baseDeps,
+      async runHiddenTests(input) {
+        capturedUserCode = input.user_code;
+        return [{ index: 0, passed: true }];
+      },
+    };
+    const tool = createGradeTool({ deps });
+    await tool.run({
+      episode_id: EPISODE_ID,
+      files: [
+        { path: "lib/utils.py", content: "def square(n):\n    return 0\n" },
+        { path: "main.py", content: "def solve(n):\n    return 42" },
+      ],
+    });
+    // Picked main.py via per-language fallback (python).
+    expect(capturedUserCode).toBe("def solve(n):\n    return 42");
+  });
+
+  it("throws GradeInputShapeMismatchError when the entry file is missing from `files`", async () => {
+    const baseDeps = fakeDeps({
+      ctx: {
+        episode_id: EPISODE_ID,
+        user_id: "user-1",
+        org_id: "self",
+        problem_id: "problem-1",
+        problem: { ...multiFilePdef(), entry_file: "main.py" },
+      },
+    });
+    const tool = createGradeTool({ deps: baseDeps });
+    await expect(
+      tool.run({
+        episode_id: EPISODE_ID,
+        files: [
+          { path: "lib/utils.py", content: "def square(n):\n    return n*n" },
+          { path: "other.py", content: "x = 1" },
+        ],
+      }),
+    ).rejects.toBeInstanceOf(GradeInputShapeMismatchError);
+  });
+
+  it("persists the multi-file submission as a JSON blob (audit trail / data export)", async () => {
+    const recorded: Array<{ code: string; passed: boolean }> = [];
+    const baseDeps = fakeDeps({
+      ctx: {
+        episode_id: EPISODE_ID,
+        user_id: "user-1",
+        org_id: "self",
+        problem_id: "problem-1",
+        problem: multiFilePdef(),
+      },
+    });
+    const deps: GradeDeps = {
+      ...baseDeps,
+      async runHiddenTests() {
+        return [{ index: 0, passed: true }];
+      },
+      async recordSubmission(input) {
+        recorded.push({ code: input.code, passed: input.passed });
+        return { submission_id: SUBMISSION_ID };
+      },
+    };
+    const tool = createGradeTool({ deps });
+    await tool.run({
+      episode_id: EPISODE_ID,
+      files: [
+        { path: "lib/utils.py", content: "def square(n):\n    return n*n" },
+        { path: "main.py", content: "def solve(n):\n    return 42" },
+      ],
+    });
+    expect(recorded).toHaveLength(1);
+    const parsed = JSON.parse(recorded[0]!.code) as {
+      kind: string;
+      entry_file: string;
+      files: Array<{ path: string; content: string }>;
+    };
+    expect(parsed.kind).toBe("multi_file_submission");
+    expect(parsed.entry_file).toBe("main.py");
+    expect(parsed.files).toHaveLength(2);
+    expect(parsed.files.map((f) => f.path).sort()).toEqual(["lib/utils.py", "main.py"]);
+  });
+
+  it("single-file submissions still persist the raw source string (no behavioural change)", async () => {
+    const recorded: Array<{ code: string }> = [];
+    const baseDeps = fakeDeps({});
+    const deps: GradeDeps = {
+      ...baseDeps,
+      async runHiddenTests() {
+        return [{ index: 0, passed: true }];
+      },
+      async recordSubmission(input) {
+        recorded.push({ code: input.code });
+        return { submission_id: SUBMISSION_ID };
+      },
+    };
+    const tool = createGradeTool({ deps });
+    await tool.run({ episode_id: EPISODE_ID, code: "def solve(): return [0,1]" });
+    expect(recorded).toHaveLength(1);
+    expect(recorded[0]!.code).toBe("def solve(): return [0,1]");
   });
 });

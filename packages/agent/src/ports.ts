@@ -105,7 +105,12 @@ export interface GradeDeps {
 
   // Runs the user's submission against the problem's hidden tests via the sandbox + per-language
   // verdict harness from @learnpro/problems. Returns one entry per hidden test.
-  runHiddenTests(input: { problem: ProblemDef; user_code: string }): Promise<HiddenTestResult[]>;
+  // STORY-043a — when the problem ships a `starter_workspace`, callers may pass `user_files` in
+  // place of `user_code` so the auxiliary files travel with the harness. Single-file
+  // submissions continue to pass just `user_code`. Either is accepted; the adapter picks the
+  // multi-file harness path when both `problem.starter_workspace` is present AND `user_files`
+  // is supplied.
+  runHiddenTests(input: GradeRunHiddenTestsInput): Promise<HiddenTestResult[]>;
 
   // LLM rubric call. Returns a structured grade + a 1-2 sentence prose explanation.
   generateRubric(input: {
@@ -158,6 +163,17 @@ export interface HiddenTestResult {
   detail?: string;
   expected?: unknown;
   got?: unknown;
+}
+
+// STORY-043a — input shape for `runHiddenTests`. Single-file submissions pass `user_code`
+// (the entry file's source); multi-file submissions ALSO pass `user_files` so the adapter
+// can ship the auxiliary files alongside the harness. The adapter picks the multi-file
+// branch when `problem.starter_workspace` is defined AND `user_files` is non-empty;
+// otherwise it falls back to the legacy single-file harness using `user_code`.
+export interface GradeRunHiddenTestsInput {
+  problem: ProblemDef;
+  user_code: string;
+  user_files?: ReadonlyArray<{ path: string; content: string }>;
 }
 
 export interface GradeRubric {
