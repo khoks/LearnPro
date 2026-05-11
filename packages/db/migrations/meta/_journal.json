@@ -169,6 +169,13 @@
       "when": 1780000000000,
       "tag": "0023_problem_variants",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1780100000000,
+      "tag": "0024_episode_variant_of",
+      "breakpoints": true
     }
   ]
 }

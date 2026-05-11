@@ -446,6 +446,7 @@ function makeEpisode(overrides: Partial<Episode> = {}): Episode {
     rubric_efficiency: null,
     rubric_test_coverage: null,
     rubric_reasoning: null,
+    is_variant_of_problem_id: null,
     ...overrides,
   };
 }
