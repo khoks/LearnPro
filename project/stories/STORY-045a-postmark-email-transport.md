@@ -2,7 +2,7 @@
 id: STORY-045a
 title: Postmark email transport adapter (STORY-045 follow-up)
 type: story
-status: in-progress
+status: done
 priority: P2
 estimate: S
 parent: EPIC-012
@@ -20,12 +20,12 @@ The new `PostmarkTransport` mirrors `ResendTransport`'s contract — same `Email
 
 ## Acceptance criteria
 
-- [ ] New `packages/notifications/email/postmark-transport.ts` implementing the existing `EmailTransport` interface.
-- [ ] POST `https://api.postmarkapp.com/email` with `X-Postmark-Server-Token: <env POSTMARK_SERVER_TOKEN>` auth and `Accept: application/json` headers.
-- [ ] Same error-mapping shape as ResendTransport — 4xx → user-actionable error; 5xx → retry-eligible; transient failures swallowed (log + return `{ delivered: false; reason }`).
-- [ ] `buildEmailTransportFromEnv()` in `apps/api/src/index.ts` (and the sibling `pickEmailTransport` / `pickTransport` helpers in the daily-reminder and weekly-digest cron entry points) supports `LEARNPRO_EMAIL_PROVIDER=postmark`. Reads `POSTMARK_SERVER_TOKEN` + `LEARNPRO_EMAIL_FROM`. Missing config → falls back to `NoopEmailTransport` (matches the Resend pattern).
-- [ ] Self-host docs: new `docs/operations/EMAIL_SETUP.md` documents the Resend + Postmark setup steps + env-var matrix.
-- [ ] Tests: 8-10 new tests in `packages/notifications/email/postmark-transport.test.ts` covering: send-happy-path with mocked fetch, 4xx error mapping (bad address + auth + rate limit), 5xx error mapping, missing-config short-circuit, Postmark-specific error-response parsing (Postmark returns `{ ErrorCode, Message }` on failure and `{ MessageID, To, SubmittedAt, ErrorCode, Message }` on success).
+- [x] New `packages/notifications/email/postmark-transport.ts` implementing the existing `EmailTransport` interface.
+- [x] POST `https://api.postmarkapp.com/email` with `X-Postmark-Server-Token: <env POSTMARK_SERVER_TOKEN>` auth and `Accept: application/json` headers.
+- [x] Same error-mapping shape as ResendTransport — 4xx → user-actionable error; 5xx → retry-eligible; transient failures swallowed (log + return `{ delivered: false; reason }`).
+- [x] `buildEmailTransportFromEnv()` extracted into a shared `apps/api/src/email-transport-env.ts` helper and called from `apps/api/src/index.ts` + the daily-reminder and weekly-digest cron entry points. Supports `LEARNPRO_EMAIL_PROVIDER=postmark`. Reads `POSTMARK_SERVER_TOKEN` + `LEARNPRO_EMAIL_FROM`. Missing config → falls back to `NoopEmailTransport` (matches the Resend pattern).
+- [x] Self-host docs: new `docs/operations/EMAIL_SETUP.md` documents the Resend + Postmark setup steps + env-var matrix.
+- [x] Tests: 12 new tests in `packages/notifications/email/postmark-transport.test.ts` covering constructor validation, send-happy-path with mocked fetch, 4xx error mapping (auth + rate-limit + bad-address), 5xx error mapping, network-error path, malformed success body, tolerated non-JSON 4xx body, Postmark-specific `{ErrorCode, Message}` error parsing surfaced in log meta, header translation (plain map → `[{Name, Value}]` array), and `name === "postmark"`. Plus 11 new tests in `apps/api/src/email-transport-env.test.ts` covering both providers' happy paths, both providers' missing-key fallback (with log capture), case-insensitive provider parsing, unknown-provider fallback, and silent fallback when no log callback is provided.
 
 ## Tasks under this Story
 
@@ -45,3 +45,17 @@ The new `PostmarkTransport` mirrors `ResendTransport`'s contract — same `Email
 ## Activity log
 
 - 2026-05-11 — created + picked up
+- 2026-05-11 — done. New `packages/notifications/email/postmark-transport.ts` mirrors
+  `ResendTransport`'s contract: POST to `https://api.postmarkapp.com/email` with
+  `X-Postmark-Server-Token` auth, PascalCase `{From, To, Subject, HtmlBody, TextBody,
+  Headers, ReplyTo}` body (plain-map `EmailMessage.headers` translated to Postmark's
+  `[{Name, Value}]` array at the boundary), Zod-validated `MessageID` success response.
+  Same coarse error-mapping as Resend — 4xx → bad_address / auth_failed / rate_limited,
+  5xx → transient_5xx, network → swallowed + logged. Postmark's `{ErrorCode, Message}`
+  4xx body is parsed and surfaced via the log meta. The `buildEmailTransportFromEnv`
+  picker was extracted from three near-duplicate inline copies (apps/api/src/index.ts,
+  daily-reminder.ts, weekly-digest.ts) into a new shared module
+  `apps/api/src/email-transport-env.ts` so the provider-routing logic is unit-tested
+  in one place. New `docs/operations/EMAIL_SETUP.md` walks operators through Resend
+  vs Postmark setup + env-var matrix + fail-soft behaviour. ~23 new tests (12 Postmark
+  transport + 11 env picker).
