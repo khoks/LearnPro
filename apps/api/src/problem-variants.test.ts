@@ -508,13 +508,15 @@ describe("POST /v1/problem-variants — STORY-039d judge wiring", () => {
       pass: true,
     }));
     listProblemVariants.mockResolvedValue([]);
-    insertProblemVariant.mockImplementation(async (_db: LearnProDb, args: { variant_def: unknown }) => ({
-      id: "row-1",
-      org_id: "self",
-      source_problem_id: SOURCE_PROBLEM_ID,
-      variant_def: args.variant_def,
-      created_at: new Date(),
-    }));
+    insertProblemVariant.mockImplementation(
+      async (_db: LearnProDb, args: { variant_def: unknown }) => ({
+        id: "row-1",
+        org_id: "self",
+        source_problem_id: SOURCE_PROBLEM_ID,
+        variant_def: args.variant_def,
+        created_at: new Date(),
+      }),
+    );
     const llm = fakeLlm([JSON.stringify(VALID_VARIANT_PAYLOAD)]);
     const db = fakeDbWithProblem([SOURCE_PROBLEM_ROW]);
     const app = buildServer({
@@ -572,13 +574,15 @@ describe("POST /v1/problem-variants — STORY-039d judge wiring", () => {
 
   it("behaves as STORY-039 when no judge is supplied (variant returned without judge call)", async () => {
     listProblemVariants.mockResolvedValue([]);
-    insertProblemVariant.mockImplementation(async (_db: LearnProDb, args: { variant_def: unknown }) => ({
-      id: "row-1",
-      org_id: "self",
-      source_problem_id: SOURCE_PROBLEM_ID,
-      variant_def: args.variant_def,
-      created_at: new Date(),
-    }));
+    insertProblemVariant.mockImplementation(
+      async (_db: LearnProDb, args: { variant_def: unknown }) => ({
+        id: "row-1",
+        org_id: "self",
+        source_problem_id: SOURCE_PROBLEM_ID,
+        variant_def: args.variant_def,
+        created_at: new Date(),
+      }),
+    );
     const llm = fakeLlm([JSON.stringify(VALID_VARIANT_PAYLOAD)]);
     const db = fakeDbWithProblem([SOURCE_PROBLEM_ROW]);
     const app = buildServer({

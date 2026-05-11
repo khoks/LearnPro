@@ -34,7 +34,13 @@ export const VARIANT_SPEC_CLARITY_MIN_PASSING = 3;
 
 const MAX_RETRIES = 1;
 
-const RubricScoreSchema = z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4), z.literal(5)]);
+const RubricScoreSchema = z.union([
+  z.literal(1),
+  z.literal(2),
+  z.literal(3),
+  z.literal(4),
+  z.literal(5),
+]);
 
 export const VariantSpecClarityReasoningSchema = z.object({
   instruction_clarity: z.string().min(1),
@@ -142,7 +148,8 @@ export function parseVariantSpecClarityResponse(text: string): VariantSpecClarit
 
   const { instruction_clarity, example_quality, concept_match, reasoning } = parsed.data;
   const pass =
-    Math.min(instruction_clarity, example_quality, concept_match) >= VARIANT_SPEC_CLARITY_MIN_PASSING;
+    Math.min(instruction_clarity, example_quality, concept_match) >=
+    VARIANT_SPEC_CLARITY_MIN_PASSING;
 
   return {
     instruction_clarity,

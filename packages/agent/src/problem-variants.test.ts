@@ -466,7 +466,7 @@ function recordingTelemetry(): {
 
 // STORY-039d — stub judges for testing.
 function passingJudge(): SpecClarityJudge & { calls: number } {
-  const judge = ((async () => {
+  const judge = (async () => {
     judge.calls += 1;
     return {
       instruction_clarity: 5,
@@ -479,13 +479,13 @@ function passingJudge(): SpecClarityJudge & { calls: number } {
       },
       pass: true,
     } satisfies VariantSpecClarityResult;
-  }) as SpecClarityJudge & { calls: number });
+  }) as SpecClarityJudge & { calls: number };
   judge.calls = 0;
   return judge;
 }
 
 function failingJudge(scoreOverride = 2): SpecClarityJudge & { calls: number } {
-  const judge = ((async () => {
+  const judge = (async () => {
     judge.calls += 1;
     return {
       instruction_clarity: scoreOverride,
@@ -498,16 +498,16 @@ function failingJudge(scoreOverride = 2): SpecClarityJudge & { calls: number } {
       },
       pass: false,
     } satisfies VariantSpecClarityResult;
-  }) as SpecClarityJudge & { calls: number });
+  }) as SpecClarityJudge & { calls: number };
   judge.calls = 0;
   return judge;
 }
 
 function throwingJudge(): SpecClarityJudge & { calls: number } {
-  const judge = ((async () => {
+  const judge = (async () => {
     judge.calls += 1;
     throw new Error("judge boom");
-  }) as SpecClarityJudge & { calls: number });
+  }) as SpecClarityJudge & { calls: number };
   judge.calls = 0;
   return judge;
 }

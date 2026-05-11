@@ -52,10 +52,7 @@ import {
   type ProblemVariantsPromptSourceShape,
 } from "@learnpro/prompts";
 import type { SandboxProvider } from "@learnpro/sandbox";
-import type {
-  SpecClarityJudge,
-  VariantSpecClarityResult,
-} from "./variant-spec-clarity-judge.js";
+import type { SpecClarityJudge, VariantSpecClarityResult } from "./variant-spec-clarity-judge.js";
 
 // STORY-039a — telemetry callback. The route surfaces these counts to logs / metrics; the
 // agent stays pure (no global state). All counters are per-source (one call to

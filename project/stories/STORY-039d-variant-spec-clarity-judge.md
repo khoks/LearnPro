@@ -2,7 +2,7 @@
 id: STORY-039d
 title: LLM-judge spec-clarity rubric for LLM-generated problem variants
 type: story
-status: in-progress
+status: done
 priority: P2
 estimate: S
 parent: EPIC-007
@@ -41,29 +41,30 @@ that don't want the round-trip (~$0.01 per variant).
 
 ## Acceptance criteria
 
-- [ ] New versioned prompt `packages/prompts/src/variant-spec-clarity-prompt.ts` with
+- [x] New versioned prompt `packages/prompts/src/variant-spec-clarity-prompt.ts` with
       version tag `variant-spec-clarity-v1`. System prompt embeds the rubric (1-5 per
       criterion + one-sentence reasoning). Forbidden-phrase test on the system prompt.
-- [ ] New judge `packages/agent/src/variant-spec-clarity-judge.ts` exposes
+- [x] New judge `packages/agent/src/variant-spec-clarity-judge.ts` exposes
       `runVariantSpecClarityJudge({ llm, variant })` returning
       `{ instruction_clarity, example_quality, concept_match, reasoning, pass }` where
       `pass = min(scores) >= 3`. Pure function — no DB / no telemetry inside. Zod-validated
       response with a single retry on parse failure; persistent failure → `{ pass: false }`
       (best-effort, never throws).
-- [ ] `generateProblemVariant` accepts an optional `judge?: SpecClarityJudge` parameter.
+- [x] `generateProblemVariant` accepts an optional `judge?: SpecClarityJudge` parameter.
       When provided, after the structural Zod gate passes AND (when configured) Piston
       self-validation passes, run the judge. On `judge.pass === false`, drop the variant
       and increment a new `variants_dropped_spec_clarity` telemetry counter (added to
       `ProblemVariantsTelemetry`). Caller-controlled — existing callers don't break.
-- [ ] `apps/api/src/problem-variants.ts` route honors `LEARNPRO_VARIANT_SPEC_CLARITY_JUDGE`
+- [x] `apps/api/src/problem-variants.ts` route honors `LEARNPRO_VARIANT_SPEC_CLARITY_JUDGE`
       env flag (default ON when ANTHROPIC_API_KEY is set, otherwise OFF). When ON, passes
       `runVariantSpecClarityJudge` as the `judge` to `generateProblemVariant`.
-- [ ] Unit tests: passing scores → `pass: true`, one failing score → `pass: false`,
+- [x] Unit tests: passing scores → `pass: true`, one failing score → `pass: false`,
       malformed JSON → retry once then `pass: false`, forbidden-phrase test on the system
-      prompt. ~8-10 tests.
-- [ ] Unit tests in `problem-variants.test.ts`: stub judge returning `pass: false` → variant
+      prompt. ~8-10 tests (12 prompt + 25 judge = 37 actual).
+- [x] Unit tests in `problem-variants.test.ts`: stub judge returning `pass: false` → variant
       dropped + `variants_dropped_spec_clarity` counter fired. Stub judge returning
-      `pass: true` → variant returned as before. ~3-4 new tests.
+      `pass: true` → variant returned as before. ~3-4 new tests (9 new agent tests + 8 new
+      route tests = 17 actual).
 
 ## Deferred / explicitly-skipped
 
@@ -118,3 +119,18 @@ that don't want the round-trip (~$0.01 per variant).
 
 - 2026-05-11 — created
 - 2026-05-11 — picked up
+- 2026-05-11 — done. New versioned `variant-spec-clarity-v1` prompt in `@learnpro/prompts`
+  (system prompt embeds 1-5 rubric anchors per criterion + JSON output schema; forbidden-
+  phrase tests guard against tone drift). New pure `runVariantSpecClarityJudge` agent in
+  `@learnpro/agent` (Haiku call; Zod-validated response; single retry on parse failure;
+  synthetic `{ pass: false }` on persistent failure — never throws to caller; `pass =
+  min(scores) >= 3`). `generateProblemVariant` now accepts an optional
+  `judge?: SpecClarityJudge` parameter; the judge runs AFTER the structural Zod gate and
+  AFTER (when wired) Piston self-validation. New `variants_dropped_spec_clarity`
+  telemetry counter on `ProblemVariantsTelemetry`. `PreviousFailure` widened to a
+  discriminated union (`self_validation | spec_clarity`) so the retry prompt picks the
+  right corrective phrasing — the spec-clarity addendum names the lowest-scoring
+  criterion. New `buildVariantSpecClarityJudgeFromEnv` in `apps/api/src/problem-variants.ts`
+  reads `LEARNPRO_VARIANT_SPEC_CLARITY_JUDGE` (default ON when `ANTHROPIC_API_KEY` is set;
+  off otherwise). `defaultsFromEnv` wires the env builder. 54 new tests (12 prompt +
+  25 judge + 9 agent + 8 route). 456 agent + 368 api tests pass repo-wide.
