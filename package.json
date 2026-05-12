@@ -17,7 +17,8 @@
     "test": "turbo run test",
     "e2e": "node scripts/e2e/run.mjs",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "db:bootstrap": "pnpm --filter @learnpro/db db:migrate && pnpm --filter @learnpro/db db:seed && pnpm --filter @learnpro/db db:seed:concepts && pnpm --filter @learnpro/tracks db:seed:tracks && pnpm --filter @learnpro/problems db:seed:problems"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",

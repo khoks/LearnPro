@@ -1,0 +1,19 @@
+# Local override — remaps published host ports to avoid collisions with native services
+# already running on this machine (native Postgres on 5432, native Redis on 6379, another
+# process on 9000/9001). Container-internal ports are unchanged; only host-side ports move.
+#
+# Activate by passing both files to compose:
+#   docker compose -f infra/docker/docker-compose.dev.yaml \
+#                  -f infra/docker/docker-compose.dev.override.yaml up -d
+
+services:
+  postgres:
+    ports:
+      - "15432:5432"
+  redis:
+    ports:
+      - "16379:6379"
+  minio:
+    ports:
+      - "19000:9000"
+      - "19001:9001"

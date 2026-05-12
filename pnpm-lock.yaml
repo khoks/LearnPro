@@ -120,6 +120,9 @@ importers:
       '@learnpro/db':
         specifier: workspace:^
         version: link:../../packages/db
+      '@learnpro/profile':
+        specifier: workspace:*
+        version: link:../../packages/profile
       '@learnpro/sandbox':
         specifier: workspace:*
         version: link:../../packages/sandbox
@@ -373,6 +376,9 @@ importers:
       '@types/node':
         specifier: ^22.10.2
         version: 22.19.17
+      tsx:
+        specifier: ^4.19.2
+        version: 4.21.0
       typescript:
         specifier: ^5.7.2
         version: 5.9.3
@@ -505,6 +511,9 @@ importers:
       '@types/node':
         specifier: ^22.10.2
         version: 22.19.17
+      tsx:
+        specifier: ^4.19.2
+        version: 4.21.0
       typescript:
         specifier: ^5.7.2
         version: 5.9.3

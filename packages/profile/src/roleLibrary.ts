@@ -115,9 +115,10 @@ export const ROLE_LIBRARY: RoleLibrary = Object.freeze(
 ) as RoleLibrary;
 
 /**
- * Case-insensitive slug lookup against the role library. Returns `null` when no role matches.
- * The free-text `target_role` captured by STORY-053 may include casing or whitespace variations;
- * we normalise to lowercase + trim before matching.
+ * Case-insensitive lookup against the role library by slug OR label. Returns `null` when no role
+ * matches. The free-text `target_role` captured by STORY-053 may be either form — the LLM
+ * onboarding agent tends to write the slug, the deterministic fallback (STORY-053 AC #6) writes
+ * the user's free-text reply which is usually the label. STORY-067 — both must resolve.
  *
  * Free choice, no soft-locks: a `null` return is the "we have nothing tailored for you" signal —
  * the /recommended page redirects to /dashboard so the user keeps moving.
@@ -125,5 +126,8 @@ export const ROLE_LIBRARY: RoleLibrary = Object.freeze(
 export function getRecommendation(library: RoleLibrary, target_role: string): Role | null {
   const needle = target_role.trim().toLowerCase();
   if (!needle) return null;
-  return library.find((r) => r.slug.toLowerCase() === needle) ?? null;
+  // Slug match wins (defensive — labels can theoretically shadow other slugs).
+  const bySlug = library.find((r) => r.slug.toLowerCase() === needle);
+  if (bySlug) return bySlug;
+  return library.find((r) => r.label.toLowerCase() === needle) ?? null;
 }

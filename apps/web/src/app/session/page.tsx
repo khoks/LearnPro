@@ -1,5 +1,7 @@
 import { redirect } from "next/navigation";
+import { getTrackIdBySlug } from "@learnpro/db";
 import { auth } from "../../auth/auth.js";
+import { getAuthDb } from "../../auth/db.js";
 import { SessionClient } from "./SessionClient";
 
 export const dynamic = "force-dynamic";
@@ -14,8 +16,17 @@ export default async function SessionPage({ searchParams }: SessionPageProps) {
     redirect("/auth/signin");
   }
   const sp = await searchParams;
-  const trackId = sp.track;
-  if (!trackId || !isUuid(trackId)) {
+  const raw = sp.track;
+  // Accept either a track UUID (legacy / dashboard track-picker) OR a track slug (the
+  // /recommended cards link via slug — STORY-069). Resolve slug → id via the DB.
+  let trackId: string | undefined;
+  if (raw && isUuid(raw)) {
+    trackId = raw;
+  } else if (raw) {
+    const db = getAuthDb();
+    trackId = (await getTrackIdBySlug(db, raw)) ?? undefined;
+  }
+  if (!trackId) {
     return (
       <main
         id="main-content"
