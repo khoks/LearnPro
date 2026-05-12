@@ -1,3 +1,4 @@
+import { pathToFileURL } from "node:url";
 import Fastify from "fastify";
 import {
   healthPayload,
@@ -913,7 +914,10 @@ async function start() {
   }
 }
 
-const isMain = import.meta.url === `file://${process.argv[1]?.replace(/\\/g, "/")}`;
+// Use `pathToFileURL` to derive the comparison URL — Windows absolute paths produce
+// `file:///D:/...` (three slashes) but a naive `file://${path}` produces `file://D:/...`,
+// which never matches and silently prevents the server from starting.
+const isMain = process.argv[1] ? import.meta.url === pathToFileURL(process.argv[1]).href : false;
 if (isMain) {
   void start();
 }
