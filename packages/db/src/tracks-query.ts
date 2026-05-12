@@ -1,9 +1,25 @@
-import { eq, inArray } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import type { LearnProDb } from "./client.js";
 import { episodes, SELF_HOSTED_ORG_ID, tracks } from "./schema.js";
 
 // Light-weight, read-only helpers for the recommendation flow (STORY-021). Kept here rather than
 // in xp-streak.ts because they're not gamification-shaped — they're pure curriculum lookups.
+
+// STORY-069 — resolve a track slug to its UUID. Used by the /session page so that user-facing
+// links like `/session?track=python-fundamentals` work alongside the legacy UUID form. Returns
+// null when no row matches (handle in caller with a "Pick a track" empty state).
+export async function getTrackIdBySlug(
+  db: LearnProDb,
+  slug: string,
+  org_id: string = SELF_HOSTED_ORG_ID,
+): Promise<string | null> {
+  const rows = await db
+    .select({ id: tracks.id })
+    .from(tracks)
+    .where(and(eq(tracks.slug, slug), eq(tracks.org_id, org_id)))
+    .limit(1);
+  return rows[0]?.id ?? null;
+}
 
 export interface TrackSummary {
   slug: string;

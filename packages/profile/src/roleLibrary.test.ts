@@ -129,6 +129,50 @@ describe("getRecommendation (STORY-021)", () => {
     expect(getRecommendation(custom, "test-role")?.label).toBe("Test role");
     expect(getRecommendation(custom, "backend-engineer")).toBeNull();
   });
+
+  // STORY-067 — the deterministic onboarding fallback writes the user's free-text reply, which
+  // is usually the label form (e.g. "Backend engineer"), not the slug form. Match both so a
+  // self-hoster without an API key doesn't get stuck with `role: null` from /api/recommendation.
+  it("returns the role for an exact label match (STORY-067)", () => {
+    const out = getRecommendation(ROLE_LIBRARY, "Backend engineer");
+    expect(out?.slug).toBe("backend-engineer");
+    expect(out?.label).toBe("Backend engineer");
+  });
+
+  it("matches the label case-insensitively (STORY-067)", () => {
+    expect(getRecommendation(ROLE_LIBRARY, "FRONTEND ENGINEER")?.slug).toBe("frontend-engineer");
+    expect(getRecommendation(ROLE_LIBRARY, "backend engineer")?.slug).toBe("backend-engineer");
+  });
+
+  it("trims surrounding whitespace before label matching (STORY-067)", () => {
+    expect(getRecommendation(ROLE_LIBRARY, "  ML engineer  ")?.slug).toBe("ml-engineer");
+  });
+
+  it("slug match wins when a slug and label both could match (defensive, STORY-067)", () => {
+    // Pathological library where one role's slug = another role's label (lowercased).
+    const custom: RoleLibrary = [
+      {
+        slug: "x",
+        label: "Right one",
+        recommended_track_slugs: ["python-fundamentals"],
+        recommended_daily_minutes: 10,
+        bias: "standard",
+      },
+      {
+        slug: "should-not-win",
+        // Label happens to equal the first role's slug — shouldn't shadow it.
+        label: "x",
+        recommended_track_slugs: ["python-fundamentals"],
+        recommended_daily_minutes: 10,
+        bias: "standard",
+      },
+    ];
+    expect(getRecommendation(custom, "x")?.label).toBe("Right one");
+  });
+
+  it("returns null on text that's neither a slug nor a label (STORY-067)", () => {
+    expect(getRecommendation(ROLE_LIBRARY, "Quantum researcher")).toBeNull();
+  });
 });
 
 describe("RoleSchema (STORY-021)", () => {
