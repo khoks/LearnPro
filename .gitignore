@@ -74,3 +74,9 @@ tmp/
 .claude/worktrees/
 # Local-only memory directory (auto-memory, see CLAUDE.md system prompt).
 .claude/memory/
+# Lock file written by the harness to serialize scheduled-task firings.
+.claude/scheduled_tasks.lock
+
+# --- Dev script artifacts ---
+# Log files from `bash scripts/dev.sh` (api, web, bootstrap streams).
+.dev-logs/
