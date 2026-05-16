@@ -11,9 +11,21 @@
 
 ## The fast path
 
+**From Git Bash, WSL, macOS Terminal, or any Linux shell:**
+
 ```bash
 bash scripts/dev.sh
 ```
+
+**From Windows PowerShell or cmd.exe** (in case you don't have Git Bash on PATH, or Windows'
+`C:\Windows\System32\bash.exe` is shadowing it and tries to route into WSL):
+
+```powershell
+.\scripts\dev.ps1
+```
+
+`dev.ps1` is a thin wrapper that locates Git for Windows' real `bash.exe` and runs
+`dev.sh` through it. All flags pass through (`.\scripts\dev.ps1 --fresh`, `--down`, etc.).
 
 That's it. The script:
 
@@ -89,8 +101,14 @@ docker compose -f infra/docker/docker-compose.dev.yaml \
 
 ## Troubleshooting
 
+- **`<3>WSL (xxx - Relay) ERROR: CreateProcessCommon:800: execvpe(/bin/bash) failed`** —
+  you're invoking `bash` from PowerShell/cmd, and Windows is routing that to its WSL
+  relay (`C:\Windows\System32\bash.exe`). If you don't have a WSL distro installed, the
+  relay fails like this. Use the PowerShell wrapper instead: `.\scripts\dev.ps1`. Or
+  run the original `bash scripts/dev.sh` from a Git Bash terminal.
 - **"Port 3000 / 4000 is already in use"** — something else is using the port.
-  `netstat -an | grep :3000` to find it; kill that process.
+  `netstat -an | grep :3000` to find it; kill that process. Or run
+  `bash scripts/dev.sh --down` to clear an orphaned previous run.
 - **Piston in restart loop** — see STORY-065. On Windows you can ignore it
   unless you need to run code; everything else works.
 - **DB bootstrap fails** — check `.dev-logs/bootstrap.log`. Most common cause is
