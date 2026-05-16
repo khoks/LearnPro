@@ -1,4 +1,17 @@
 #!/usr/bin/env bash
+# Self-relaunch under bash if we were invoked via `sh dev.sh`, or under dash, or any other
+# non-bash POSIX shell. The script uses bash-only features (arrays, ${BASH_SOURCE[0]},
+# `wait -n`, etc.); under sh you'd hit `bad substitution` at line 48 or `unexpected "("`
+# at the first array assignment. The check itself is POSIX-clean so sh can parse it.
+if [ -z "${BASH_VERSION:-}" ]; then
+  if command -v bash >/dev/null 2>&1; then
+    exec bash "$0" "$@"
+  else
+    echo "ERROR: bash is required to run this script. Install bash (or Git for Windows) and retry." >&2
+    exit 1
+  fi
+fi
+
 # scripts/dev.sh — one-shot dev environment bootstrapper for LearnPro.
 #
 # What it does:
@@ -58,7 +71,9 @@ for arg in "$@"; do
     --fresh)       FRESH=1 ;;
     --down)        DOWN_ONLY=1 ;;
     -h|--help)
-      sed -n '2,48p' "$0" | sed 's/^# \{0,1\}//'
+      # Print the script's leading description comment block (the "scripts/dev.sh — …"
+      # banner through the No-API-key note). Skip the self-relaunch guard at the top.
+      sed -n '15,54p' "$0" | sed 's/^# \{0,1\}//'
       exit 0
       ;;
     *) echo "Unknown flag: $arg" >&2; exit 2 ;;
