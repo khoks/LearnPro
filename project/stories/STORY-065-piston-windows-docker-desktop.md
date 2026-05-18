@@ -40,3 +40,30 @@ Tested 2026-05-11 with Docker Desktop 29.3.0 on Windows 11 + WSL2 backend. Pisto
 ## Activity log
 
 - 2026-05-11 — created. Found during /option 1/ Chrome walkthrough.
+- 2026-05-18 — user hit the bug again from the UI on a real Run click. Three updates
+  this round:
+  - **Verified the failure mode end-to-end** at the request level: API logs
+    `SandboxRequestError: Piston execute failed: fetch failed: ECONNREFUSED`,
+    Piston container is in `Restarting (1) Less than a second ago` with the
+    `mkdir 'isolate/': Read-only file system` loop. UI surfaces
+    `sandbox_unavailable — Piston execute failed`.
+  - **Public Piston API ruled out as a default fallback.** emkc.org/api/v2/piston
+    went whitelist-only on 2026-02-15: `"Public Piston API is now whitelist only as of
+    2/15/2026. Please contact EngineerMan on Discord with use case justification or
+    consider hosting your own Piston instance."` So `PISTON_URL=https://emkc.org/...`
+    isn't a one-line fix anymore. Affects any documentation that suggested it.
+  - **Shipped two user-facing improvements** (this PR):
+    - `RunResultPanel` (both /playground and /session) now appends a coach-voice
+      explanation + link to `docs/operations/SANDBOX.md` when `result.error ===
+      "sandbox_unavailable"`. Previously the UI just showed
+      `sandbox_unavailable — Piston execute failed` with no path forward.
+    - New `docs/operations/SANDBOX.md` with the four real fix paths:
+      (A) WSL-native docker engine inside a user Ubuntu distro — recommended,
+      preserves self-host promise;
+      (B) remote Piston on a Linux VM via `PISTON_URL`;
+      (C) public Piston — ruled out per above;
+      (D) skip Run/Submit and use the rest of the app.
+  - **Remaining AC unchanged**: a default sandbox backend that works on Docker
+    Desktop Windows is still open. Pluggable `SandboxProvider` interface is in place;
+    Pyodide-for-Python is the most likely v2 candidate but breaks parity with the
+    TypeScript track.

@@ -448,6 +448,7 @@ function ResultPanel({
   }
 
   if (!result.ok) {
+    const sandboxBlocked = result.error === "sandbox_unavailable";
     return (
       <section
         aria-live="polite"
@@ -463,6 +464,19 @@ function ResultPanel({
           <code>{result.error}</code>
           {result.message ? ` — ${result.message}` : ""}
         </div>
+        {sandboxBlocked ? (
+          <div style={{ marginTop: "0.5rem", fontSize: 13, color: "#555" }}>
+            The Piston sandbox isn&apos;t reachable. On Docker Desktop for Windows this is a known
+            limitation (cgroup v2 isn&apos;t writable inside the container).{" "}
+            <a
+              href="https://github.com/khoks/LearnPro/blob/main/docs/operations/SANDBOX.md"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Workarounds in docs/operations/SANDBOX.md →
+            </a>
+          </div>
+        ) : null}
       </section>
     );
   }

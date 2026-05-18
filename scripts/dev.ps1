@@ -16,6 +16,9 @@
 #       <3>WSL (xxx - Relay) ERROR: CreateProcessCommon:800: execvpe(/bin/bash) failed:
 #         No such file or directory
 #     This wrapper bypasses that by calling Git for Windows' bash.exe directly.
+#   - PowerShell's Ctrl+C handling can kill the bash subprocess abruptly without giving
+#     bash a chance to fire its trap. We register a CancelKeyPress + finally block that
+#     calls `dev.sh --down` so containers + dev servers always get torn down cleanly.
 
 $ErrorActionPreference = "Stop"
 
@@ -67,13 +70,41 @@ if (-not (Test-Path $bashScript -PathType Leaf)) {
   exit 1
 }
 
-# Translate the Windows-style path to a form Git Bash accepts. Git Bash handles both
-# "D:/...\path" and Unix-style "/d/..." paths; we use forward-slashed Windows so users
-# see a familiar location in any error messages.
 $bashScriptUnix = $bashScript -replace '\\', '/'
 
-# Run the bash script with all of our args passed through. We deliberately avoid --login
-# (skip the user's .bash_profile which may pollute the env) and -i (skip interactive
-# rc loading which slows startup). The script itself manages its own environment.
-& $bashExe $bashScriptUnix @args
-exit $LASTEXITCODE
+# If the user passed --down explicitly, just run it and exit — no cleanup-on-cleanup logic.
+$isDownOnly = $args -contains '--down'
+
+# Register a CancelKeyPress handler so Ctrl+C in PowerShell triggers a graceful teardown
+# instead of killing bash mid-flight. The handler:
+#   1. Sets $script:cancelled = $true so the main flow knows to skip the post-run noise.
+#   2. Cancels the default termination so PowerShell stays alive long enough to run the
+#      finally block — that's where the actual `dev.sh --down` invocation happens.
+$script:cancelled = $false
+$cancelHandler = [System.ConsoleCancelEventHandler] {
+  param($sender, $e)
+  $e.Cancel = $true   # don't let .NET kill us before finally runs
+  $script:cancelled = $true
+  Write-Host ""
+  Write-Host "Ctrl+C received — tearing down…" -ForegroundColor Yellow
+}
+[System.Console]::add_CancelKeyPress($cancelHandler)
+
+try {
+  & $bashExe $bashScriptUnix @args
+  $rc = $LASTEXITCODE
+}
+finally {
+  [System.Console]::remove_CancelKeyPress($cancelHandler)
+
+  # If Ctrl+C fired (or the bash side died without its own trap firing — e.g. Windows
+  # SIGKILL semantics on a non-graceful kill), run the explicit teardown. Skip the
+  # teardown when the user invoked --down themselves; that's already the teardown.
+  if ($script:cancelled -and -not $isDownOnly) {
+    Write-Host "Running dev.sh --down to clean up containers + dev servers…" -ForegroundColor Cyan
+    & $bashExe $bashScriptUnix --down
+  }
+}
+
+if ($script:cancelled) { exit 130 }   # 130 = killed by SIGINT, standard convention
+exit $rc

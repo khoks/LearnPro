@@ -133,12 +133,32 @@ esac
 
 open_url() {
   local url="$1"
+  local opened=0
   if [ "$IS_WINDOWS" = "1" ]; then
-    cmd.exe /c "start \"\" $url" >/dev/null 2>&1 || true
+    # Try multiple openers in order — different bash flavors (Git Bash vs WSL) and different
+    # invocation contexts (terminal vs piped through PowerShell) behave inconsistently with
+    # cmd.exe; the redundancy is intentional.
+    if command -v explorer.exe >/dev/null 2>&1 && explorer.exe "$url" >/dev/null 2>&1; then
+      opened=1
+    elif command -v rundll32.exe >/dev/null 2>&1 \
+      && rundll32.exe url.dll,FileProtocolHandler "$url" >/dev/null 2>&1; then
+      opened=1
+    elif command -v powershell.exe >/dev/null 2>&1 \
+      && powershell.exe -NoProfile -Command "Start-Process '$url'" >/dev/null 2>&1; then
+      opened=1
+    elif command -v cmd.exe >/dev/null 2>&1 \
+      && cmd.exe /c "start \"\" \"$url\"" >/dev/null 2>&1; then
+      opened=1
+    fi
   elif [ "$(uname -s)" = "Darwin" ]; then
-    open "$url" >/dev/null 2>&1 || true
+    open "$url" >/dev/null 2>&1 && opened=1
   else
-    (xdg-open "$url" >/dev/null 2>&1 &) || true
+    (xdg-open "$url" >/dev/null 2>&1 &) && opened=1
+  fi
+  if [ "$opened" = "0" ]; then
+    # All openers failed (or none available). Print the URL so the user can click/copy it.
+    warn "Couldn't auto-open the browser. Open this URL yourself:"
+    warn "  $url"
   fi
 }
 
